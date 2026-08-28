@@ -34,8 +34,8 @@ struct RideView: View {
                     0
                 )
                 let speedometerHeight = min(
-                    168,
-                    max(112, availableFeatureHeight * 0.29)
+                    176,
+                    max(116, availableFeatureHeight * 0.305)
                 )
 
                 ZStack(alignment: .top) {
@@ -163,7 +163,7 @@ struct RideView: View {
                 SpeedometerArc()
                     .stroke(
                         .white.opacity(0.14),
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -171,7 +171,7 @@ struct RideView: View {
                     .trim(from: 0, to: min(CGFloat(speed) / 30, 1))
                     .stroke(
                         arcColor(for: speed),
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
                     .animation(.smooth(duration: 0.45), value: speed)
