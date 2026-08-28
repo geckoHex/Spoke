@@ -6,14 +6,19 @@
 //
 
 import SwiftUI
+import SwiftData
+import UIKit
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
+    @Query private var storedSettings: [AppSettings]
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "house.fill", value: .home) {
-                HomeView()
+                HomeView(settings: settings)
             }
 
             Tab("Ride", systemImage: "figure.outdoor.cycle", value: .ride) {
@@ -29,10 +34,49 @@ struct ContentView: View {
             }
 
             Tab("Settings", systemImage: "gear", value: .settings) {
-                SettingsView()
+                SettingsView(settings: settings)
             }
         }
         .preferredColorScheme(.dark)
+        .task {
+            createSettingsIfNeeded()
+            updateIdleTimer()
+        }
+        .onChange(of: scenePhase) {
+            updateIdleTimer()
+        }
+        .onChange(of: shouldKeepScreenOn) {
+            updateIdleTimer()
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+    }
+
+    private var settings: AppSettings? {
+        storedSettings.first
+    }
+
+    private var shouldKeepScreenOn: Bool {
+        settings?.keepScreenOn ?? true
+    }
+
+    private func createSettingsIfNeeded() {
+        guard settings == nil else { return }
+
+        let settings = AppSettings()
+        modelContext.insert(settings)
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.delete(settings)
+        }
+    }
+
+    private func updateIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled =
+            scenePhase == .active && shouldKeepScreenOn
     }
 }
 
@@ -45,4 +89,5 @@ private enum AppTab: Hashable {
 
 #Preview {
     ContentView()
+        .modelContainer(for: [Item.self, AppSettings.self], inMemory: true)
 }
