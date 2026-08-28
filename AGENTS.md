@@ -21,6 +21,9 @@ Use local SwiftData persistence, following the existing architecture.
 
 When the user tells you to use an asset not bundled with the app, copy the asset to where it belongs in the app.
 
+For all app audio, use AVAudioSession to interrupt other system audio while playback is active.
+When app audio finishes, deactivate the session with .notifyOthersOnDeactivation so interrupted audio can resume.
+
 Do not launch the app or simulator. Build checks and git inspection are allowed. Make only requested changes; do not commit it.
 
 Finish with exactly one single-line suggested commit message.
