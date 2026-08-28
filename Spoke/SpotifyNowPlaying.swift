@@ -103,19 +103,19 @@ struct SpotifyNowPlayingView: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let progress = track.progress(at: context.date)
 
-            VStack(spacing: 12) {
-                HStack(spacing: 14) {
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
                     albumArt
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(track.title)
-                            .font(.headline)
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.white)
                             .lineLimit(2)
 
                         Text(track.artist)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.55))
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -148,8 +148,8 @@ struct SpotifyNowPlayingView: View {
                 }
             }
         }
-        .frame(width: 72, height: 72)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityHidden(true)
     }
 

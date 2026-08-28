@@ -21,10 +21,10 @@ struct RideView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
-                let topInset: CGFloat = 20
-                let bottomInset: CGFloat = 12
-                let verticalSpacing: CGFloat = 16
-                let spotifyHeight: CGFloat = 108
+                let topInset: CGFloat = 16
+                let bottomInset: CGFloat = 10
+                let verticalSpacing: CGFloat = 14
+                let spotifyHeight: CGFloat = 96
                 let availableFeatureHeight = max(
                     proxy.size.height
                         - topInset
@@ -34,8 +34,8 @@ struct RideView: View {
                     0
                 )
                 let speedometerHeight = min(
-                    190,
-                    max(108, availableFeatureHeight * 0.32)
+                    168,
+                    max(112, availableFeatureHeight * 0.29)
                 )
 
                 ZStack(alignment: .top) {
@@ -130,10 +130,10 @@ struct RideView: View {
                 .opacity(isMapLoaded ? 1 : 0)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(.white, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 1)
         }
         .accessibilityLabel("Current location map")
     }
@@ -155,15 +155,15 @@ struct RideView: View {
 
     private var speedometer: some View {
         GeometryReader { proxy in
-            let arcWidth = min(proxy.size.width, proxy.size.height * 2)
+            let arcWidth = min(max(proxy.size.width - 24, 0), proxy.size.height * 2)
             let arcHeight = arcWidth / 2
             let speed = speedTracker.speedInMilesPerHour
 
             ZStack(alignment: .bottom) {
                 SpeedometerArc()
                     .stroke(
-                        .white.opacity(0.18),
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                        .white.opacity(0.14),
+                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -171,7 +171,7 @@ struct RideView: View {
                     .trim(from: 0, to: min(CGFloat(speed) / 30, 1))
                     .stroke(
                         arcColor(for: speed),
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
                     .animation(.smooth(duration: 0.45), value: speed)
@@ -180,8 +180,8 @@ struct RideView: View {
                     Text(String(format: "%02d", speed))
                         .font(
                             .system(
-                                size: min(88, arcWidth * 0.29),
-                                weight: .bold,
+                                size: min(92, arcWidth * 0.29),
+                                weight: .semibold,
                                 design: .rounded
                             )
                         )
@@ -192,9 +192,10 @@ struct RideView: View {
                         .animation(.snappy(duration: 0.35), value: speed)
 
                     Text("mph")
-                        .font(.headline.weight(.semibold))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.65))
                 }
-                .padding(.bottom, 2)
+                .padding(.bottom, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
@@ -250,9 +251,18 @@ private struct CurrentLocationMap: UIViewRepresentable {
 
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
+        let configuration = MKStandardMapConfiguration(
+            elevationStyle: .flat,
+            emphasisStyle: .muted
+        )
+        configuration.pointOfInterestFilter = .excludingAll
+
         mapView.delegate = context.coordinator
-        mapView.mapType = .standard
+        mapView.preferredConfiguration = configuration
         mapView.showsUserLocation = true
+        mapView.showsBuildings = false
+        mapView.showsCompass = false
+        mapView.showsScale = false
         mapView.isScrollEnabled = false
         mapView.isZoomEnabled = false
         mapView.isRotateEnabled = false
