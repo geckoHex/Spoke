@@ -92,24 +92,17 @@ private struct RideDashboardView: View {
     var body: some View {
         GeometryReader { proxy in
             let metrics = RideLayoutMetrics(size: proxy.size)
+            let isLandscape = proxy.size.width > proxy.size.height
 
             ZStack(alignment: .top) {
                 Color.black
                     .ignoresSafeArea()
 
-                VStack(spacing: metrics.verticalSpacing) {
-                    speedometer
-                        .frame(height: metrics.speedometerHeight)
-
-                    currentLocationMap
-                        .frame(maxHeight: .infinity)
-
-                    spotifySection
-                        .frame(height: metrics.spotifyHeight, alignment: .top)
+                if isLandscape {
+                    landscapeLayout(metrics: metrics)
+                } else {
+                    portraitLayout(metrics: metrics)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, metrics.topInset)
-                .padding(.bottom, metrics.bottomInset)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -129,6 +122,44 @@ private struct RideDashboardView: View {
                 settings?.spotifyRefreshToken = refreshToken
             }
         }
+    }
+
+    private func portraitLayout(metrics: RideLayoutMetrics) -> some View {
+        VStack(spacing: metrics.verticalSpacing) {
+            speedometer
+                .frame(height: metrics.speedometerHeight)
+
+            currentLocationMap
+                .frame(maxHeight: .infinity)
+
+            spotifySection
+                .frame(height: metrics.spotifyHeight, alignment: .top)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, metrics.topInset)
+        .padding(.bottom, metrics.bottomInset)
+    }
+
+    private func landscapeLayout(metrics: RideLayoutMetrics) -> some View {
+        HStack(spacing: metrics.verticalSpacing) {
+            VStack(spacing: metrics.verticalSpacing) {
+                speedometer
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                spotifySection
+                    .frame(height: metrics.spotifyHeight, alignment: .top)
+                    .padding(12)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                    .padding(.horizontal, 12)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            currentLocationMap
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, metrics.topInset)
+        .padding(.bottom, metrics.bottomInset)
     }
 
     private var spotifyCredentials: SpotifyCredentials? {
@@ -284,31 +315,68 @@ private struct RideSkeletonView: View {
     var body: some View {
         GeometryReader { proxy in
             let metrics = RideLayoutMetrics(size: proxy.size)
+            let isLandscape = proxy.size.width > proxy.size.height
 
             PhaseAnimator([false, true]) { isBright in
-                VStack(spacing: metrics.verticalSpacing) {
-                    speedometerSkeleton
-                        .frame(height: metrics.speedometerHeight)
-
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(.white.opacity(0.1))
-                        .frame(maxHeight: .infinity)
-
-                    spotifySkeleton
-                        .frame(height: metrics.spotifyHeight, alignment: .top)
+                Group {
+                    if isLandscape {
+                        landscapeSkeleton(metrics: metrics)
+                    } else {
+                        portraitSkeleton(metrics: metrics)
+                    }
                 }
                 .opacity(isBright ? 0.72 : 0.38)
             } animation: { _ in
                 .easeInOut(duration: 0.9)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, metrics.topInset)
-            .padding(.bottom, metrics.bottomInset)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Loading Ride")
+    }
+
+    private func portraitSkeleton(metrics: RideLayoutMetrics) -> some View {
+        VStack(spacing: metrics.verticalSpacing) {
+            speedometerSkeleton
+                .frame(height: metrics.speedometerHeight)
+
+            mapSkeleton
+                .frame(maxHeight: .infinity)
+
+            spotifySkeleton
+                .frame(height: metrics.spotifyHeight, alignment: .top)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, metrics.topInset)
+        .padding(.bottom, metrics.bottomInset)
+    }
+
+    private func landscapeSkeleton(metrics: RideLayoutMetrics) -> some View {
+        HStack(spacing: metrics.verticalSpacing) {
+            VStack(spacing: metrics.verticalSpacing) {
+                speedometerSkeleton
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                spotifySkeleton
+                    .frame(height: metrics.spotifyHeight, alignment: .top)
+                    .padding(12)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                    .padding(.horizontal, 12)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            mapSkeleton
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, metrics.topInset)
+        .padding(.bottom, metrics.bottomInset)
+    }
+
+    private var mapSkeleton: some View {
+        RoundedRectangle(cornerRadius: 28, style: .continuous)
+            .fill(.white.opacity(0.1))
     }
 
     private var speedometerSkeleton: some View {
