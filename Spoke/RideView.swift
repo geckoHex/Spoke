@@ -16,7 +16,7 @@ struct RideView: View {
     @State private var shouldCreateMap = false
     @State private var isMapLoaded = false
 
-    private let mapCameraDistance: CLLocationDistance = 2_500
+    private let mapCameraDistance: CLLocationDistance = 700
 
     var body: some View {
         NavigationStack {
@@ -25,36 +25,36 @@ struct RideView: View {
                 let bottomInset: CGFloat = 12
                 let verticalSpacing: CGFloat = 16
                 let spotifyHeight: CGFloat = 108
-                let availableBoxHeight = max(
-                    (
-                        proxy.size.height
-                            - topInset
-                            - bottomInset
-                            - (verticalSpacing * 2)
-                            - spotifyHeight
-                    ) / 2,
+                let availableFeatureHeight = max(
+                    proxy.size.height
+                        - topInset
+                        - bottomInset
+                        - (verticalSpacing * 2)
+                        - spotifyHeight,
                     0
                 )
-                let boxSide = min(
-                    max(proxy.size.width - 40, 0),
-                    availableBoxHeight * 1.5
+                let speedometerHeight = min(
+                    190,
+                    max(108, availableFeatureHeight * 0.32)
                 )
-                let boxHeight = boxSide * (2.0 / 3.0)
 
                 ZStack(alignment: .top) {
                     Color.black
                         .ignoresSafeArea()
 
-                    VStack(spacing: 16) {
-                        speedBox(side: boxSide)
-                            .frame(height: boxHeight)
+                    VStack(spacing: verticalSpacing) {
+                        speedometer
+                            .frame(height: speedometerHeight)
+
                         currentLocationMap
-                            .frame(height: boxHeight)
+                            .frame(maxHeight: .infinity)
+
                         spotifySection
                             .frame(height: spotifyHeight, alignment: .top)
                     }
-                    .frame(width: boxSide)
+                    .padding(.horizontal, 20)
                     .padding(.top, topInset)
+                    .padding(.bottom, bottomInset)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -153,39 +153,89 @@ struct RideView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func speedBox(side: CGFloat) -> some View {
-        VStack(spacing: 8) {
-            Text(String(format: "%02d", speedTracker.speedInMilesPerHour))
-                .font(
-                    .system(
-                        size: min(104, side * 0.3),
-                        weight: .bold,
-                        design: .rounded
-                    )
-                )
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .contentTransition(
-                    .numericText(value: Double(speedTracker.speedInMilesPerHour))
-                )
-                .animation(
-                    .snappy(duration: 0.35),
-                    value: speedTracker.speedInMilesPerHour
-                )
+    private var speedometer: some View {
+        GeometryReader { proxy in
+            let arcWidth = min(proxy.size.width, proxy.size.height * 2)
+            let arcHeight = arcWidth / 2
+            let speed = speedTracker.speedInMilesPerHour
 
-            Text("mph")
-                .font(.headline.weight(.semibold))
+            ZStack(alignment: .bottom) {
+                SpeedometerArc()
+                    .stroke(
+                        .white.opacity(0.18),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .frame(width: arcWidth, height: arcHeight)
+
+                SpeedometerArc()
+                    .trim(from: 0, to: min(CGFloat(speed) / 30, 1))
+                    .stroke(
+                        arcColor(for: speed),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .frame(width: arcWidth, height: arcHeight)
+                    .animation(.smooth(duration: 0.45), value: speed)
+
+                VStack(spacing: 2) {
+                    Text(String(format: "%02d", speed))
+                        .font(
+                            .system(
+                                size: min(88, arcWidth * 0.29),
+                                weight: .bold,
+                                design: .rounded
+                            )
+                        )
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .contentTransition(.numericText(value: Double(speed)))
+                        .animation(.snappy(duration: 0.35), value: speed)
+
+                    Text("mph")
+                        .font(.headline.weight(.semibold))
+                }
+                .padding(.bottom, 2)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(.white, lineWidth: 2)
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed")
         .accessibilityValue("\(speedTracker.speedInMilesPerHour) miles per hour")
+    }
+
+    private func arcColor(for speed: Int) -> Color {
+        switch speed {
+        case ..<20:
+            .green
+        case 20..<25:
+            .yellow
+        default:
+            .red
+        }
+    }
+}
+
+private struct SpeedometerArc: Shape {
+    func path(in rect: CGRect) -> Path {
+        let radius = min(rect.width / 2, rect.height)
+        let center = CGPoint(x: rect.midX, y: rect.maxY)
+        let curveOffset = radius * 0.552_284_749_8
+        var path = Path()
+
+        path.move(to: CGPoint(x: center.x - radius, y: center.y))
+        path.addCurve(
+            to: CGPoint(x: center.x, y: center.y - radius),
+            control1: CGPoint(x: center.x - radius, y: center.y - curveOffset),
+            control2: CGPoint(x: center.x - curveOffset, y: center.y - radius)
+        )
+        path.addCurve(
+            to: CGPoint(x: center.x + radius, y: center.y),
+            control1: CGPoint(x: center.x + curveOffset, y: center.y - radius),
+            control2: CGPoint(x: center.x + radius, y: center.y - curveOffset)
+        )
+
+        return path
     }
 }
 
@@ -203,6 +253,10 @@ private struct CurrentLocationMap: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.mapType = .standard
         mapView.showsUserLocation = true
+        mapView.isScrollEnabled = false
+        mapView.isZoomEnabled = false
+        mapView.isRotateEnabled = false
+        mapView.isPitchEnabled = false
         return mapView
     }
 
@@ -213,6 +267,7 @@ private struct CurrentLocationMap: UIViewRepresentable {
               context.coordinator.lastCenteredLocationTimestamp != location.timestamp
         else { return }
 
+        let shouldAnimate = context.coordinator.lastCenteredLocationTimestamp != nil
         context.coordinator.lastCenteredLocationTimestamp = location.timestamp
         mapView.setCamera(
             MKMapCamera(
@@ -221,7 +276,7 @@ private struct CurrentLocationMap: UIViewRepresentable {
                 pitch: 0,
                 heading: 0
             ),
-            animated: false
+            animated: shouldAnimate
         )
     }
 
