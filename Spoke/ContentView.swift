@@ -43,42 +43,6 @@ private enum AppTab: Hashable {
     case settings
 }
 
-private struct HomeView: View {
-    var body: some View {
-        PlaceholderView(title: "Home")
-    }
-}
-
-private struct RideView: View {
-    var body: some View {
-        PlaceholderView(title: "Ride")
-    }
-}
-
-private struct HistoryView: View {
-    var body: some View {
-        PlaceholderView(title: "History")
-    }
-}
-
-private struct SettingsView: View {
-    var body: some View {
-        PlaceholderView(title: "Settings")
-    }
-}
-
-private struct PlaceholderView: View {
-    let title: String
-
-    var body: some View {
-        NavigationStack {
-            Color.black
-                .ignoresSafeArea()
-                .navigationTitle(title)
-        }
-    }
-}
-
 #Preview {
     ContentView()
 }
