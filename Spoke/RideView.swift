@@ -10,10 +10,8 @@ import MapKit
 
 struct RideView: View {
     @StateObject private var speedTracker = RideSpeedTracker()
-    @State private var mapPosition: MapCameraPosition = .userLocation(
-        followsHeading: false,
-        fallback: .automatic
-    )
+    @State private var shouldCreateMap = false
+    @State private var isMapLoaded = false
 
     private let mapCameraDistance: CLLocationDistance = 2_500
 
@@ -44,31 +42,60 @@ struct RideView: View {
             .onAppear {
                 speedTracker.start()
             }
+            .task {
+                guard !shouldCreateMap else { return }
+
+                await Task.yield()
+
+                do {
+                    try await Task.sleep(for: .milliseconds(100))
+                } catch {
+                    return
+                }
+
+                shouldCreateMap = true
+            }
             .onDisappear {
                 speedTracker.stop()
-            }
-            .onReceive(speedTracker.$currentLocation.compactMap { $0 }) { location in
-                mapPosition = .camera(
-                    MapCamera(
-                        centerCoordinate: location.coordinate,
-                        distance: mapCameraDistance
-                    )
-                )
             }
         }
     }
 
     private var currentLocationMap: some View {
-        Map(position: $mapPosition) {
-            UserAnnotation()
+        ZStack {
+            mapLoadingPlaceholder
+
+            if shouldCreateMap {
+                CurrentLocationMap(
+                    location: speedTracker.currentLocation,
+                    cameraDistance: mapCameraDistance
+                ) {
+                    isMapLoaded = true
+                }
+                .opacity(isMapLoaded ? 1 : 0)
+            }
         }
-        .mapStyle(.standard)
         .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 32, style: .continuous)
                 .stroke(.white, lineWidth: 2)
         }
         .accessibilityLabel("Current location map")
+    }
+
+    private var mapLoadingPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "map")
+                .font(.system(size: 34, weight: .medium))
+
+            Text("Loading Map")
+                .font(.headline)
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black)
+        .opacity(isMapLoaded ? 0 : 1)
+        .accessibilityElement(children: .combine)
     }
 
     private func speedBox(side: CGFloat) -> some View {
@@ -104,6 +131,71 @@ struct RideView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed")
         .accessibilityValue("\(speedTracker.speedInMilesPerHour) miles per hour")
+    }
+}
+
+private struct CurrentLocationMap: UIViewRepresentable {
+    let location: CLLocation?
+    let cameraDistance: CLLocationDistance
+    let onInitialLoad: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onInitialLoad: onInitialLoad)
+    }
+
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.delegate = context.coordinator
+        mapView.mapType = .standard
+        mapView.showsUserLocation = true
+        return mapView
+    }
+
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        context.coordinator.onInitialLoad = onInitialLoad
+
+        guard let location,
+              context.coordinator.lastCenteredLocationTimestamp != location.timestamp
+        else { return }
+
+        context.coordinator.lastCenteredLocationTimestamp = location.timestamp
+        mapView.setCamera(
+            MKMapCamera(
+                lookingAtCenter: location.coordinate,
+                fromDistance: cameraDistance,
+                pitch: 0,
+                heading: 0
+            ),
+            animated: false
+        )
+    }
+
+    static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator) {
+        mapView.delegate = nil
+    }
+
+    final class Coordinator: NSObject, MKMapViewDelegate {
+        var onInitialLoad: () -> Void
+        var lastCenteredLocationTimestamp: Date?
+        private var didCompleteInitialLoad = false
+
+        init(onInitialLoad: @escaping () -> Void) {
+            self.onInitialLoad = onInitialLoad
+        }
+
+        func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+            completeInitialLoad()
+        }
+
+        func mapViewDidFailLoadingMap(_ mapView: MKMapView, withError error: any Error) {
+            completeInitialLoad()
+        }
+
+        private func completeInitialLoad() {
+            guard !didCompleteInitialLoad else { return }
+            didCompleteInitialLoad = true
+            onInitialLoad()
+        }
     }
 }
 
