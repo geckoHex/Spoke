@@ -73,8 +73,11 @@ private struct RideDashboardView: View {
     @StateObject private var speedTracker: RideSpeedTracker
     @StateObject private var spotifyStore: SpotifyNowPlayingStore
     @StateObject private var mapStore: RideMapSnapshotStore
+    @State private var developerSpeedInMilesPerHour = 0
+    @State private var isDeveloperSpeedometerPressed = false
 
     private let mapCameraDistance: CLLocationDistance = 700
+    private let maximumDeveloperSpeedInMilesPerHour = 45
 
     init(settings: AppSettings?, resources: RideSessionResources) {
         self.settings = settings
@@ -111,6 +114,7 @@ private struct RideDashboardView: View {
         }
         .onDisappear {
             speedTracker.stop()
+            isDeveloperSpeedometerPressed = false
         }
         .task(id: spotifyCredentials) {
             guard let spotifyCredentials else {
@@ -165,6 +169,16 @@ private struct RideDashboardView: View {
     private var spotifyCredentials: SpotifyCredentials? {
         guard let settings else { return nil }
         return SpotifyCredentials(settings: settings)
+    }
+
+    private var isDeveloperModeEnabled: Bool {
+        settings?.developerModeEnabled == true
+    }
+
+    private var displayedSpeedInMilesPerHour: Int {
+        isDeveloperModeEnabled
+            ? developerSpeedInMilesPerHour
+            : speedTracker.speedInMilesPerHour
     }
 
     @ViewBuilder
@@ -251,7 +265,7 @@ private struct RideDashboardView: View {
         GeometryReader { proxy in
             let arcWidth = min(max(proxy.size.width - 24, 0), proxy.size.height * 2)
             let arcHeight = arcWidth / 2
-            let speed = speedTracker.speedInMilesPerHour
+            let speed = displayedSpeedInMilesPerHour
 
             ZStack(alignment: .bottom) {
                 SpeedometerArc()
@@ -294,9 +308,56 @@ private struct RideDashboardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .foregroundStyle(.white)
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    guard isDeveloperModeEnabled else { return }
+                    isDeveloperSpeedometerPressed = true
+                }
+                .onEnded { _ in
+                    guard isDeveloperModeEnabled else { return }
+                    isDeveloperSpeedometerPressed = false
+                }
+        )
+        .task(
+            id: DeveloperSpeedControlState(
+                isEnabled: isDeveloperModeEnabled,
+                isPressed: isDeveloperSpeedometerPressed
+            )
+        ) {
+            await runDeveloperSpeedControl()
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed")
-        .accessibilityValue("\(speedTracker.speedInMilesPerHour) miles per hour")
+        .accessibilityValue("\(displayedSpeedInMilesPerHour) miles per hour")
+    }
+
+    private func runDeveloperSpeedControl() async {
+        guard isDeveloperModeEnabled else {
+            developerSpeedInMilesPerHour = 0
+            isDeveloperSpeedometerPressed = false
+            return
+        }
+
+        while !Task.isCancelled {
+            if isDeveloperSpeedometerPressed {
+                developerSpeedInMilesPerHour = min(
+                    developerSpeedInMilesPerHour + 1,
+                    maximumDeveloperSpeedInMilesPerHour
+                )
+            } else if developerSpeedInMilesPerHour > 0 {
+                developerSpeedInMilesPerHour -= 1
+            } else {
+                return
+            }
+
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return
+            }
+        }
     }
 
     private func arcColor(for speed: Int) -> Color {
@@ -309,6 +370,11 @@ private struct RideDashboardView: View {
             .red
         }
     }
+}
+
+private struct DeveloperSpeedControlState: Equatable {
+    let isEnabled: Bool
+    let isPressed: Bool
 }
 
 private struct RideSkeletonView: View {

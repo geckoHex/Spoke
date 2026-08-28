@@ -71,6 +71,10 @@ private struct SettingsForm: View {
                 Toggle("Keep screen on", isOn: $settings.keepScreenOn)
             }
 
+            Section("Developer") {
+                Toggle("Enable Developer Mode", isOn: $settings.developerModeEnabled)
+            }
+
             Section("Spotify Client ID") {
                 HStack(spacing: 8) {
                     TextField("", text: $settings.spotifyClientID)
