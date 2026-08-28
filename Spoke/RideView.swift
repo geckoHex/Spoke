@@ -77,8 +77,17 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
     @Published private(set) var speedInMilesPerHour = 0
 
     private let locationManager = CLLocationManager()
-    private let minimumUpdateInterval: TimeInterval = 0.5
-    private var lastPublishedAt: Date?
+    private let metersPerSecondToMilesPerHour = 2.236_936_292_1
+    private let maximumLocationAge: TimeInterval = 2
+    private let maximumHorizontalAccuracy: CLLocationAccuracy = 25
+    private let maximumSpeedAccuracy: CLLocationSpeedAccuracy = 3
+    private let maximumCyclingSpeed: CLLocationSpeed = 45
+    private let maximumCyclingAcceleration: CLLocationSpeed = 4
+    private let smoothingTimeConstant: TimeInterval = 0.35
+    private let stationarySpeed: CLLocationSpeed = 0.45
+
+    private var filteredSpeed: CLLocationSpeed?
+    private var lastAcceptedSample: SpeedSample?
     private var isActive = false
     private var isUpdating = false
 
@@ -86,8 +95,9 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
         super.init()
         locationManager.delegate = self
         locationManager.activityType = .fitness
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.pausesLocationUpdatesAutomatically = false
     }
 
     func start() {
@@ -109,7 +119,8 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
         isActive = false
         locationManager.stopUpdatingLocation()
         isUpdating = false
-        lastPublishedAt = nil
+        filteredSpeed = nil
+        lastAcceptedSample = nil
         speedInMilesPerHour = 0
     }
 
@@ -130,28 +141,90 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last,
-              location.speed >= 0,
-              location.horizontalAccuracy >= 0,
-              abs(location.timestamp.timeIntervalSinceNow) < 5
-        else {
-            return
+        var newestFilteredSpeed: CLLocationSpeed?
+
+        for location in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
+            guard isValid(location) else { continue }
+
+            let sample = SpeedSample(location: location)
+            guard isPlausible(sample) else { continue }
+
+            newestFilteredSpeed = smooth(sample)
+            lastAcceptedSample = sample
         }
 
-        let now = Date()
-        if let lastPublishedAt,
-           now.timeIntervalSince(lastPublishedAt) < minimumUpdateInterval {
-            return
-        }
+        guard let newestFilteredSpeed else { return }
 
-        lastPublishedAt = now
-        speedInMilesPerHour = Int((location.speed * 2.236_936_292_1).rounded())
+        speedInMilesPerHour = Int(
+            (newestFilteredSpeed * metersPerSecondToMilesPerHour).rounded()
+        )
     }
 
     private func startUpdatingLocation() {
         guard isActive, !isUpdating else { return }
         locationManager.startUpdatingLocation()
         isUpdating = true
+    }
+
+    private func isValid(_ location: CLLocation) -> Bool {
+        let age = Date().timeIntervalSince(location.timestamp)
+
+        return (-1...maximumLocationAge).contains(age)
+            && location.horizontalAccuracy >= 0
+            && location.horizontalAccuracy <= maximumHorizontalAccuracy
+            && location.speed >= 0
+            && location.speed <= maximumCyclingSpeed
+            && location.speedAccuracy >= 0
+            && location.speedAccuracy <= maximumSpeedAccuracy
+    }
+
+    private func isPlausible(_ sample: SpeedSample) -> Bool {
+        guard let previous = lastAcceptedSample else { return true }
+
+        let elapsed = sample.timestamp.timeIntervalSince(previous.timestamp)
+        guard elapsed > 0 else { return false }
+
+        let expectedChange = maximumCyclingAcceleration * elapsed
+        let uncertainty = sample.speedAccuracy + previous.speedAccuracy
+
+        return abs(sample.speed - previous.speed) <= expectedChange + uncertainty
+    }
+
+    private func smooth(_ sample: SpeedSample) -> CLLocationSpeed {
+        let measuredSpeed = sample.speed < stationarySpeed ? 0 : sample.speed
+
+        guard let filteredSpeed,
+              let previous = lastAcceptedSample
+        else {
+            self.filteredSpeed = measuredSpeed
+            return measuredSpeed
+        }
+
+        let elapsed = max(sample.timestamp.timeIntervalSince(previous.timestamp), 0.05)
+        let timeWeight = 1 - exp(-elapsed / smoothingTimeConstant)
+        let accuracyRatio = min(sample.speedAccuracy / maximumSpeedAccuracy, 1)
+        let accuracyWeight = 1 - (accuracyRatio * 0.25)
+        var weight = min(max(timeWeight * accuracyWeight, 0.35), 1)
+
+        if abs(measuredSpeed - filteredSpeed) >= 2 {
+            weight = max(weight, 0.8)
+        }
+
+        let smoothedSpeed = filteredSpeed + ((measuredSpeed - filteredSpeed) * weight)
+        self.filteredSpeed = smoothedSpeed
+        return smoothedSpeed
+    }
+}
+
+private struct SpeedSample {
+    let speed: CLLocationSpeed
+    let speedAccuracy: CLLocationSpeedAccuracy
+    let timestamp: Date
+
+    init(location: CLLocation) {
+        speed = location.speed
+        speedAccuracy = location.speedAccuracy
+        timestamp = location.timestamp
     }
 }
 
