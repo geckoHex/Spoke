@@ -73,6 +73,7 @@ private struct RideDashboardView: View {
     @StateObject private var speedTracker: RideSpeedTracker
     @StateObject private var spotifyStore: SpotifyNowPlayingStore
     @StateObject private var mapStore: RideMapSnapshotStore
+    private let overspeedAlertController: RideOverspeedAlertController
     @State private var developerSpeedInMilesPerHour = 0
     @State private var isDeveloperSpeedometerPressed = false
 
@@ -90,6 +91,7 @@ private struct RideDashboardView: View {
         _mapStore = StateObject(
             wrappedValue: RideMapSnapshotStore(renderer: resources.mapRenderer)
         )
+        overspeedAlertController = resources.overspeedAlertController
     }
 
     var body: some View {
@@ -115,6 +117,15 @@ private struct RideDashboardView: View {
         .onDisappear {
             speedTracker.stop()
             isDeveloperSpeedometerPressed = false
+
+            Task {
+                await overspeedAlertController.stop()
+            }
+        }
+        .onChange(of: displayedSpeedInMilesPerHour, initial: true) { _, speed in
+            Task {
+                await overspeedAlertController.update(speedInMilesPerHour: speed)
+            }
         }
         .task(id: spotifyCredentials) {
             guard let spotifyCredentials else {
@@ -521,11 +532,19 @@ private struct RideSessionResources: Sendable {
     let speedProcessor: RideSpeedProcessor
     let spotifyClient: SpotifyAPIClient
     let mapRenderer: RideMapSnapshotRenderer
+    let overspeedAlertController: RideOverspeedAlertController
 
     nonisolated init() {
         speedProcessor = RideSpeedProcessor()
         spotifyClient = SpotifyAPIClient()
         mapRenderer = RideMapSnapshotRenderer()
+        let alertPlayer = RideOverspeedAlertPlayer(
+            resourceURL: Bundle.main.url(
+                forResource: "overspeed-alert",
+                withExtension: "mp3"
+            )
+        )
+        overspeedAlertController = RideOverspeedAlertController(player: alertPlayer)
     }
 }
 
