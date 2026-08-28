@@ -6,56 +6,79 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @State private var selectedTab: AppTab = .home
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+        TabView(selection: $selectedTab) {
+            Tab("Home", systemImage: "house.fill", value: .home) {
+                HomeView()
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            Tab("Ride", systemImage: "figure.outdoor.cycle", value: .ride) {
+                RideView()
             }
+
+            Tab(
+                "History",
+                systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+                value: .history
+            ) {
+                HistoryView()
+            }
+
+            Tab("Settings", systemImage: "gear", value: .settings) {
+                SettingsView()
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+private enum AppTab: Hashable {
+    case home
+    case ride
+    case history
+    case settings
+}
+
+private struct HomeView: View {
+    var body: some View {
+        PlaceholderView(title: "Home")
+    }
+}
+
+private struct RideView: View {
+    var body: some View {
+        PlaceholderView(title: "Ride")
+    }
+}
+
+private struct HistoryView: View {
+    var body: some View {
+        PlaceholderView(title: "History")
+    }
+}
+
+private struct SettingsView: View {
+    var body: some View {
+        PlaceholderView(title: "Settings")
+    }
+}
+
+private struct PlaceholderView: View {
+    let title: String
+
+    var body: some View {
+        NavigationStack {
+            Color.black
+                .ignoresSafeArea()
+                .navigationTitle(title)
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }
