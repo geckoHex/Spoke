@@ -17,13 +17,14 @@ struct RideView: View {
                     max(proxy.size.width - 40, 0),
                     max((proxy.size.height / 2) - 20, 0)
                 )
+                let boxHeight = boxSide * (2.0 / 3.0)
 
                 ZStack(alignment: .top) {
                     Color.black
                         .ignoresSafeArea()
 
                     speedBox(side: boxSide)
-                        .frame(width: boxSide, height: boxSide)
+                        .frame(width: boxSide, height: boxHeight)
                         .padding(.top, 20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
