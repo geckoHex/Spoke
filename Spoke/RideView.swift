@@ -6,9 +6,16 @@
 import SwiftUI
 import CoreLocation
 import Combine
+import MapKit
 
 struct RideView: View {
     @StateObject private var speedTracker = RideSpeedTracker()
+    @State private var mapPosition: MapCameraPosition = .userLocation(
+        followsHeading: false,
+        fallback: .automatic
+    )
+
+    private let mapCameraDistance: CLLocationDistance = 2_500
 
     var body: some View {
         NavigationStack {
@@ -23,9 +30,14 @@ struct RideView: View {
                     Color.black
                         .ignoresSafeArea()
 
-                    speedBox(side: boxSide)
-                        .frame(width: boxSide, height: boxHeight)
-                        .padding(.top, 20)
+                    VStack(spacing: 16) {
+                        speedBox(side: boxSide)
+                            .frame(height: boxHeight)
+                        currentLocationMap
+                            .frame(height: boxHeight)
+                    }
+                    .frame(width: boxSide)
+                    .padding(.top, 20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -35,7 +47,28 @@ struct RideView: View {
             .onDisappear {
                 speedTracker.stop()
             }
+            .onReceive(speedTracker.$currentLocation.compactMap { $0 }) { location in
+                mapPosition = .camera(
+                    MapCamera(
+                        centerCoordinate: location.coordinate,
+                        distance: mapCameraDistance
+                    )
+                )
+            }
         }
+    }
+
+    private var currentLocationMap: some View {
+        Map(position: $mapPosition) {
+            UserAnnotation()
+        }
+        .mapStyle(.standard)
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(.white, lineWidth: 2)
+        }
+        .accessibilityLabel("Current location map")
     }
 
     private func speedBox(side: CGFloat) -> some View {
@@ -76,10 +109,12 @@ struct RideView: View {
 
 private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published private(set) var speedInMilesPerHour = 0
+    @Published private(set) var currentLocation: CLLocation?
 
     private let locationManager = CLLocationManager()
     private let metersPerSecondToMilesPerHour = 2.236_936_292_1
     private let maximumLocationAge: TimeInterval = 2
+    private let maximumMapHorizontalAccuracy: CLLocationAccuracy = 100
     private let maximumHorizontalAccuracy: CLLocationAccuracy = 25
     private let maximumSpeedAccuracy: CLLocationSpeedAccuracy = 3
     private let maximumCyclingSpeed: CLLocationSpeed = 45
@@ -123,6 +158,7 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
         filteredSpeed = nil
         lastAcceptedSample = nil
         speedInMilesPerHour = 0
+        currentLocation = nil
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -142,6 +178,10 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let newestMapLocation = locations.last(where: isValidForMap) {
+            currentLocation = newestMapLocation
+        }
+
         var newestFilteredSpeed: CLLocationSpeed?
 
         for location in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
@@ -177,6 +217,14 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
             && location.speed <= maximumCyclingSpeed
             && location.speedAccuracy >= 0
             && location.speedAccuracy <= maximumSpeedAccuracy
+    }
+
+    private func isValidForMap(_ location: CLLocation) -> Bool {
+        let age = Date().timeIntervalSince(location.timestamp)
+
+        return (-1...maximumLocationAge).contains(age)
+            && location.horizontalAccuracy >= 0
+            && location.horizontalAccuracy <= maximumMapHorizontalAccuracy
     }
 
     private func isPlausible(_ sample: SpeedSample) -> Bool {
