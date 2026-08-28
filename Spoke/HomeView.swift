@@ -30,7 +30,7 @@ struct HomeView: View {
                             ActiveRideControl(
                                 ride: ride,
                                 date: context.date,
-                                onTap: {
+                                onPauseToggle: {
                                     rideSession.togglePause()
                                 },
                                 onEnd: endRide
@@ -56,7 +56,12 @@ struct HomeView: View {
         }
         .sheet(isPresented: isShowingSummary) {
             if let completedRide {
-                RideSummaryView(ride: completedRide)
+                RideSummaryView(
+                    ride: completedRide,
+                    onDone: {
+                        self.completedRide = nil
+                    }
+                )
             }
         }
     }
@@ -93,17 +98,39 @@ struct HomeView: View {
 private struct ActiveRideControl: View {
     let ride: TrackedRide
     let date: Date
-    let onTap: () -> Void
+    let onPauseToggle: () -> Void
     let onEnd: () -> Void
 
     @State private var isPressing = false
-    @State private var completedHold = false
     @State private var holdProgress: CGFloat = 0
     @State private var holdTask: Task<Void, Never>?
 
     private let holdDuration = 1.5
 
     var body: some View {
+        let elapsedDuration = ride.elapsedDuration(at: date)
+
+        HStack(spacing: 12) {
+            timer(elapsedDuration: elapsedDuration)
+
+            Button {
+                onPauseToggle()
+            } label: {
+                Image(systemName: ride.isPaused ? "play.fill" : "pause.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.black)
+                    .frame(width: 56, height: 56)
+                    .background(.white, in: .circle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
+        }
+        .onDisappear {
+            holdTask?.cancel()
+        }
+    }
+
+    private func timer(elapsedDuration: TimeInterval) -> some View {
         ZStack {
             Capsule()
                 .fill(.white)
@@ -116,9 +143,11 @@ private struct ActiveRideControl: View {
             }
             .clipShape(Capsule())
 
-            Text(RideMetrics.duration(ride.elapsedDuration(at: date)))
+            Text(RideMetrics.duration(elapsedDuration))
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(.black)
+                .contentTransition(.numericText(value: elapsedDuration))
+                .animation(.snappy(duration: 0.35), value: Int(elapsedDuration))
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
@@ -136,18 +165,12 @@ private struct ActiveRideControl: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Ride timer")
         .accessibilityValue(
-            "\(RideMetrics.duration(ride.elapsedDuration(at: date))), "
+            "\(RideMetrics.duration(elapsedDuration)), "
                 + (ride.isPaused ? "paused" : "running")
         )
-        .accessibilityHint("Tap to pause or resume. Hold to end the ride.")
-        .accessibilityAction {
-            onTap()
-        }
+        .accessibilityHint("Hold to end the ride.")
         .accessibilityAction(named: "End Ride") {
             onEnd()
-        }
-        .onDisappear {
-            holdTask?.cancel()
         }
     }
 
@@ -156,7 +179,6 @@ private struct ActiveRideControl: View {
 
         holdTask?.cancel()
         isPressing = true
-        completedHold = false
         holdProgress = 0
 
         withAnimation(.linear(duration: holdDuration)) {
@@ -171,7 +193,6 @@ private struct ActiveRideControl: View {
             }
 
             guard isPressing else { return }
-            completedHold = true
             isPressing = false
             onEnd()
 
@@ -187,10 +208,6 @@ private struct ActiveRideControl: View {
         isPressing = false
         holdTask?.cancel()
         holdTask = nil
-
-        if !completedHold {
-            onTap()
-        }
 
         withAnimation(.easeOut(duration: 0.15)) {
             holdProgress = 0

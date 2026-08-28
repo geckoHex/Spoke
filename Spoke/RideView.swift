@@ -24,9 +24,23 @@ struct RideView: View {
                         Color.black
                             .ignoresSafeArea()
 
-                        Text("No ride active")
-                            .font(.headline)
-                            .foregroundStyle(.white.opacity(0.65))
+                        VStack(spacing: 16) {
+                            Image(systemName: "figure.outdoor.cycle")
+                                .font(.system(size: 52, weight: .medium))
+
+                            Text("No ride active")
+                                .font(.title2.weight(.semibold))
+                        }
+                        .foregroundStyle(.white)
+
+                        VStack {
+                            Spacer()
+
+                            Text("Visit the home tab to start a ride")
+                                .font(.footnote)
+                                .foregroundStyle(.white.opacity(0.55))
+                                .padding(.bottom, 24)
+                        }
                     }
                 } else {
                     ZStack {

@@ -7,13 +7,12 @@ import SwiftUI
 
 struct RideSummaryView: View {
     let ride: TrackedRide
-
-    @Environment(\.dismiss) private var dismiss
+    let onDone: () -> Void
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black
+                Color.white
                     .ignoresSafeArea()
 
                 VStack(spacing: 28) {
@@ -43,20 +42,24 @@ struct RideSummaryView: View {
                         )
                     }
 
-                    Button("Done") {
-                        dismiss()
+                    Button {
+                        onDone()
+                    } label: {
+                        Text("Done")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .background(.black, in: .capsule)
                     }
-                    .font(.headline)
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .background(.white, in: .capsule)
                     .buttonStyle(.plain)
                 }
+                .foregroundStyle(.black)
                 .padding(24)
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
+        .presentationBackground(.white)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
@@ -69,10 +72,10 @@ struct RideSummaryView: View {
 
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.black.opacity(0.55))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        .background(.black.opacity(0.06), in: .rect(cornerRadius: 20))
     }
 }
