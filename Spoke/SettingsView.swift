@@ -6,6 +6,13 @@
 import SwiftUI
 import SwiftData
 
+private enum SettingsField: Hashable {
+    case name
+    case spotifyClientID
+    case spotifyClientSecret
+    case spotifyRefreshToken
+}
+
 struct SettingsView: View {
     let settings: AppSettings?
 
@@ -26,13 +33,9 @@ struct SettingsView: View {
 }
 
 private struct SettingsForm: View {
-    private enum Field: Hashable {
-        case name
-    }
-
     @Bindable var settings: AppSettings
-    @FocusState private var focusedField: Field?
-    @State private var nameInputFrame = CGRect.zero
+    @FocusState private var focusedField: SettingsField?
+    @State private var inputFrames: [SettingsField: CGRect] = [:]
 
     var body: some View {
         Form {
@@ -50,7 +53,7 @@ private struct SettingsForm: View {
                                 focusedField = nil
                             }
 
-                        if !settings.name.isEmpty {
+                        if focusedField == .name && !settings.name.isEmpty {
                             Button {
                                 settings.name = ""
                                 focusedField = .name
@@ -62,17 +65,80 @@ private struct SettingsForm: View {
                             .accessibilityLabel("Clear name")
                         }
                     }
-                    .background {
-                        GeometryReader { geometry in
-                            Color.clear.preference(
-                                key: NameInputFramePreferenceKey.self,
-                                value: geometry.frame(in: .named("settingsForm"))
-                            )
-                        }
-                    }
+                    .inputFramePreference(for: .name)
                 }
 
                 Toggle("Keep screen on", isOn: $settings.keepScreenOn)
+            }
+
+            Section("Spotify") {
+                LabeledContent("Client ID") {
+                    HStack(spacing: 8) {
+                        TextField("Required", text: $settings.spotifyClientID)
+                            .focused($focusedField, equals: .spotifyClientID)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.asciiCapable)
+                            .multilineTextAlignment(.trailing)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
+                            }
+
+                        clearButton(
+                            for: .spotifyClientID,
+                            value: $settings.spotifyClientID,
+                            label: "Clear Spotify client ID"
+                        )
+                    }
+                    .inputFramePreference(for: .spotifyClientID)
+                }
+
+                LabeledContent("Client Secret") {
+                    HStack(spacing: 8) {
+                        SecureField("Required", text: $settings.spotifyClientSecret)
+                            .focused($focusedField, equals: .spotifyClientSecret)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.asciiCapable)
+                            .multilineTextAlignment(.trailing)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
+                            }
+                            .privacySensitive()
+
+                        clearButton(
+                            for: .spotifyClientSecret,
+                            value: $settings.spotifyClientSecret,
+                            label: "Clear Spotify client secret"
+                        )
+                    }
+                    .inputFramePreference(for: .spotifyClientSecret)
+                }
+
+                LabeledContent("Refresh Token") {
+                    HStack(spacing: 8) {
+                        SecureField("Required", text: $settings.spotifyRefreshToken)
+                            .focused($focusedField, equals: .spotifyRefreshToken)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.asciiCapable)
+                            .multilineTextAlignment(.trailing)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
+                            }
+                            .privacySensitive()
+
+                        clearButton(
+                            for: .spotifyRefreshToken,
+                            value: $settings.spotifyRefreshToken,
+                            label: "Clear Spotify refresh token"
+                        )
+                    }
+                    .inputFramePreference(for: .spotifyRefreshToken)
+                }
             }
         }
         .scrollContentBackground(.hidden)
@@ -80,8 +146,8 @@ private struct SettingsForm: View {
         .background(Color.black)
         .tint(.blue)
         .coordinateSpace(name: "settingsForm")
-        .onPreferenceChange(NameInputFramePreferenceKey.self) {
-            nameInputFrame = $0
+        .onPreferenceChange(SettingsInputFramePreferenceKey.self) {
+            inputFrames = $0
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -95,18 +161,54 @@ private struct SettingsForm: View {
         .simultaneousGesture(
             SpatialTapGesture(coordinateSpace: .named("settingsForm"))
                 .onEnded { value in
-                    guard !nameInputFrame.contains(value.location) else { return }
+                    guard !inputFrames.values.contains(where: { $0.contains(value.location) })
+                    else { return }
                     focusedField = nil
                 }
         )
     }
+
+    @ViewBuilder
+    private func clearButton(
+        for field: SettingsField,
+        value: Binding<String>,
+        label: String
+    ) -> some View {
+        if focusedField == field && !value.wrappedValue.isEmpty {
+            Button {
+                value.wrappedValue = ""
+                focusedField = field
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(label)
+        }
+    }
 }
 
-private struct NameInputFramePreferenceKey: PreferenceKey {
-    static let defaultValue = CGRect.zero
+private struct SettingsInputFramePreferenceKey: PreferenceKey {
+    static let defaultValue: [SettingsField: CGRect] = [:]
 
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
+    static func reduce(
+        value: inout [SettingsField: CGRect],
+        nextValue: () -> [SettingsField: CGRect]
+    ) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
+private extension View {
+    func inputFramePreference(for field: SettingsField) -> some View {
+        background {
+            GeometryReader { geometry in
+                Color.clear.preference(
+                    key: SettingsInputFramePreferenceKey.self,
+                    value: [field: geometry.frame(in: .named("settingsForm"))]
+                )
+            }
+        }
     }
 }
 

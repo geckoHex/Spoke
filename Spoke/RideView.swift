@@ -9,7 +9,10 @@ import Combine
 import MapKit
 
 struct RideView: View {
+    let settings: AppSettings?
+
     @StateObject private var speedTracker = RideSpeedTracker()
+    @StateObject private var spotifyStore = SpotifyNowPlayingStore()
     @State private var shouldCreateMap = false
     @State private var isMapLoaded = false
 
@@ -18,9 +21,23 @@ struct RideView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
+                let topInset: CGFloat = 20
+                let bottomInset: CGFloat = 12
+                let verticalSpacing: CGFloat = 16
+                let spotifyHeight: CGFloat = 108
+                let availableBoxHeight = max(
+                    (
+                        proxy.size.height
+                            - topInset
+                            - bottomInset
+                            - (verticalSpacing * 2)
+                            - spotifyHeight
+                    ) / 2,
+                    0
+                )
                 let boxSide = min(
                     max(proxy.size.width - 40, 0),
-                    max((proxy.size.height / 2) - 20, 0)
+                    availableBoxHeight * 1.5
                 )
                 let boxHeight = boxSide * (2.0 / 3.0)
 
@@ -33,9 +50,11 @@ struct RideView: View {
                             .frame(height: boxHeight)
                         currentLocationMap
                             .frame(height: boxHeight)
+                        spotifySection
+                            .frame(height: spotifyHeight, alignment: .top)
                     }
                     .frame(width: boxSide)
-                    .padding(.top, 20)
+                    .padding(.top, topInset)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -57,6 +76,42 @@ struct RideView: View {
             }
             .onDisappear {
                 speedTracker.stop()
+            }
+            .task(id: spotifyCredentials) {
+                guard let spotifyCredentials else {
+                    spotifyStore.reset()
+                    return
+                }
+
+                await spotifyStore.monitor(credentials: spotifyCredentials) { refreshToken in
+                    settings?.spotifyRefreshToken = refreshToken
+                }
+            }
+        }
+    }
+
+    private var spotifyCredentials: SpotifyCredentials? {
+        guard let settings else { return nil }
+        return SpotifyCredentials(settings: settings)
+    }
+
+    @ViewBuilder
+    private var spotifySection: some View {
+        if spotifyCredentials == nil {
+            SpotifyStatusView(
+                symbol: "exclamationmark.triangle.fill",
+                message: "Spotify credentials are missing. Add them in Settings."
+            )
+        } else {
+            switch spotifyStore.state {
+            case .idle, .loading:
+                SpotifyStatusView(symbol: "music.note", message: "Loading Spotify…")
+            case .notPlaying:
+                SpotifyStatusView(symbol: "music.note", message: "Nothing is playing on Spotify.")
+            case .failed(let message):
+                SpotifyStatusView(symbol: "exclamationmark.triangle.fill", message: message)
+            case .playing(let track):
+                SpotifyNowPlayingView(track: track)
             }
         }
     }
@@ -370,6 +425,6 @@ private struct SpeedSample {
 }
 
 #Preview {
-    RideView()
+    RideView(settings: AppSettings())
         .preferredColorScheme(.dark)
 }

@@ -22,7 +22,7 @@ struct ContentView: View {
             }
 
             Tab("Ride", systemImage: "figure.outdoor.cycle", value: .ride) {
-                RideView()
+                RideView(settings: settings)
             }
 
             Tab(
