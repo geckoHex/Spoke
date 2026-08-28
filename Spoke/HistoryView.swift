@@ -20,14 +20,12 @@ struct HistoryView: View {
         NavigationStack {
             Group {
                 if completedRides.isEmpty {
-                    ZStack {
-                        Color.black
-                            .ignoresSafeArea()
-
-                        Text("No rides yet")
-                            .font(.headline)
-                            .foregroundStyle(.white.opacity(0.65))
-                    }
+                    ContentUnavailableView(
+                        "No Rides Yet",
+                        systemImage: "figure.outdoor.cycle",
+                        description: Text("Completed rides will appear here.")
+                    )
+                    .background(Color.black)
                 } else {
                     List(completedRides) { ride in
                         NavigationLink {
@@ -139,11 +137,7 @@ private struct RideHistoryDetailView: View {
                             }
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(.white.opacity(0.12), lineWidth: 1)
-                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
                 HStack(spacing: 12) {
@@ -159,17 +153,12 @@ private struct RideHistoryDetailView: View {
                         )
                     )
                 }
-                .frame(height: 88)
+                .frame(height: 72)
 
                 Button("Ride soundtrack") {
                     isShowingSoundtrack = true
                 }
-                .font(.headline)
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(.white, in: .capsule)
-                .buttonStyle(.plain)
+                .buttonStyle(SpokePrimaryButtonStyle())
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
@@ -194,7 +183,6 @@ private struct RideHistoryDetailView: View {
                 .foregroundStyle(.white.opacity(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
     }
 }
 
@@ -209,19 +197,12 @@ private struct RideSoundtrackView: View {
         NavigationStack {
             Group {
                 if entries.isEmpty {
-                    ZStack {
-                        Color.black
-                            .ignoresSafeArea()
-
-                        VStack(spacing: 12) {
-                            Image(systemName: "music.note.list")
-                                .font(.system(size: 34, weight: .medium))
-
-                            Text("No songs recorded")
-                                .font(.headline)
-                        }
-                        .foregroundStyle(.white.opacity(0.65))
-                    }
+                    ContentUnavailableView(
+                        "No Songs Recorded",
+                        systemImage: "music.note.list",
+                        description: Text("Songs played during this ride will appear here.")
+                    )
+                    .background(Color.black)
                 } else {
                     List(entries) { entry in
                         RideSoundtrackRow(entry: entry)

@@ -22,7 +22,7 @@ struct HomeView: View {
                     Color.black
                         .ignoresSafeArea()
 
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 24) {
                         HomeGreeting(
                             timeOfDay: timeOfDay,
                             name: displayName
@@ -56,12 +56,7 @@ struct HomeView: View {
                             Button("Start Ride") {
                                 rideSession.startRide()
                             }
-                            .font(.headline)
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(.white, in: .capsule)
-                            .buttonStyle(.plain)
+                            .buttonStyle(SpokePrimaryButtonStyle())
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,13 +121,13 @@ private struct HomeWeatherView: View {
     }
 
     private var weatherCard: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             weatherIcon
 
             if let snapshot {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(snapshot.temperature)
-                        .font(.title2.weight(.bold))
+                        .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
 
                     Text(snapshot.condition)
@@ -163,14 +158,9 @@ private struct HomeWeatherView: View {
                 Spacer()
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 4)
         .frame(maxWidth: .infinity)
-        .frame(height: 76)
-        .background(.white.opacity(0.06), in: .rect(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
-        }
+        .frame(minHeight: 64)
     }
 
     @ViewBuilder
@@ -201,21 +191,11 @@ private struct HomeGreeting: View {
     let name: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(timeOfDay.color.opacity(0.16))
-
-                Circle()
-                    .stroke(timeOfDay.color.opacity(0.3), lineWidth: 1)
-
-                Image(systemName: timeOfDay.symbolName)
-                    .font(.system(size: 29, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(timeOfDay.color)
-            }
-            .frame(width: 68, height: 68)
-            .accessibilityHidden(true)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Image(systemName: timeOfDay.symbolName)
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(timeOfDay.salutation),")
@@ -223,7 +203,7 @@ private struct HomeGreeting: View {
                     .foregroundStyle(.white.opacity(0.65))
 
                 Text(name)
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .font(.largeTitle.bold())
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
@@ -266,14 +246,6 @@ private enum TimeOfDay {
         case .morning: "sunrise.fill"
         case .afternoon: "sun.max.fill"
         case .evening: "moon.stars.fill"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .morning: .orange
-        case .afternoon: .yellow
-        case .evening: .indigo
         }
     }
 }
@@ -401,6 +373,19 @@ private struct ActiveRideControl: View {
         withAnimation(.easeOut(duration: 0.15)) {
             holdProgress = 0
         }
+    }
+}
+
+struct SpokePrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(.black)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 50)
+            .padding(.horizontal, 16)
+            .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
 

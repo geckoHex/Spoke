@@ -159,7 +159,11 @@ final class HomeWeatherModel {
             let updatedSnapshot = HomeWeatherSnapshot(
                 fetchedAt: requestDate,
                 temperature: weather.temperature.formatted(
-                    .measurement(width: .abbreviated, usage: .weather)
+                    .measurement(
+                        width: .abbreviated,
+                        usage: .weather,
+                        numberFormatStyle: .number.precision(.fractionLength(0))
+                    )
                 ),
                 condition: weather.condition.description,
                 symbolName: weather.symbolName,

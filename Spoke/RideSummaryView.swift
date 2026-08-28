@@ -12,16 +12,16 @@ struct RideSummaryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white
+                Color.black
                     .ignoresSafeArea()
 
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
                     VStack(spacing: 8) {
                         Text("Ride Complete")
                             .font(.title2.weight(.semibold))
 
                         Text(RideMetrics.duration(ride.elapsedDuration()))
-                            .font(.system(size: 52, weight: .semibold, design: .rounded))
+                            .font(.largeTitle.weight(.semibold))
                             .monospacedDigit()
                     }
 
@@ -42,24 +42,17 @@ struct RideSummaryView: View {
                         )
                     }
 
-                    Button {
+                    Button("Done") {
                         onDone()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 54)
-                            .background(.black, in: .capsule)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SpokePrimaryButtonStyle())
                 }
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
                 .padding(24)
             }
         }
-        .preferredColorScheme(.light)
-        .presentationBackground(.white)
+        .preferredColorScheme(.dark)
+        .presentationBackground(.black)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
@@ -72,10 +65,9 @@ struct RideSummaryView: View {
 
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(.black.opacity(0.55))
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .background(.black.opacity(0.06), in: .rect(cornerRadius: 20))
+        .padding(.vertical, 8)
     }
 }

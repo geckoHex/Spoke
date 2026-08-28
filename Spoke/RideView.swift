@@ -20,28 +20,12 @@ struct RideView: View {
         NavigationStack {
             Group {
                 if rideSession.activeRide == nil {
-                    ZStack {
-                        Color.black
-                            .ignoresSafeArea()
-
-                        VStack(spacing: 16) {
-                            Image(systemName: "figure.outdoor.cycle")
-                                .font(.system(size: 52, weight: .medium))
-
-                            Text("No ride active")
-                                .font(.title2.weight(.semibold))
-                        }
-                        .foregroundStyle(.white)
-
-                        VStack {
-                            Spacer()
-
-                            Text("Visit the home tab to start a ride")
-                                .font(.footnote)
-                                .foregroundStyle(.white.opacity(0.55))
-                                .padding(.bottom, 24)
-                        }
-                    }
+                    ContentUnavailableView(
+                        "No Active Ride",
+                        systemImage: "figure.outdoor.cycle",
+                        description: Text("Start a ride from Home to see live metrics.")
+                    )
+                    .background(Color.black)
                 } else {
                     ZStack {
                         if let resources {
@@ -204,9 +188,6 @@ private struct RideDashboardView: View {
 
                 spotifySection
                     .frame(height: metrics.spotifyHeight, alignment: .top)
-                    .padding(12)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
-                    .padding(.horizontal, 12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -290,11 +271,7 @@ private struct RideDashboardView: View {
                 await mapStore.load(request)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 1)
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityLabel("Current location map")
     }
 
@@ -478,9 +455,6 @@ private struct RideSkeletonView: View {
 
                 spotifySkeleton
                     .frame(height: metrics.spotifyHeight, alignment: .top)
-                    .padding(12)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
-                    .padding(.horizontal, 12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -493,7 +467,7 @@ private struct RideSkeletonView: View {
     }
 
     private var mapSkeleton: some View {
-        RoundedRectangle(cornerRadius: 28, style: .continuous)
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
             .fill(.white.opacity(0.1))
     }
 
