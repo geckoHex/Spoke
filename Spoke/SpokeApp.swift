@@ -16,6 +16,7 @@ struct SpokeApp: App {
             AppSettings.self,
             TrackedRide.self,
             RideRoutePoint.self,
+            RideSoundtrackEntry.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

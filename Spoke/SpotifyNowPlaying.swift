@@ -28,6 +28,7 @@ struct SpotifyCredentials: Equatable, Hashable, Sendable {
 }
 
 struct SpotifyTrack: Equatable, Sendable {
+    let spotifyID: String?
     let albumArtURL: URL?
     let title: String
     let artist: String
@@ -35,6 +36,18 @@ struct SpotifyTrack: Equatable, Sendable {
     let duration: TimeInterval
     let isPlaying: Bool
     let receivedAt: Date
+
+    var identity: String {
+        if let spotifyID, !spotifyID.isEmpty {
+            return "spotify:\(spotifyID)"
+        }
+
+        return "metadata:\(title)\u{1F}\(artist)"
+    }
+
+    var playbackStartedAt: Date {
+        receivedAt.addingTimeInterval(-min(max(progress, 0), duration))
+    }
 
     func progress(at date: Date) -> TimeInterval {
         let elapsed = isPlaying ? max(date.timeIntervalSince(receivedAt), 0) : 0
@@ -68,7 +81,8 @@ final class SpotifyNowPlayingStore: ObservableObject {
 
     func monitor(
         credentials: SpotifyCredentials,
-        onRefreshToken: @escaping @MainActor (String) -> Void
+        onRefreshToken: @escaping @MainActor (String) -> Void,
+        onTrackChecked: @escaping @MainActor (SpotifyTrack?) -> Void
     ) async {
         await client.reset()
         state = .loading
@@ -82,6 +96,7 @@ final class SpotifyNowPlayingStore: ObservableObject {
                     onRefreshToken(refreshedToken)
                 }
 
+                onTrackChecked(result.track)
                 state = result.track.map(State.playing) ?? .notPlaying
             } catch is CancellationError {
                 return
@@ -284,6 +299,7 @@ actor SpotifyAPIClient {
             guard let item = response.item else { return nil }
 
             return SpotifyTrack(
+                spotifyID: item.id,
                 albumArtURL: item.album.images.first?.url,
                 title: item.name,
                 artist: item.artists.map(\.name).joined(separator: ", "),
@@ -348,12 +364,14 @@ nonisolated private struct SpotifyCurrentlyPlayingResponse: Decodable, Sendable 
 }
 
 nonisolated private struct SpotifyTrackResponse: Decodable, Sendable {
+    let id: String?
     let album: SpotifyAlbumResponse
     let artists: [SpotifyArtistResponse]
     let durationMS: Int
     let name: String
 
     enum CodingKeys: String, CodingKey {
+        case id
         case album
         case artists
         case durationMS = "duration_ms"

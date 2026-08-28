@@ -16,12 +16,16 @@ final class TrackedRide {
     @Relationship(deleteRule: .cascade, inverse: \RideRoutePoint.ride)
     var routePoints: [RideRoutePoint]
 
+    @Relationship(deleteRule: .cascade, inverse: \RideSoundtrackEntry.ride)
+    var soundtrackEntries: [RideSoundtrackEntry]
+
     init(startedAt: Date = .now) {
         self.startedAt = startedAt
         endedAt = nil
         pausedAt = nil
         accumulatedPausedDuration = 0
         routePoints = []
+        soundtrackEntries = []
     }
 
     var isPaused: Bool {

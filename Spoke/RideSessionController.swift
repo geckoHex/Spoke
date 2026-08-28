@@ -19,6 +19,7 @@ final class RideSessionController {
     @ObservationIgnored private var locationTask: Task<Void, Never>?
     @ObservationIgnored private var locationSessionGeneration = 0
     @ObservationIgnored private var lastRecordedPositionAt: Date?
+    @ObservationIgnored private var lastSpotifyTrackIdentity: String?
     @ObservationIgnored private let speedProcessor = RideSpeedProcessor()
 
     private let positionRecordingInterval: TimeInterval = 5
@@ -38,6 +39,9 @@ final class RideSessionController {
         activeRide = ride
         let latestPoint = ride.routePoints.max { $0.recordedAt < $1.recordedAt }
         lastRecordedPositionAt = latestPoint?.recordedAt
+        lastSpotifyTrackIdentity = ride.soundtrackEntries
+            .max { $0.startedAt < $1.startedAt }?
+            .trackIdentity
         currentLocation = latestPoint.map(RideLocationSample.init)
 
         if !ride.isPaused {
@@ -63,6 +67,7 @@ final class RideSessionController {
         currentLocation = nil
         speedInMilesPerHour = 0
         lastRecordedPositionAt = nil
+        lastSpotifyTrackIdentity = nil
         beginLocationUpdates()
         return ride
     }
@@ -120,7 +125,61 @@ final class RideSessionController {
         activeRide = nil
         currentLocation = nil
         lastRecordedPositionAt = nil
+        lastSpotifyTrackIdentity = nil
         return ride
+    }
+
+    func recordSpotifyCheck(_ track: SpotifyTrack?) {
+        let observedIdentity = track?.identity
+        defer { lastSpotifyTrackIdentity = observedIdentity }
+
+        guard let track,
+              track.isPlaying,
+              track.identity != lastSpotifyTrackIdentity,
+              let modelContext,
+              let ride = activeRide,
+              ride.endedAt == nil
+        else { return }
+
+        let entry = RideSoundtrackEntry(
+            spotifyTrackID: track.spotifyID,
+            albumArtURL: track.albumArtURL,
+            title: track.title,
+            artist: track.artist,
+            startedAt: track.playbackStartedAt
+        )
+        modelContext.insert(entry)
+        ride.soundtrackEntries.append(entry)
+
+        do {
+            try modelContext.save()
+        } catch {
+            ride.soundtrackEntries.removeAll { $0 === entry }
+            modelContext.delete(entry)
+            return
+        }
+
+        guard let albumArtURL = track.albumArtURL else { return }
+        cacheAlbumArt(from: albumArtURL, for: entry)
+    }
+
+    private func cacheAlbumArt(from url: URL, for entry: RideSoundtrackEntry) {
+        Task { [weak self, weak entry] in
+            guard let self, let entry else { return }
+
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+                guard let response = response as? HTTPURLResponse,
+                      response.statusCode == 200,
+                      data.count <= 5_000_000
+                else { return }
+
+                entry.albumArtData = data
+                try self.modelContext?.save()
+            } catch {
+                // The persisted Spotify image URL remains available as a fallback.
+            }
+        }
     }
 
     private func beginLocationUpdates() {

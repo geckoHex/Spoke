@@ -168,9 +168,15 @@ private struct RideDashboardView: View {
                 return
             }
 
-            await spotifyStore.monitor(credentials: spotifyCredentials) { refreshToken in
-                settings?.spotifyRefreshToken = refreshToken
-            }
+            await spotifyStore.monitor(
+                credentials: spotifyCredentials,
+                onRefreshToken: { refreshToken in
+                    settings?.spotifyRefreshToken = refreshToken
+                },
+                onTrackChecked: { track in
+                    rideSession.recordSpotifyCheck(track)
+                }
+            )
         }
     }
 

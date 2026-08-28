@@ -97,6 +97,7 @@ private enum AppTab: Hashable {
                 AppSettings.self,
                 TrackedRide.self,
                 RideRoutePoint.self,
+                RideSoundtrackEntry.self,
             ],
             inMemory: true
         )

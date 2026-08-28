@@ -6,6 +6,7 @@
 import MapKit
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct HistoryView: View {
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
@@ -76,6 +77,8 @@ private struct RideHistoryRow: View {
 
 private struct RideHistoryDetailView: View {
     let ride: TrackedRide
+
+    @State private var isShowingSoundtrack = false
 
     private var coordinates: [CLLocationCoordinate2D] {
         ride.routePoints
@@ -157,6 +160,16 @@ private struct RideHistoryDetailView: View {
                     )
                 }
                 .frame(height: 88)
+
+                Button("Ride soundtrack") {
+                    isShowingSoundtrack = true
+                }
+                .font(.headline)
+                .foregroundStyle(.black)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(.white, in: .capsule)
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
@@ -165,6 +178,9 @@ private struct RideHistoryDetailView: View {
             ride.startedAt.formatted(date: .abbreviated, time: .omitted)
         )
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isShowingSoundtrack) {
+            RideSoundtrackView(ride: ride)
+        }
     }
 
     private func metric(title: String, value: String) -> some View {
@@ -182,8 +198,130 @@ private struct RideHistoryDetailView: View {
     }
 }
 
+private struct RideSoundtrackView: View {
+    let ride: TrackedRide
+
+    private var entries: [RideSoundtrackEntry] {
+        ride.soundtrackEntries.sorted { $0.startedAt < $1.startedAt }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if entries.isEmpty {
+                    ZStack {
+                        Color.black
+                            .ignoresSafeArea()
+
+                        VStack(spacing: 12) {
+                            Image(systemName: "music.note.list")
+                                .font(.system(size: 34, weight: .medium))
+
+                            Text("No songs recorded")
+                                .font(.headline)
+                        }
+                        .foregroundStyle(.white.opacity(0.65))
+                    }
+                } else {
+                    List(entries) { entry in
+                        RideSoundtrackRow(entry: entry)
+                            .listRowBackground(Color.black)
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.black)
+                }
+            }
+            .navigationTitle("Ride soundtrack")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .preferredColorScheme(.dark)
+        .presentationBackground(.black)
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct RideSoundtrackRow: View {
+    let entry: RideSoundtrackEntry
+
+    var body: some View {
+        HStack(spacing: 12) {
+            albumArt
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+
+                Text(entry.artist)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(formattedStartTime)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.white.opacity(0.6))
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var albumArt: some View {
+        Group {
+            if let albumArtData = entry.albumArtData,
+               let image = UIImage(data: albumArtData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AsyncImage(url: entry.albumArtURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        albumArtPlaceholder
+                    }
+                }
+            }
+        }
+        .frame(width: 56, height: 56)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
+    private var albumArtPlaceholder: some View {
+        ZStack {
+            Color.white.opacity(0.12)
+
+            Image(systemName: "music.note")
+                .font(.title3.weight(.medium))
+                .foregroundStyle(.white)
+        }
+    }
+
+    private var formattedStartTime: String {
+        Self.timeFormatter.string(from: entry.startedAt).lowercased()
+    }
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
+}
+
 #Preview {
     HistoryView()
-        .modelContainer(for: [TrackedRide.self, RideRoutePoint.self], inMemory: true)
+        .modelContainer(
+            for: [TrackedRide.self, RideRoutePoint.self, RideSoundtrackEntry.self],
+            inMemory: true
+        )
         .preferredColorScheme(.dark)
 }
