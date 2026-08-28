@@ -3,18 +3,187 @@
 //  Spoke
 //
 
+import MapKit
+import SwiftData
 import SwiftUI
 
 struct HistoryView: View {
+    @Query(sort: \TrackedRide.startedAt, order: .reverse)
+    private var rides: [TrackedRide]
+
+    private var completedRides: [TrackedRide] {
+        rides.filter { $0.endedAt != nil }
+    }
+
     var body: some View {
         NavigationStack {
+            Group {
+                if completedRides.isEmpty {
+                    ZStack {
+                        Color.black
+                            .ignoresSafeArea()
+
+                        Text("No rides yet")
+                            .font(.headline)
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                } else {
+                    List(completedRides) { ride in
+                        NavigationLink {
+                            RideHistoryDetailView(ride: ride)
+                        } label: {
+                            RideHistoryRow(ride: ride)
+                        }
+                        .listRowBackground(Color.black)
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.black)
+                }
+            }
+            .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.large)
+        }
+    }
+}
+
+private struct RideHistoryRow: View {
+    let ride: TrackedRide
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(ride.startedAt.formatted(date: .abbreviated, time: .shortened))
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            HStack(spacing: 16) {
+                Label(
+                    RideMetrics.duration(ride.elapsedDuration()),
+                    systemImage: "timer"
+                )
+
+                Label(
+                    RideMetrics.distance(RideMetrics.distanceInMeters(for: ride)),
+                    systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                )
+            }
+            .font(.subheadline)
+            .foregroundStyle(.white.opacity(0.6))
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+private struct RideHistoryDetailView: View {
+    let ride: TrackedRide
+
+    private var coordinates: [CLLocationCoordinate2D] {
+        ride.routePoints
+            .sorted { $0.recordedAt < $1.recordedAt }
+            .map {
+                CLLocationCoordinate2D(
+                    latitude: $0.latitude,
+                    longitude: $0.longitude
+                )
+            }
+    }
+
+    private var cameraPosition: MapCameraPosition {
+        guard !coordinates.isEmpty else { return .automatic }
+
+        let rect = coordinates.reduce(MKMapRect.null) { partialResult, coordinate in
+            let point = MKMapPoint(coordinate)
+            let pointRect = MKMapRect(x: point.x, y: point.y, width: 1, height: 1)
+            return partialResult.union(pointRect)
+        }
+        let horizontalPadding = max(rect.size.width * 0.18, 500)
+        let verticalPadding = max(rect.size.height * 0.18, 500)
+        return .rect(
+            rect.insetBy(dx: -horizontalPadding, dy: -verticalPadding)
+        )
+    }
+
+    var body: some View {
+        ZStack {
             Color.black
                 .ignoresSafeArea()
+
+            VStack(spacing: 18) {
+                if coordinates.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "map")
+                            .font(.system(size: 34, weight: .medium))
+
+                        Text("No route recorded")
+                            .font(.headline)
+                    }
+                    .foregroundStyle(.white.opacity(0.65))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Map(initialPosition: cameraPosition) {
+                        if coordinates.count > 1 {
+                            MapPolyline(coordinates: coordinates)
+                                .stroke(.white, lineWidth: 5)
+                        } else if let coordinate = coordinates.first {
+                            Annotation("Ride location", coordinate: coordinate) {
+                                Circle()
+                                    .fill(.white)
+                                    .frame(width: 12, height: 12)
+                                    .overlay {
+                                        Circle()
+                                            .stroke(.black, lineWidth: 2)
+                                    }
+                            }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(.white.opacity(0.12), lineWidth: 1)
+                    }
+                }
+
+                HStack(spacing: 12) {
+                    metric(
+                        title: "Duration",
+                        value: RideMetrics.duration(ride.elapsedDuration())
+                    )
+
+                    metric(
+                        title: "Distance",
+                        value: RideMetrics.distance(
+                            RideMetrics.distanceInMeters(for: ride)
+                        )
+                    )
+                }
+                .frame(height: 88)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
         }
+        .navigationTitle(
+            ride.startedAt.formatted(date: .abbreviated, time: .omitted)
+        )
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func metric(title: String, value: String) -> some View {
+        VStack(spacing: 5) {
+            Text(value)
+                .font(.headline)
+                .monospacedDigit()
+
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
     }
 }
 
 #Preview {
     HistoryView()
+        .modelContainer(for: [TrackedRide.self, RideRoutePoint.self], inMemory: true)
         .preferredColorScheme(.dark)
 }

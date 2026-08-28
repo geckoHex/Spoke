@@ -14,15 +14,16 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var storedSettings: [AppSettings]
     @State private var selectedTab: AppTab = .home
+    @State private var rideSession = RideSessionController()
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "house.fill", value: .home) {
-                HomeView(settings: settings)
+                HomeView(settings: settings, rideSession: rideSession)
             }
 
             Tab("Ride", systemImage: "figure.outdoor.cycle", value: .ride) {
-                RideView(settings: settings)
+                RideView(settings: settings, rideSession: rideSession)
             }
 
             Tab(
@@ -40,6 +41,7 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
         .task {
             createSettingsIfNeeded()
+            rideSession.configure(modelContext: modelContext)
             updateIdleTimer()
         }
         .onChange(of: scenePhase) {
@@ -89,5 +91,13 @@ private enum AppTab: Hashable {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [Item.self, AppSettings.self], inMemory: true)
+        .modelContainer(
+            for: [
+                Item.self,
+                AppSettings.self,
+                TrackedRide.self,
+                RideRoutePoint.self,
+            ],
+            inMemory: true
+        )
 }
