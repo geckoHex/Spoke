@@ -7,85 +7,126 @@ import SwiftUI
 import CoreLocation
 import Combine
 import MapKit
+import UIKit
 
 struct RideView: View {
     let settings: AppSettings?
 
-    @StateObject private var speedTracker = RideSpeedTracker()
-    @StateObject private var spotifyStore = SpotifyNowPlayingStore()
-    @State private var shouldCreateMap = false
-    @State private var isMapLoaded = false
-
-    private let mapCameraDistance: CLLocationDistance = 700
+    @State private var resources: RideSessionResources?
+    @State private var isShowingSkeleton = true
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                let topInset: CGFloat = 16
-                let bottomInset: CGFloat = 10
-                let verticalSpacing: CGFloat = 14
-                let spotifyHeight: CGFloat = 96
-                let availableFeatureHeight = max(
-                    proxy.size.height
-                        - topInset
-                        - bottomInset
-                        - (verticalSpacing * 2)
-                        - spotifyHeight,
-                    0
-                )
-                let speedometerHeight = min(
-                    176,
-                    max(116, availableFeatureHeight * 0.305)
-                )
-
-                ZStack(alignment: .top) {
-                    Color.black
-                        .ignoresSafeArea()
-
-                    VStack(spacing: verticalSpacing) {
-                        speedometer
-                            .frame(height: speedometerHeight)
-
-                        currentLocationMap
-                            .frame(maxHeight: .infinity)
-
-                        spotifySection
-                            .frame(height: spotifyHeight, alignment: .top)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, topInset)
-                    .padding(.bottom, bottomInset)
+            ZStack {
+                if let resources {
+                    RideDashboardView(settings: settings, resources: resources)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .onAppear {
-                speedTracker.start()
-            }
-            .task {
-                guard !shouldCreateMap else { return }
 
+                if resources == nil || isShowingSkeleton {
+                    RideSkeletonView()
+                        .transition(.opacity)
+                        .zIndex(1)
+                        .allowsHitTesting(false)
+                }
+            }
+            .background(Color.black.ignoresSafeArea())
+        }
+        .task {
+            if resources == nil {
                 await Task.yield()
 
                 do {
-                    try await Task.sleep(for: .milliseconds(100))
+                    try await Task.sleep(for: .milliseconds(350))
                 } catch {
                     return
                 }
 
-                shouldCreateMap = true
-            }
-            .onDisappear {
-                speedTracker.stop()
-            }
-            .task(id: spotifyCredentials) {
-                guard let spotifyCredentials else {
-                    spotifyStore.reset()
-                    return
-                }
+                let preparedResources = await Task.detached(priority: .userInitiated) {
+                    RideSessionResources()
+                }.value
 
-                await spotifyStore.monitor(credentials: spotifyCredentials) { refreshToken in
-                    settings?.spotifyRefreshToken = refreshToken
+                guard !Task.isCancelled else { return }
+                resources = preparedResources
+            }
+
+            guard isShowingSkeleton else { return }
+
+            await Task.yield()
+
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return
+            }
+
+            withAnimation(.easeOut(duration: 0.2)) {
+                isShowingSkeleton = false
+            }
+        }
+    }
+}
+
+private struct RideDashboardView: View {
+    let settings: AppSettings?
+
+    @Environment(\.displayScale) private var displayScale
+    @StateObject private var speedTracker: RideSpeedTracker
+    @StateObject private var spotifyStore: SpotifyNowPlayingStore
+    @StateObject private var mapStore: RideMapSnapshotStore
+
+    private let mapCameraDistance: CLLocationDistance = 700
+
+    init(settings: AppSettings?, resources: RideSessionResources) {
+        self.settings = settings
+        _speedTracker = StateObject(
+            wrappedValue: RideSpeedTracker(processor: resources.speedProcessor)
+        )
+        _spotifyStore = StateObject(
+            wrappedValue: SpotifyNowPlayingStore(client: resources.spotifyClient)
+        )
+        _mapStore = StateObject(
+            wrappedValue: RideMapSnapshotStore(renderer: resources.mapRenderer)
+        )
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let metrics = RideLayoutMetrics(size: proxy.size)
+
+            ZStack(alignment: .top) {
+                Color.black
+                    .ignoresSafeArea()
+
+                VStack(spacing: metrics.verticalSpacing) {
+                    speedometer
+                        .frame(height: metrics.speedometerHeight)
+
+                    currentLocationMap
+                        .frame(maxHeight: .infinity)
+
+                    spotifySection
+                        .frame(height: metrics.spotifyHeight, alignment: .top)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, metrics.topInset)
+                .padding(.bottom, metrics.bottomInset)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .onAppear {
+            speedTracker.start()
+        }
+        .onDisappear {
+            speedTracker.stop()
+        }
+        .task(id: spotifyCredentials) {
+            guard let spotifyCredentials else {
+                await spotifyStore.reset()
+                return
+            }
+
+            await spotifyStore.monitor(credentials: spotifyCredentials) { refreshToken in
+                settings?.spotifyRefreshToken = refreshToken
             }
         }
     }
@@ -117,17 +158,39 @@ struct RideView: View {
     }
 
     private var currentLocationMap: some View {
-        ZStack {
-            mapLoadingPlaceholder
-
-            if shouldCreateMap {
-                CurrentLocationMap(
-                    location: speedTracker.currentLocation,
+        GeometryReader { proxy in
+            let request = speedTracker.currentLocation.map {
+                RideMapSnapshotRequest(
+                    location: $0,
+                    size: proxy.size,
+                    scale: displayScale,
                     cameraDistance: mapCameraDistance
-                ) {
-                    isMapLoaded = true
+                )
+            }
+
+            ZStack {
+                mapLoadingPlaceholder
+
+                if let image = mapStore.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .transition(.opacity)
+
+                    Circle()
+                        .fill(Color(uiColor: .systemBlue))
+                        .frame(width: 16, height: 16)
+                        .overlay {
+                            Circle()
+                                .stroke(.white, lineWidth: 3)
+                        }
+                        .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+                        .accessibilityHidden(true)
                 }
-                .opacity(isMapLoaded ? 1 : 0)
+            }
+            .task(id: request) {
+                guard let request else { return }
+                await mapStore.load(request)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
@@ -149,7 +212,7 @@ struct RideView: View {
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black)
-        .opacity(isMapLoaded ? 0 : 1)
+        .opacity(mapStore.image == nil ? 1 : 0)
         .accessibilityElement(children: .combine)
     }
 
@@ -217,6 +280,121 @@ struct RideView: View {
     }
 }
 
+private struct RideSkeletonView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let metrics = RideLayoutMetrics(size: proxy.size)
+
+            PhaseAnimator([false, true]) { isBright in
+                VStack(spacing: metrics.verticalSpacing) {
+                    speedometerSkeleton
+                        .frame(height: metrics.speedometerHeight)
+
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(.white.opacity(0.1))
+                        .frame(maxHeight: .infinity)
+
+                    spotifySkeleton
+                        .frame(height: metrics.spotifyHeight, alignment: .top)
+                }
+                .opacity(isBright ? 0.72 : 0.38)
+            } animation: { _ in
+                .easeInOut(duration: 0.9)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, metrics.topInset)
+            .padding(.bottom, metrics.bottomInset)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading Ride")
+    }
+
+    private var speedometerSkeleton: some View {
+        GeometryReader { proxy in
+            let arcWidth = min(max(proxy.size.width - 24, 0), proxy.size.height * 2)
+            let arcHeight = arcWidth / 2
+
+            ZStack(alignment: .bottom) {
+                SpeedometerArc()
+                    .stroke(
+                        .white.opacity(0.18),
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                    )
+                    .frame(width: arcWidth, height: arcHeight)
+
+                VStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(.white.opacity(0.18))
+                        .frame(width: min(116, arcWidth * 0.36), height: 54)
+
+                    Capsule()
+                        .fill(.white.opacity(0.14))
+                        .frame(width: 36, height: 10)
+                }
+                .padding(.bottom, 5)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+
+    private var spotifySkeleton: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.white.opacity(0.16))
+                .frame(width: 64, height: 64)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Capsule()
+                    .fill(.white.opacity(0.18))
+                    .frame(maxWidth: 170)
+                    .frame(height: 13)
+
+                Capsule()
+                    .fill(.white.opacity(0.12))
+                    .frame(maxWidth: 104)
+                    .frame(height: 11)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 8)
+    }
+}
+
+private struct RideLayoutMetrics {
+    let topInset: CGFloat = 16
+    let bottomInset: CGFloat = 10
+    let verticalSpacing: CGFloat = 14
+    let spotifyHeight: CGFloat = 96
+    let speedometerHeight: CGFloat
+
+    init(size: CGSize) {
+        let availableFeatureHeight = max(
+            size.height
+                - topInset
+                - bottomInset
+                - (verticalSpacing * 2)
+                - spotifyHeight,
+            0
+        )
+        speedometerHeight = min(176, max(116, availableFeatureHeight * 0.305))
+    }
+}
+
+private struct RideSessionResources: Sendable {
+    let speedProcessor: RideSpeedProcessor
+    let spotifyClient: SpotifyAPIClient
+    let mapRenderer: RideMapSnapshotRenderer
+
+    nonisolated init() {
+        speedProcessor = RideSpeedProcessor()
+        spotifyClient = SpotifyAPIClient()
+        mapRenderer = RideMapSnapshotRenderer()
+    }
+}
+
 private struct SpeedometerArc: Shape {
     func path(in rect: CGRect) -> Path {
         let radius = min(rect.width / 2, rect.height)
@@ -240,90 +418,151 @@ private struct SpeedometerArc: Shape {
     }
 }
 
-private struct CurrentLocationMap: UIViewRepresentable {
-    let location: CLLocation?
-    let cameraDistance: CLLocationDistance
-    let onInitialLoad: () -> Void
+private struct RideMapSnapshotRequest: Hashable, Sendable {
+    let latitude: Double
+    let longitude: Double
+    let width: Double
+    let height: Double
+    let scale: Double
+    let cameraDistance: Double
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onInitialLoad: onInitialLoad)
+    init(
+        location: RideLocationSample,
+        size: CGSize,
+        scale: CGFloat,
+        cameraDistance: CLLocationDistance
+    ) {
+        latitude = (location.latitude * 10_000).rounded() / 10_000
+        longitude = (location.longitude * 10_000).rounded() / 10_000
+        width = max(size.width.rounded(.up), 1)
+        height = max(size.height.rounded(.up), 1)
+        self.scale = scale
+        self.cameraDistance = cameraDistance
     }
+}
 
-    func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
+private actor RideMapSnapshotRenderer {
+    func render(_ request: RideMapSnapshotRequest) async throws -> UIImage {
+        try Task.checkCancellation()
+
+        let options = MKMapSnapshotter.Options()
         let configuration = MKStandardMapConfiguration(
             elevationStyle: .flat,
             emphasisStyle: .muted
         )
         configuration.pointOfInterestFilter = .excludingAll
 
-        mapView.delegate = context.coordinator
-        mapView.preferredConfiguration = configuration
-        mapView.showsUserLocation = true
-        mapView.showsBuildings = false
-        mapView.showsCompass = false
-        mapView.showsScale = false
-        mapView.isScrollEnabled = false
-        mapView.isZoomEnabled = false
-        mapView.isRotateEnabled = false
-        mapView.isPitchEnabled = false
-        return mapView
-    }
-
-    func updateUIView(_ mapView: MKMapView, context: Context) {
-        context.coordinator.onInitialLoad = onInitialLoad
-
-        guard let location,
-              context.coordinator.lastCenteredLocationTimestamp != location.timestamp
-        else { return }
-
-        let shouldAnimate = context.coordinator.lastCenteredLocationTimestamp != nil
-        context.coordinator.lastCenteredLocationTimestamp = location.timestamp
-        mapView.setCamera(
-            MKMapCamera(
-                lookingAtCenter: location.coordinate,
-                fromDistance: cameraDistance,
-                pitch: 0,
-                heading: 0
+        options.preferredConfiguration = configuration
+        options.camera = MKMapCamera(
+            lookingAtCenter: CLLocationCoordinate2D(
+                latitude: request.latitude,
+                longitude: request.longitude
             ),
-            animated: shouldAnimate
+            fromDistance: request.cameraDistance,
+            pitch: 0,
+            heading: 0
         )
+        options.size = CGSize(width: request.width, height: request.height)
+        options.scale = request.scale
+        options.traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+
+        let snapshotter = MKMapSnapshotter(options: options)
+        let snapshot = try await withTaskCancellationHandler {
+            try await snapshotter.start()
+        } onCancel: {
+            snapshotter.cancel()
+        }
+
+        try Task.checkCancellation()
+        return snapshot.image
+    }
+}
+
+private final class RideMapSnapshotStore: ObservableObject {
+    @Published private(set) var image: UIImage?
+
+    private let renderer: RideMapSnapshotRenderer
+
+    init(renderer: RideMapSnapshotRenderer) {
+        self.renderer = renderer
     }
 
-    static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator) {
-        mapView.delegate = nil
-    }
+    func load(_ request: RideMapSnapshotRequest) async {
+        do {
+            let renderedImage = try await renderer.render(request)
+            guard !Task.isCancelled else { return }
 
-    final class Coordinator: NSObject, MKMapViewDelegate {
-        var onInitialLoad: () -> Void
-        var lastCenteredLocationTimestamp: Date?
-        private var didCompleteInitialLoad = false
-
-        init(onInitialLoad: @escaping () -> Void) {
-            self.onInitialLoad = onInitialLoad
-        }
-
-        func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
-            completeInitialLoad()
-        }
-
-        func mapViewDidFailLoadingMap(_ mapView: MKMapView, withError error: any Error) {
-            completeInitialLoad()
-        }
-
-        private func completeInitialLoad() {
-            guard !didCompleteInitialLoad else { return }
-            didCompleteInitialLoad = true
-            onInitialLoad()
+            withAnimation(.easeOut(duration: 0.2)) {
+                image = renderedImage
+            }
+        } catch {
+            // Keep the existing snapshot while a newer request is rendered.
         }
     }
 }
 
-private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
+private final class RideSpeedTracker: ObservableObject {
     @Published private(set) var speedInMilesPerHour = 0
-    @Published private(set) var currentLocation: CLLocation?
+    @Published private(set) var currentLocation: RideLocationSample?
 
-    private let locationManager = CLLocationManager()
+    private let processor: RideSpeedProcessor
+    private var updateTask: Task<Void, Never>?
+    private var sessionGeneration = 0
+
+    init(processor: RideSpeedProcessor) {
+        self.processor = processor
+    }
+
+    func start() {
+        guard updateTask == nil else { return }
+        sessionGeneration += 1
+        let generation = sessionGeneration
+        let publish: @MainActor @Sendable (RideSpeedUpdate) -> Void = { [weak self] update in
+            guard let self,
+                  self.updateTask != nil,
+                  self.sessionGeneration == generation
+            else { return }
+
+            if let mapLocation = update.mapLocation {
+                self.currentLocation = mapLocation
+            }
+            if let speedInMilesPerHour = update.speedInMilesPerHour {
+                self.speedInMilesPerHour = speedInMilesPerHour
+            }
+        }
+
+        updateTask = Task.detached(priority: .userInitiated) { [processor] in
+            do {
+                for try await update in CLLocationUpdate.liveUpdates(.fitness) {
+                    try Task.checkCancellation()
+                    guard let location = update.location else { continue }
+
+                    let processedUpdate = await processor.process(
+                        [RideLocationSample(location: location)],
+                        now: Date()
+                    )
+                    await publish(processedUpdate)
+                }
+            } catch {
+                // Cancellation and unavailable location updates both end this session quietly.
+            }
+        }
+    }
+
+    func stop() {
+        sessionGeneration += 1
+        updateTask?.cancel()
+        updateTask = nil
+        speedInMilesPerHour = 0
+        currentLocation = nil
+
+        Task {
+            await processor.reset()
+        }
+    }
+}
+
+private actor RideSpeedProcessor {
     private let metersPerSecondToMilesPerHour = 2.236_936_292_1
     private let maximumLocationAge: TimeInterval = 2
     private let maximumMapHorizontalAccuracy: CLLocationAccuracy = 100
@@ -335,111 +574,55 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
     private let stationarySpeed: CLLocationSpeed = 0.45
 
     private var filteredSpeed: CLLocationSpeed?
-    private var lastAcceptedSample: SpeedSample?
-    private var isActive = false
-    private var isUpdating = false
+    private var lastAcceptedSample: RideLocationSample?
 
-    override init() {
-        super.init()
-        locationManager.delegate = self
-        locationManager.activityType = .fitness
-        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-        locationManager.distanceFilter = kCLDistanceFilterNone
-        locationManager.pausesLocationUpdatesAutomatically = false
-    }
-
-    func start() {
-        isActive = true
-
-        switch locationManager.authorizationStatus {
-        case .notDetermined:
-            locationManager.requestWhenInUseAuthorization()
-        case .authorizedAlways, .authorizedWhenInUse:
-            startUpdatingLocation()
-        case .denied, .restricted:
-            break
-        @unknown default:
-            break
-        }
-    }
-
-    func stop() {
-        isActive = false
-        locationManager.stopUpdatingLocation()
-        isUpdating = false
-        filteredSpeed = nil
-        lastAcceptedSample = nil
-        speedInMilesPerHour = 0
-        currentLocation = nil
-    }
-
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        guard isActive else { return }
-
-        switch manager.authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse:
-            startUpdatingLocation()
-        case .denied, .restricted:
-            manager.stopUpdatingLocation()
-            isUpdating = false
-        case .notDetermined:
-            break
-        @unknown default:
-            break
-        }
-    }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let newestMapLocation = locations.last(where: isValidForMap) {
-            currentLocation = newestMapLocation
-        }
-
+    func process(_ samples: [RideLocationSample], now: Date) -> RideSpeedUpdate {
+        let mapLocation = samples.last { isValidForMap($0, now: now) }
         var newestFilteredSpeed: CLLocationSpeed?
 
-        for location in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
-            guard isValid(location) else { continue }
-
-            let sample = SpeedSample(location: location)
-            guard isPlausible(sample) else { continue }
+        for sample in samples.sorted(by: { $0.timestamp < $1.timestamp }) {
+            guard isValid(sample, now: now), isPlausible(sample) else { continue }
 
             newestFilteredSpeed = smooth(sample)
             lastAcceptedSample = sample
         }
 
-        guard let newestFilteredSpeed else { return }
+        let speed = newestFilteredSpeed.map {
+            Int(($0 * metersPerSecondToMilesPerHour).rounded())
+        }
 
-        speedInMilesPerHour = Int(
-            (newestFilteredSpeed * metersPerSecondToMilesPerHour).rounded()
+        return RideSpeedUpdate(
+            mapLocation: mapLocation,
+            speedInMilesPerHour: speed
         )
     }
 
-    private func startUpdatingLocation() {
-        guard isActive, !isUpdating else { return }
-        locationManager.startUpdatingLocation()
-        isUpdating = true
+    func reset() {
+        filteredSpeed = nil
+        lastAcceptedSample = nil
     }
 
-    private func isValid(_ location: CLLocation) -> Bool {
-        let age = Date().timeIntervalSince(location.timestamp)
+    private func isValid(_ sample: RideLocationSample, now: Date) -> Bool {
+        let age = now.timeIntervalSince(sample.timestamp)
 
         return (-1...maximumLocationAge).contains(age)
-            && location.horizontalAccuracy >= 0
-            && location.horizontalAccuracy <= maximumHorizontalAccuracy
-            && location.speed >= 0
-            && location.speed <= maximumCyclingSpeed
-            && location.speedAccuracy >= 0
-            && location.speedAccuracy <= maximumSpeedAccuracy
+            && sample.horizontalAccuracy >= 0
+            && sample.horizontalAccuracy <= maximumHorizontalAccuracy
+            && sample.speed >= 0
+            && sample.speed <= maximumCyclingSpeed
+            && sample.speedAccuracy >= 0
+            && sample.speedAccuracy <= maximumSpeedAccuracy
     }
 
-    private func isValidForMap(_ location: CLLocation) -> Bool {
-        let age = Date().timeIntervalSince(location.timestamp)
+    private func isValidForMap(_ sample: RideLocationSample, now: Date) -> Bool {
+        let age = now.timeIntervalSince(sample.timestamp)
 
         return (-1...maximumLocationAge).contains(age)
-            && location.horizontalAccuracy >= 0
-            && location.horizontalAccuracy <= maximumMapHorizontalAccuracy
+            && sample.horizontalAccuracy >= 0
+            && sample.horizontalAccuracy <= maximumMapHorizontalAccuracy
     }
 
-    private func isPlausible(_ sample: SpeedSample) -> Bool {
+    private func isPlausible(_ sample: RideLocationSample) -> Bool {
         guard let previous = lastAcceptedSample else { return true }
 
         let elapsed = sample.timestamp.timeIntervalSince(previous.timestamp)
@@ -451,7 +634,7 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
         return abs(sample.speed - previous.speed) <= expectedChange + uncertainty
     }
 
-    private func smooth(_ sample: SpeedSample) -> CLLocationSpeed {
+    private func smooth(_ sample: RideLocationSample) -> CLLocationSpeed {
         let measuredSpeed = sample.speed < stationarySpeed ? 0 : sample.speed
 
         guard let filteredSpeed,
@@ -477,16 +660,27 @@ private final class RideSpeedTracker: NSObject, ObservableObject, CLLocationMana
     }
 }
 
-private struct SpeedSample {
+private struct RideLocationSample: Hashable, Sendable {
+    let latitude: Double
+    let longitude: Double
+    let horizontalAccuracy: CLLocationAccuracy
     let speed: CLLocationSpeed
     let speedAccuracy: CLLocationSpeedAccuracy
     let timestamp: Date
 
-    init(location: CLLocation) {
+    nonisolated init(location: CLLocation) {
+        latitude = location.coordinate.latitude
+        longitude = location.coordinate.longitude
+        horizontalAccuracy = location.horizontalAccuracy
         speed = location.speed
         speedAccuracy = location.speedAccuracy
         timestamp = location.timestamp
     }
+}
+
+private struct RideSpeedUpdate: Sendable {
+    let mapLocation: RideLocationSample?
+    let speedInMilesPerHour: Int?
 }
 
 #Preview {

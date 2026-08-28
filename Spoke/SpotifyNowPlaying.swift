@@ -54,19 +54,23 @@ final class SpotifyNowPlayingStore: ObservableObject {
 
     @Published private(set) var state: State = .idle
 
-    private let client = SpotifyAPIClient()
+    private let client: SpotifyAPIClient
     private let refreshInterval = Duration.seconds(10)
 
-    func reset() {
+    init(client: SpotifyAPIClient = SpotifyAPIClient()) {
+        self.client = client
+    }
+
+    func reset() async {
         state = .idle
-        client.reset()
+        await client.reset()
     }
 
     func monitor(
         credentials: SpotifyCredentials,
         onRefreshToken: @escaping @MainActor (String) -> Void
     ) async {
-        client.reset()
+        await client.reset()
         state = .loading
 
         while !Task.isCancelled {
@@ -180,13 +184,13 @@ struct SpotifyStatusView: View {
     }
 }
 
-private final class SpotifyAPIClient {
+actor SpotifyAPIClient {
     private struct AccessToken {
         let value: String
         let expiration: Date
     }
 
-    struct NowPlayingResult {
+    struct NowPlayingResult: Sendable {
         let track: SpotifyTrack?
         let refreshedToken: String?
     }
@@ -319,7 +323,7 @@ private final class SpotifyAPIClient {
     }
 }
 
-private struct SpotifyTokenResponse: Decodable {
+nonisolated private struct SpotifyTokenResponse: Decodable, Sendable {
     let accessToken: String
     let expiresIn: Int
     let refreshToken: String?
@@ -331,7 +335,7 @@ private struct SpotifyTokenResponse: Decodable {
     }
 }
 
-private struct SpotifyCurrentlyPlayingResponse: Decodable {
+nonisolated private struct SpotifyCurrentlyPlayingResponse: Decodable, Sendable {
     let progressMS: Int?
     let isPlaying: Bool
     let item: SpotifyTrackResponse?
@@ -343,7 +347,7 @@ private struct SpotifyCurrentlyPlayingResponse: Decodable {
     }
 }
 
-private struct SpotifyTrackResponse: Decodable {
+nonisolated private struct SpotifyTrackResponse: Decodable, Sendable {
     let album: SpotifyAlbumResponse
     let artists: [SpotifyArtistResponse]
     let durationMS: Int
@@ -357,19 +361,19 @@ private struct SpotifyTrackResponse: Decodable {
     }
 }
 
-private struct SpotifyAlbumResponse: Decodable {
+nonisolated private struct SpotifyAlbumResponse: Decodable, Sendable {
     let images: [SpotifyImageResponse]
 }
 
-private struct SpotifyImageResponse: Decodable {
+nonisolated private struct SpotifyImageResponse: Decodable, Sendable {
     let url: URL
 }
 
-private struct SpotifyArtistResponse: Decodable {
+nonisolated private struct SpotifyArtistResponse: Decodable, Sendable {
     let name: String
 }
 
-private struct SpotifyTokenErrorResponse: Decodable {
+nonisolated private struct SpotifyTokenErrorResponse: Decodable, Sendable {
     let error: String?
     let errorDescription: String?
 
@@ -383,11 +387,11 @@ private struct SpotifyTokenErrorResponse: Decodable {
     }
 }
 
-private struct SpotifyWebErrorResponse: Decodable {
+nonisolated private struct SpotifyWebErrorResponse: Decodable, Sendable {
     let error: SpotifyWebError
 }
 
-private struct SpotifyWebError: Decodable {
+nonisolated private struct SpotifyWebError: Decodable, Sendable {
     let message: String
 }
 
