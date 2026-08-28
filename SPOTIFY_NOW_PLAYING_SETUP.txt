@@ -1,0 +1,137 @@
+SPOTIFY NOW PLAYING CREDENTIALS
+Terminal guide for Spoke
+
+What you will get
+-----------------
+1. Spotify Client ID
+2. Spotify Client Secret
+3. Spotify Refresh Token
+
+Important permission
+--------------------
+Spoke only displays the current song. It needs this read-only Spotify scope:
+
+user-read-currently-playing
+
+Do not request a write scope for this feature. In particular,
+user-modify-playback-state is only for an app that changes Spotify playback
+(play, pause, skip, seek, volume, and so on). Spoke does none of those things.
+
+Part 1: Create a Spotify app
+----------------------------
+1. Go to https://developer.spotify.com/dashboard and sign in.
+2. Create an app for Spoke.
+3. Open the app's Settings page.
+4. Under Redirect URIs, add this exact value:
+
+   http://127.0.0.1:8888/callback
+
+   Do not use localhost. Spotify requires the explicit loopback IP address.
+5. Save the settings.
+6. Copy the Client ID and Client Secret from the app's Settings page.
+
+Part 2: Start a local callback listener
+----------------------------------------
+Open Terminal and run this command. Leave this Terminal window running:
+
+python3 -m http.server 8888
+
+The browser may show a 404 after Spotify returns to the callback. That is
+expected. The Terminal window will print the callback URL, including the
+authorization code.
+
+Part 3: Ask Spotify for permission
+----------------------------------
+Open a second Terminal window and enter the following commands.
+
+read -r "SPOTIFY_CLIENT_ID?Paste your Spotify Client ID: "
+read -rs "SPOTIFY_CLIENT_SECRET?Paste your Spotify Client Secret: "
+printf '\n'
+SPOTIFY_REDIRECT_URI='http://127.0.0.1:8888/callback'
+SPOTIFY_STATE="$(openssl rand -hex 16)"
+
+Build the Spotify authorization URL:
+
+SPOTIFY_AUTH_URL="https://accounts.spotify.com/authorize?response_type=code&client_id=${SPOTIFY_CLIENT_ID}&redirect_uri=${SPOTIFY_REDIRECT_URI}&scope=user-read-currently-playing&state=${SPOTIFY_STATE}&show_dialog=true"
+printf '%s\n' "$SPOTIFY_AUTH_URL"
+
+Copy the printed URL and open it in your browser. Sign in to Spotify and
+approve the requested permission.
+
+After approval, Spotify sends the browser to this local callback address:
+
+http://127.0.0.1:8888/callback?code=...&state=...
+
+Copy that complete callback URL from the browser address bar and return to
+the second Terminal window.
+
+Part 4: Exchange the authorization code for a refresh token
+------------------------------------------------------------
+Paste the complete callback URL when prompted:
+
+read -r "SPOTIFY_CALLBACK_URL?Paste the complete callback URL: "
+SPOTIFY_RETURNED_STATE="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.parse_qs(urllib.parse.urlparse(sys.argv[1]).query).get("state", [""])[0])' "$SPOTIFY_CALLBACK_URL")"
+
+if [ "$SPOTIFY_RETURNED_STATE" != "$SPOTIFY_STATE" ]; then
+  printf '%s\n' 'The callback state did not match. Stop and try again.'
+  exit 1
+fi
+
+SPOTIFY_AUTH_CODE="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.parse_qs(urllib.parse.urlparse(sys.argv[1]).query)["code"][0])' "$SPOTIFY_CALLBACK_URL")"
+
+SPOTIFY_TOKEN_JSON="$(curl --silent --show-error --fail-with-body \
+  --request POST 'https://accounts.spotify.com/api/token' \
+  --user "${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}" \
+  --header 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'grant_type=authorization_code' \
+  --data-urlencode "code=${SPOTIFY_AUTH_CODE}" \
+  --data-urlencode "redirect_uri=${SPOTIFY_REDIRECT_URI}")"
+
+SPOTIFY_REFRESH_TOKEN="$(printf '%s' "$SPOTIFY_TOKEN_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["refresh_token"])')"
+
+printf '\nYour Spotify Refresh Token is:\n%s\n\n' "$SPOTIFY_REFRESH_TOKEN"
+
+Part 5: Enter the values in Spoke
+---------------------------------
+In Spoke, open Settings > Spotify and enter:
+
+Client ID:       the value copied from the Spotify Dashboard
+Client Secret:   the value copied from the Spotify Dashboard
+Refresh Token:   the value printed in Part 4
+
+The Client Secret and Refresh Token fields in Spoke are password fields, so
+their characters are hidden while entering them.
+
+Part 6: Verify the token in Terminal (optional)
+------------------------------------------------
+This requests a fresh access token, then reads the current song:
+
+SPOTIFY_ACCESS_TOKEN="$(curl --silent --show-error --fail-with-body \
+  --request POST 'https://accounts.spotify.com/api/token' \
+  --user "${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}" \
+  --header 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'grant_type=refresh_token' \
+  --data-urlencode "refresh_token=${SPOTIFY_REFRESH_TOKEN}" | \
+  python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])')"
+
+curl --silent --show-error \
+  --header "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" \
+  'https://api.spotify.com/v1/me/player/currently-playing'
+
+Expected results:
+- JSON with album, track title, artist, duration_ms, and progress_ms: working.
+- No output and HTTP 204: Spotify is not currently playing anything.
+- HTTP 401 or 403: create a new refresh token and make sure the authorization
+  URL used user-read-currently-playing exactly.
+
+Security notes
+--------------
+- Treat the Client Secret and Refresh Token like passwords. Do not put either
+  in source code, a Git commit, a screenshot, or a shared note.
+- The commands above prompt for the Client Secret instead of placing it in a
+  command line, which keeps it out of normal shell history.
+- Spotify access tokens are short-lived. Spoke refreshes them automatically.
+- Spotify refresh tokens currently expire after six months. Repeat this guide
+  to authorize again if Spotify reports invalid_grant.
+- Stop the local callback listener with Control-C after you have copied the
+  refresh token.
