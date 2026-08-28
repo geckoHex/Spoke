@@ -15,16 +15,17 @@ struct HomeView: View {
         NavigationStack {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let currentDate = max(context.date, Date.now)
+                let timeOfDay = TimeOfDay(date: currentDate)
 
                 ZStack {
                     Color.black
                         .ignoresSafeArea()
 
                     VStack(alignment: .leading, spacing: 20) {
-                        Text(greeting(at: currentDate))
-                            .font(.largeTitle.weight(.bold))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.leading)
+                        HomeGreeting(
+                            timeOfDay: timeOfDay,
+                            name: displayName
+                        )
 
                         Spacer()
 
@@ -83,17 +84,91 @@ struct HomeView: View {
         completedRide = rideSession.endRide()
     }
 
-    private func greeting(at date: Date) -> String {
-        let hour = Calendar.current.component(.hour, from: date)
-        let salutation = switch hour {
-        case 5..<12: "Good morning"
-        case 12..<17: "Good afternoon"
-        default: "Good evening"
-        }
-
+    private var displayName: String {
         let trimmedName = settings?.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = trimmedName.flatMap { $0.isEmpty ? nil : $0 } ?? "User"
-        return "\(salutation), \(name)"
+        return trimmedName.flatMap { $0.isEmpty ? nil : $0 } ?? "User"
+    }
+}
+
+private struct HomeGreeting: View {
+    let timeOfDay: TimeOfDay
+    let name: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(timeOfDay.color.opacity(0.16))
+
+                Circle()
+                    .stroke(timeOfDay.color.opacity(0.3), lineWidth: 1)
+
+                Image(systemName: timeOfDay.symbolName)
+                    .font(.system(size: 29, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(timeOfDay.color)
+            }
+            .frame(width: 68, height: 68)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(timeOfDay.salutation),")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.65))
+
+                Text(name)
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(timeOfDay.salutation), \(name)")
+    }
+}
+
+private enum TimeOfDay {
+    case morning
+    case afternoon
+    case evening
+
+    init(date: Date) {
+        let hour = Calendar.current.component(.hour, from: date)
+
+        switch hour {
+        case 5..<12:
+            self = .morning
+        case 12..<17:
+            self = .afternoon
+        default:
+            self = .evening
+        }
+    }
+
+    var salutation: String {
+        switch self {
+        case .morning: "Good morning"
+        case .afternoon: "Good afternoon"
+        case .evening: "Good evening"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .morning: "sunrise.fill"
+        case .afternoon: "sun.max.fill"
+        case .evening: "moon.stars.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .morning: .orange
+        case .afternoon: .yellow
+        case .evening: .indigo
+        }
     }
 }
 
