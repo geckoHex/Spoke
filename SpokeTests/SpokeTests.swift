@@ -19,6 +19,15 @@ struct SpokeTests {
         #expect(ride.elapsedDuration(at: start.addingTimeInterval(25)) == 10)
     }
 
+    @Test func pausedRideIgnoresAStaleTimelineDate() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let ride = TrackedRide(startedAt: start)
+
+        ride.pause(at: start.addingTimeInterval(10))
+
+        #expect(ride.elapsedDuration(at: start.addingTimeInterval(9)) == 10)
+    }
+
     @Test func completedRideDurationExcludesAllPausedTime() {
         let start = Date(timeIntervalSince1970: 1_000)
         let ride = TrackedRide(startedAt: start)

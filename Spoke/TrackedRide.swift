@@ -29,15 +29,11 @@ final class TrackedRide {
     }
 
     func elapsedDuration(at date: Date = .now) -> TimeInterval {
-        let effectiveEnd = endedAt ?? date
-        let currentPauseDuration = pausedAt.map {
-            max(effectiveEnd.timeIntervalSince($0), 0)
-        } ?? 0
+        let effectiveEnd = endedAt ?? pausedAt ?? date
 
         return max(
             effectiveEnd.timeIntervalSince(startedAt)
-                - accumulatedPausedDuration
-                - currentPauseDuration,
+                - accumulatedPausedDuration,
             0
         )
     }

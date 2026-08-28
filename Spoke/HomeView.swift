@@ -14,12 +14,14 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             TimelineView(.periodic(from: .now, by: 1)) { context in
+                let currentDate = max(context.date, Date.now)
+
                 ZStack {
                     Color.black
                         .ignoresSafeArea()
 
                     VStack(alignment: .leading, spacing: 20) {
-                        Text(greeting(at: context.date))
+                        Text(greeting(at: currentDate))
                             .font(.largeTitle.weight(.bold))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.leading)
@@ -29,7 +31,7 @@ struct HomeView: View {
                         if let ride = rideSession.activeRide {
                             ActiveRideControl(
                                 ride: ride,
-                                date: context.date,
+                                date: currentDate,
                                 onPauseToggle: {
                                     rideSession.togglePause()
                                 },
@@ -108,10 +110,13 @@ private struct ActiveRideControl: View {
     private let holdDuration = 1.5
 
     var body: some View {
-        let elapsedDuration = ride.elapsedDuration(at: date)
+        let elapsedSeconds = max(
+            Int(ride.elapsedDuration(at: date).rounded(.down)),
+            0
+        )
 
         HStack(spacing: 12) {
-            timer(elapsedDuration: elapsedDuration)
+            timer(elapsedSeconds: elapsedSeconds)
 
             Button {
                 onPauseToggle()
@@ -130,7 +135,7 @@ private struct ActiveRideControl: View {
         }
     }
 
-    private func timer(elapsedDuration: TimeInterval) -> some View {
+    private func timer(elapsedSeconds: Int) -> some View {
         ZStack {
             Capsule()
                 .fill(.white)
@@ -143,11 +148,14 @@ private struct ActiveRideControl: View {
             }
             .clipShape(Capsule())
 
-            Text(RideMetrics.duration(elapsedDuration))
+            Text(RideMetrics.duration(TimeInterval(elapsedSeconds)))
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(.black)
-                .contentTransition(.numericText(value: elapsedDuration))
-                .animation(.snappy(duration: 0.35), value: Int(elapsedDuration))
+                .contentTransition(.numericText(value: Double(elapsedSeconds)))
+                .animation(
+                    ride.isPaused ? nil : .snappy(duration: 0.35),
+                    value: elapsedSeconds
+                )
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
@@ -165,7 +173,7 @@ private struct ActiveRideControl: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Ride timer")
         .accessibilityValue(
-            "\(RideMetrics.duration(elapsedDuration)), "
+            "\(RideMetrics.duration(TimeInterval(elapsedSeconds))), "
                 + (ride.isPaused ? "paused" : "running")
         )
         .accessibilityHint("Hold to end the ride.")
