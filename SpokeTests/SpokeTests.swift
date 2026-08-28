@@ -11,6 +11,51 @@ import Testing
 @testable import Spoke
 
 struct SpokeTests {
+    @MainActor
+    @Test func weatherCacheExpiresAfterTwentyMinutes() throws {
+        let suiteName = "SpokeTests.WeatherCache.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let cache = HomeWeatherCache(defaults: defaults)
+        let fetchedAt = Date(timeIntervalSince1970: 10_000)
+        let snapshot = HomeWeatherSnapshot(
+            fetchedAt: fetchedAt,
+            temperature: "72°F",
+            condition: "Clear",
+            symbolName: "sun.max.fill",
+            attributionMarkURL: URL(string: "https://example.com/mark")!,
+            legalPageURL: URL(string: "https://example.com/legal")!
+        )
+        cache.save(snapshot)
+        cache.recordRequest(at: fetchedAt)
+
+        #expect(
+            cache.freshSnapshot(
+                at: fetchedAt.addingTimeInterval(20 * 60 - 1)
+            ) == snapshot
+        )
+        #expect(
+            cache.freshSnapshot(
+                at: fetchedAt.addingTimeInterval(20 * 60)
+            ) == nil
+        )
+        #expect(
+            !cache.canRequest(
+                at: fetchedAt.addingTimeInterval(20 * 60 - 1)
+            )
+        )
+        #expect(
+            cache.canRequest(
+                at: fetchedAt.addingTimeInterval(20 * 60)
+            )
+        )
+        #expect(
+            cache.nextRequestDate()
+                == fetchedAt.addingTimeInterval(20 * 60)
+        )
+    }
+
     @Test func activeRideDurationExcludesCurrentPause() {
         let start = Date(timeIntervalSince1970: 1_000)
         let ride = TrackedRide(startedAt: start)

@@ -10,6 +10,7 @@ struct HomeView: View {
     let rideSession: RideSessionController
 
     @State private var completedRide: TrackedRide?
+    @State private var weatherModel = HomeWeatherModel()
 
     var body: some View {
         NavigationStack {
@@ -25,6 +26,12 @@ struct HomeView: View {
                         HomeGreeting(
                             timeOfDay: timeOfDay,
                             name: displayName
+                        )
+
+                        HomeWeatherView(
+                            snapshot: weatherModel.snapshot,
+                            isLoading: weatherModel.isLoading,
+                            isUnavailable: weatherModel.isUnavailable
                         )
 
                         Spacer()
@@ -67,6 +74,9 @@ struct HomeView: View {
                 )
             }
         }
+        .task {
+            await weatherModel.maintainWeather()
+        }
     }
 
     private var isShowingSummary: Binding<Bool> {
@@ -87,6 +97,82 @@ struct HomeView: View {
     private var displayName: String {
         let trimmedName = settings?.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmedName.flatMap { $0.isEmpty ? nil : $0 } ?? "User"
+    }
+}
+
+private struct HomeWeatherView: View {
+    let snapshot: HomeWeatherSnapshot?
+    let isLoading: Bool
+    let isUnavailable: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            weatherIcon
+
+            if let snapshot {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(snapshot.temperature)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.white)
+
+                    Text(snapshot.condition)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+
+                Spacer(minLength: 12)
+
+                Link(destination: snapshot.legalPageURL) {
+                    AsyncImage(url: snapshot.attributionMarkURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        Text("Apple Weather")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                    .frame(width: 92, height: 14, alignment: .trailing)
+                }
+                .accessibilityLabel("Apple Weather attribution")
+            } else {
+                Text(isUnavailable ? "Weather unavailable" : "Loading weather")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.65))
+
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 76)
+        .background(.white.opacity(0.06), in: .rect(cornerRadius: 20))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(.white.opacity(0.1), lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var weatherIcon: some View {
+        if let snapshot {
+            Image(systemName: snapshot.symbolName)
+                .font(.system(size: 32, weight: .medium))
+                .symbolRenderingMode(.multicolor)
+                .frame(width: 38)
+                .accessibilityHidden(true)
+        } else if isLoading || !isUnavailable {
+            ProgressView()
+                .tint(.white)
+                .frame(width: 38)
+                .accessibilityLabel("Loading")
+        } else {
+            Image(systemName: "cloud.fill")
+                .font(.system(size: 27, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+                .frame(width: 38)
+                .accessibilityHidden(true)
+        }
     }
 }
 
