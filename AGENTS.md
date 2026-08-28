@@ -19,6 +19,8 @@ Use the correct keyboard for each input. The keyboard's own `Done` key and an ou
 
 Use local SwiftData persistence, following the existing architecture.
 
+When the user tells you to use an asset not bundled with the app, copy the asset to where it belongs in the app.
+
 Do not launch the app or simulator. Build checks and git inspection are allowed. Make only requested changes; do not commit it.
 
 Finish with exactly one single-line suggested commit message.
