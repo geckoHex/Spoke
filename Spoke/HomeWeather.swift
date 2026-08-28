@@ -68,6 +68,11 @@ struct HomeWeatherCache {
 
         return lastRequestAt.addingTimeInterval(Self.duration)
     }
+
+    func invalidate() {
+        defaults.removeObject(forKey: key)
+        defaults.removeObject(forKey: lastRequestKey)
+    }
 }
 
 @MainActor
@@ -88,6 +93,15 @@ final class HomeWeatherModel {
     init(cache: HomeWeatherCache) {
         self.cache = cache
         snapshot = cache.storedSnapshot()
+    }
+
+    func expireCacheAndReload() async {
+        guard !isLoading else { return }
+
+        cache.invalidate()
+        snapshot = nil
+        isUnavailable = false
+        _ = await loadIfNeeded()
     }
 
     func maintainWeather() async {

@@ -54,6 +54,12 @@ struct SpokeTests {
             cache.nextRequestDate()
                 == fetchedAt.addingTimeInterval(20 * 60)
         )
+
+        cache.invalidate()
+
+        #expect(cache.storedSnapshot() == nil)
+        #expect(cache.canRequest(at: fetchedAt))
+        #expect(cache.nextRequestDate() == nil)
     }
 
     @Test func activeRideDurationExcludesCurrentPause() {

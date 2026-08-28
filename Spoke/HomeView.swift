@@ -31,7 +31,14 @@ struct HomeView: View {
                         HomeWeatherView(
                             snapshot: weatherModel.snapshot,
                             isLoading: weatherModel.isLoading,
-                            isUnavailable: weatherModel.isUnavailable
+                            isUnavailable: weatherModel.isUnavailable,
+                            isDeveloperModeEnabled:
+                                settings?.developerModeEnabled == true,
+                            onExpireAndReload: {
+                                Task {
+                                    await weatherModel.expireCacheAndReload()
+                                }
+                            }
                         )
 
                         Spacer()
@@ -104,8 +111,21 @@ private struct HomeWeatherView: View {
     let snapshot: HomeWeatherSnapshot?
     let isLoading: Bool
     let isUnavailable: Bool
+    let isDeveloperModeEnabled: Bool
+    let onExpireAndReload: () -> Void
 
+    @ViewBuilder
     var body: some View {
+        if isDeveloperModeEnabled {
+            weatherCard
+                .contentShape(.rect)
+                .onTapGesture(count: 5, perform: onExpireAndReload)
+        } else {
+            weatherCard
+        }
+    }
+
+    private var weatherCard: some View {
         HStack(spacing: 14) {
             weatherIcon
 
