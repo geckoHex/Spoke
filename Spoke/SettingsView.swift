@@ -39,106 +39,104 @@ private struct SettingsForm: View {
 
     var body: some View {
         Form {
-            Section {
-                LabeledContent("Name") {
-                    HStack(spacing: 8) {
-                        TextField("First name", text: $settings.name)
-                            .focused($focusedField, equals: .name)
-                            .textContentType(.givenName)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                            .multilineTextAlignment(.trailing)
-                            .submitLabel(.done)
-                            .onSubmit {
-                                focusedField = nil
-                            }
-
-                        if focusedField == .name && !settings.name.isEmpty {
-                            Button {
-                                settings.name = ""
-                                focusedField = .name
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Clear name")
+            Section("Name") {
+                HStack(spacing: 8) {
+                    TextField("", text: $settings.name)
+                        .focused($focusedField, equals: .name)
+                        .textContentType(.givenName)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
                         }
-                    }
-                    .inputFramePreference(for: .name)
-                }
+                        .accessibilityLabel("Name")
 
+                    if focusedField == .name && !settings.name.isEmpty {
+                        Button {
+                            settings.name = ""
+                            focusedField = .name
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Clear name")
+                    }
+                }
+                .inputFramePreference(for: .name)
+            }
+
+            Section {
                 Toggle("Keep screen on", isOn: $settings.keepScreenOn)
             }
 
-            Section("Spotify") {
-                LabeledContent("Client ID") {
-                    HStack(spacing: 8) {
-                        TextField("Required", text: $settings.spotifyClientID)
-                            .focused($focusedField, equals: .spotifyClientID)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.asciiCapable)
-                            .multilineTextAlignment(.trailing)
-                            .submitLabel(.done)
-                            .onSubmit {
-                                focusedField = nil
-                            }
+            Section("Spotify Client ID") {
+                HStack(spacing: 8) {
+                    TextField("", text: $settings.spotifyClientID)
+                        .focused($focusedField, equals: .spotifyClientID)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.asciiCapable)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
+                        .accessibilityLabel("Spotify client ID")
 
-                        clearButton(
-                            for: .spotifyClientID,
-                            value: $settings.spotifyClientID,
-                            label: "Clear Spotify client ID"
-                        )
-                    }
-                    .inputFramePreference(for: .spotifyClientID)
+                    clearButton(
+                        for: .spotifyClientID,
+                        value: $settings.spotifyClientID,
+                        label: "Clear Spotify client ID"
+                    )
                 }
+                .inputFramePreference(for: .spotifyClientID)
+            }
 
-                LabeledContent("Client Secret") {
-                    HStack(spacing: 8) {
-                        SecureField("Required", text: $settings.spotifyClientSecret)
-                            .focused($focusedField, equals: .spotifyClientSecret)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.asciiCapable)
-                            .multilineTextAlignment(.trailing)
-                            .submitLabel(.done)
-                            .onSubmit {
-                                focusedField = nil
-                            }
-                            .privacySensitive()
+            Section("Spotify Client Secret") {
+                HStack(spacing: 8) {
+                    SecureField("", text: $settings.spotifyClientSecret)
+                        .focused($focusedField, equals: .spotifyClientSecret)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.asciiCapable)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
+                        .privacySensitive()
+                        .accessibilityLabel("Spotify client secret")
 
-                        clearButton(
-                            for: .spotifyClientSecret,
-                            value: $settings.spotifyClientSecret,
-                            label: "Clear Spotify client secret"
-                        )
-                    }
-                    .inputFramePreference(for: .spotifyClientSecret)
+                    clearButton(
+                        for: .spotifyClientSecret,
+                        value: $settings.spotifyClientSecret,
+                        label: "Clear Spotify client secret"
+                    )
                 }
+                .inputFramePreference(for: .spotifyClientSecret)
+            }
 
-                LabeledContent("Refresh Token") {
-                    HStack(spacing: 8) {
-                        SecureField("Required", text: $settings.spotifyRefreshToken)
-                            .focused($focusedField, equals: .spotifyRefreshToken)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.asciiCapable)
-                            .multilineTextAlignment(.trailing)
-                            .submitLabel(.done)
-                            .onSubmit {
-                                focusedField = nil
-                            }
-                            .privacySensitive()
+            Section("Spotify Refresh Token") {
+                HStack(spacing: 8) {
+                    SecureField("", text: $settings.spotifyRefreshToken)
+                        .focused($focusedField, equals: .spotifyRefreshToken)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.asciiCapable)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
+                        .privacySensitive()
+                        .accessibilityLabel("Spotify refresh token")
 
-                        clearButton(
-                            for: .spotifyRefreshToken,
-                            value: $settings.spotifyRefreshToken,
-                            label: "Clear Spotify refresh token"
-                        )
-                    }
-                    .inputFramePreference(for: .spotifyRefreshToken)
+                    clearButton(
+                        for: .spotifyRefreshToken,
+                        value: $settings.spotifyRefreshToken,
+                        label: "Clear Spotify refresh token"
+                    )
                 }
+                .inputFramePreference(for: .spotifyRefreshToken)
             }
         }
         .scrollContentBackground(.hidden)
@@ -148,15 +146,6 @@ private struct SettingsForm: View {
         .coordinateSpace(name: "settingsForm")
         .onPreferenceChange(SettingsInputFramePreferenceKey.self) {
             inputFrames = $0
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-
-                Button("Done") {
-                    focusedField = nil
-                }
-            }
         }
         .simultaneousGesture(
             SpatialTapGesture(coordinateSpace: .named("settingsForm"))
