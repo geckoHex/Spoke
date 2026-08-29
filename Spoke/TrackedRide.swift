@@ -39,8 +39,8 @@ final class TrackedRide {
     }
 
     var automaticName: String? {
-        guard let startAddress = normalizedAddress(startAddress),
-              let endAddress = normalizedAddress(endAddress)
+        guard let startAddress = RideAddressFormatter.street(from: startAddress),
+              let endAddress = RideAddressFormatter.street(from: endAddress)
         else { return nil }
 
         return "\(startAddress) → \(endAddress)"
@@ -49,11 +49,6 @@ final class TrackedRide {
     func rename(to name: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         customName = trimmedName.isEmpty ? nil : trimmedName
-    }
-
-    private func normalizedAddress(_ address: String?) -> String? {
-        let trimmedAddress = address?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedAddress.flatMap { $0.isEmpty ? nil : $0 }
     }
 
     func elapsedDuration(at date: Date = .now) -> TimeInterval {

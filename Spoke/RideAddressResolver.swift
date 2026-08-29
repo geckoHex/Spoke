@@ -20,20 +20,39 @@ enum RideAddressResolver {
 
         do {
             let mapItems = try await request.mapItems
-            guard let address = mapItems.first?.address else { return nil }
-            return normalized(address.shortAddress) ?? normalized(address.fullAddress)
+            guard let mapItem = mapItems.first else { return nil }
+
+            let addressCandidates = [
+                mapItem.addressRepresentations?.fullAddress(
+                    includingRegion: false,
+                    singleLine: false
+                ),
+                mapItem.address?.shortAddress,
+                mapItem.address?.fullAddress,
+            ]
+
+            return addressCandidates.lazy.compactMap {
+                RideAddressFormatter.street(from: $0)
+            }.first
         } catch {
             return nil
         }
     }
+}
 
-    private static func normalized(_ address: String?) -> String? {
-        let singleLineAddress = address?
+enum RideAddressFormatter {
+    nonisolated static func street(from address: String?) -> String? {
+        let firstLine = address?
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-            .joined(separator: ", ")
+            .first
 
-        return singleLineAddress.flatMap { $0.isEmpty ? nil : $0 }
+        let street = firstLine?
+            .split(separator: ",", maxSplits: 1)
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return street.flatMap { $0.isEmpty ? nil : $0 }
     }
 }

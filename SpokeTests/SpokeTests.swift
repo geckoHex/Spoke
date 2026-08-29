@@ -167,10 +167,24 @@ struct SpokeTests {
 
         #expect(ride.automaticName == nil)
 
-        ride.startAddress = "  1 Infinite Loop  "
-        ride.endAddress = "Apple Park Way"
+        ride.startAddress = "  123 Tree St, Los Angeles, CA 90001  "
+        ride.endAddress = "456 Acorn Ln\nPasadena, CA 91101\nUnited States"
 
-        #expect(ride.automaticName == "1 Infinite Loop → Apple Park Way")
+        #expect(ride.automaticName == "123 Tree St → 456 Acorn Ln")
+    }
+
+    @Test func streetAddressFormatterRemovesLocality() {
+        #expect(
+            RideAddressFormatter.street(
+                from: "1 Apple Park Way\nCupertino, CA 95014\nUnited States"
+            ) == "1 Apple Park Way"
+        )
+        #expect(
+            RideAddressFormatter.street(
+                from: "123 Tree St, Los Angeles, CA 90001"
+            ) == "123 Tree St"
+        )
+        #expect(RideAddressFormatter.street(from: "  \n ") == nil)
     }
 
     @Test func rideAgeUsesOnlyTheLargestTimeDenomination() {
