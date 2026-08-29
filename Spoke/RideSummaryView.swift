@@ -16,32 +16,62 @@ struct RideSummaryView: View {
                 Color(uiColor: .secondarySystemBackground)
                     .ignoresSafeArea()
 
-                VStack(spacing: 24) {
-                    VStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: 52, height: 52)
+                            .background(.white, in: Circle())
+
                         Text("Ride Complete")
-                            .font(.title2.weight(.semibold))
-
-                        Text(RideMetrics.duration(ride.elapsedDuration()))
-                            .font(.largeTitle.weight(.semibold))
-                            .monospacedDigit()
+                            .font(.title2.weight(.bold))
                     }
 
-                    HStack(spacing: 12) {
-                        summaryItem(
-                            title: "Distance",
-                            value: RideMetrics.distance(
-                                RideMetrics.distanceInMeters(for: ride)
-                            )
-                        )
+                    VStack(alignment: .leading, spacing: 0) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Duration")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
 
-                        summaryItem(
-                            title: "Started",
-                            value: ride.startedAt.formatted(
-                                date: .omitted,
-                                time: .shortened
+                            Text(RideMetrics.duration(ride.elapsedDuration()))
+                                .font(.system(size: 50, weight: .semibold))
+                                .monospacedDigit()
+                                .minimumScaleFactor(0.75)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(22)
+
+                        Divider()
+                            .overlay(.white.opacity(0.12))
+
+                        HStack(spacing: 0) {
+                            summaryItem(
+                                title: "Distance",
+                                value: RideMetrics.distance(
+                                    RideMetrics.distanceInMeters(for: ride)
+                                )
                             )
-                        )
+
+                            Divider()
+                                .overlay(.white.opacity(0.12))
+
+                            summaryItem(
+                                title: "Started",
+                                value: ride.startedAt.formatted(
+                                    date: .omitted,
+                                    time: .shortened
+                                )
+                            )
+                        }
+                        .frame(height: 88)
                     }
+                    .background(
+                        .black.opacity(0.28),
+                        in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    )
+                    .padding(.top, 24)
 
                     Spacer(minLength: 0)
 
@@ -52,7 +82,9 @@ struct RideSummaryView: View {
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(24)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 24)
             }
         }
         .preferredColorScheme(.dark)
@@ -62,7 +94,7 @@ struct RideSummaryView: View {
     }
 
     private func summaryItem(title: String, value: String) -> some View {
-        VStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             Text(value)
                 .font(.title3.weight(.semibold))
                 .monospacedDigit()
@@ -71,7 +103,7 @@ struct RideSummaryView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(.horizontal, 22)
     }
 }
