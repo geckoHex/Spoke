@@ -13,16 +13,15 @@ struct RideSummaryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(uiColor: .secondarySystemBackground)
+                Color.white
                     .ignoresSafeArea()
 
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 22, weight: .bold))
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 34, weight: .semibold))
                             .foregroundStyle(.black)
-                            .frame(width: 52, height: 52)
-                            .background(.white, in: Circle())
+                            .accessibilityHidden(true)
 
                         Text("Ride Complete")
                             .font(.title2.weight(.bold))
@@ -41,10 +40,10 @@ struct RideSummaryView: View {
                                 .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(22)
+                        .padding(20)
 
                         Divider()
-                            .overlay(.white.opacity(0.12))
+                            .overlay(.black.opacity(0.08))
 
                         HStack(spacing: 0) {
                             summaryItem(
@@ -55,7 +54,7 @@ struct RideSummaryView: View {
                             )
 
                             Divider()
-                                .overlay(.white.opacity(0.12))
+                                .overlay(.black.opacity(0.08))
 
                             summaryItem(
                                 title: "Started",
@@ -68,27 +67,35 @@ struct RideSummaryView: View {
                         .frame(height: 88)
                     }
                     .background(
-                        .black.opacity(0.28),
-                        in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        Color(uiColor: .systemGray6),
+                        in: RoundedRectangle(cornerRadius: 22, style: .continuous)
                     )
-                    .padding(.top, 24)
+                    .padding(.top, 20)
 
                     Spacer(minLength: 0)
 
-                    Button("Done") {
-                        onDone()
+                    Button(action: onDone) {
+                        Text("Done")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 50)
+                            .background(
+                                .black,
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            )
                     }
-                    .buttonStyle(SpokePrimaryButtonStyle())
+                    .buttonStyle(.plain)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.black)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 .padding(.bottom, 24)
             }
         }
-        .preferredColorScheme(.dark)
-        .presentationBackground(Color(uiColor: .secondarySystemBackground))
+        .preferredColorScheme(.light)
+        .presentationBackground(.white)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
