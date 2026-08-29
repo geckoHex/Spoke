@@ -25,9 +25,11 @@ struct HomeView: View {
                 let currentDate = max(context.date, Date.now)
                 let timeOfDay = TimeOfDay(date: currentDate)
 
-                ZStack {
+                ZStack(alignment: .top) {
                     Color.black
                         .ignoresSafeArea()
+
+                    HomeSkyGradient(period: HomeSkyPeriod(date: currentDate))
 
                     GeometryReader { proxy in
                         ScrollView {
@@ -180,22 +182,23 @@ private struct HomeRideActivity: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 20) {
             weeklySummary
-                .homeCard()
+
+            Divider()
+                .overlay(.white.opacity(0.12))
 
             if let latestRide = rides.first {
                 latestRideRow(latestRide)
-                    .homeCard()
             } else {
                 Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
                     .font(.body.weight(.medium))
                     .foregroundStyle(.white.opacity(0.55))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .homeCard()
                     .accessibilityLabel("No completed rides yet")
             }
         }
+        .homeCard()
         .accessibilityElement(children: .contain)
     }
 
@@ -334,22 +337,31 @@ private struct HomeWeatherView: View {
     }
 
     private var weatherCard: some View {
-        HStack(spacing: 12) {
-            weatherIcon
+        ZStack(alignment: .bottomTrailing) {
+            HStack(spacing: 12) {
+                weatherIcon
 
-            if let snapshot {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(snapshot.temperature)
-                        .font(.title.weight(.semibold))
-                        .foregroundStyle(.white)
+                if let snapshot {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(snapshot.temperature)
+                            .font(.title.weight(.semibold))
+                            .foregroundStyle(.white)
 
-                    Text(snapshot.condition)
-                        .font(.body)
-                        .foregroundStyle(.white.opacity(0.6))
+                        Text(snapshot.condition)
+                            .font(.body)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                } else {
+                    Text(isUnavailable ? "Weather unavailable" : "Loading weather")
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.65))
                 }
 
                 Spacer(minLength: 12)
+            }
+            .padding(.bottom, snapshot == nil ? 0 : 10)
 
+            if let snapshot {
                 Link(destination: snapshot.legalPageURL) {
                     AsyncImage(url: snapshot.attributionMarkURL) { image in
                         image
@@ -360,19 +372,13 @@ private struct HomeWeatherView: View {
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(.white.opacity(0.55))
                     }
-                    .frame(width: 92, height: 14, alignment: .trailing)
+                    .frame(width: 72, height: 10, alignment: .trailing)
                 }
                 .accessibilityLabel("Apple Weather attribution")
-            } else {
-                Text(isUnavailable ? "Weather unavailable" : "Loading weather")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.65))
-
-                Spacer()
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 72)
+        .frame(minHeight: 76)
         .homeCard(padding: 18)
     }
 
@@ -403,25 +409,19 @@ private struct HomeGreeting: View {
     let timeOfDay: TimeOfDay
     let name: String
 
+    @ScaledMetric(relativeTo: .largeTitle) private var nameSize: CGFloat = 42
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: timeOfDay.symbolName)
-                .font(.system(size: 27, weight: .medium))
-                .foregroundStyle(.blue)
-                .frame(width: 44)
-                .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("\(timeOfDay.salutation),")
+                .font(.title.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.7))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(timeOfDay.salutation),")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.65))
-
-                Text(name)
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
-            }
+            Text(name)
+                .font(.system(size: nameSize, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
@@ -466,12 +466,86 @@ private enum TimeOfDay {
         case .evening: "Good evening"
         }
     }
+}
 
-    var symbolName: String {
+private struct HomeSkyGradient: View {
+    let period: HomeSkyPeriod
+
+    var body: some View {
+        GeometryReader { proxy in
+            LinearGradient(
+                colors: period.colors,
+                startPoint: .topLeading,
+                endPoint: .topTrailing
+            )
+            .mask {
+                LinearGradient(
+                    stops: [
+                        .init(color: .white, location: 0),
+                        .init(color: .white.opacity(0.82), location: 0.36),
+                        .init(color: .clear, location: 0.96),
+                    ],
+                    startPoint: UnitPoint(x: 0.08, y: 0),
+                    endPoint: UnitPoint(x: 0.92, y: 1)
+                )
+            }
+            .frame(
+                width: proxy.size.width,
+                height: min(max(proxy.size.height * 0.54, 360), 470),
+                alignment: .top
+            )
+            .blur(radius: 22)
+            .opacity(0.34)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private enum HomeSkyPeriod {
+    case sunrise
+    case day
+    case sunset
+    case night
+
+    init(date: Date) {
+        let hour = Calendar.current.component(.hour, from: date)
+
+        switch hour {
+        case 5..<8:
+            self = .sunrise
+        case 8..<17:
+            self = .day
+        case 17..<20:
+            self = .sunset
+        default:
+            self = .night
+        }
+    }
+
+    var colors: [Color] {
         switch self {
-        case .morning: "sunrise.fill"
-        case .afternoon: "sun.max.fill"
-        case .evening: "moon.stars.fill"
+        case .sunrise:
+            [
+                Color(red: 1, green: 0.25, blue: 0.5),
+                Color(red: 1, green: 0.48, blue: 0.16),
+            ]
+        case .day:
+            [
+                Color(red: 1, green: 0.78, blue: 0.18),
+                Color(red: 0.18, green: 0.55, blue: 1),
+            ]
+        case .sunset:
+            [
+                Color(red: 0.55, green: 0.18, blue: 0.85),
+                Color(red: 1, green: 0.34, blue: 0.12),
+            ]
+        case .night:
+            [
+                Color(red: 0.28, green: 0.12, blue: 0.58),
+                Color(red: 0.03, green: 0.12, blue: 0.35),
+            ]
         }
     }
 }
