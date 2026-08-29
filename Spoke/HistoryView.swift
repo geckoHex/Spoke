@@ -270,13 +270,27 @@ private struct RideHistoryDetailView: View {
                         .overlay(.white.opacity(0.1))
                         .padding(.horizontal, 20)
 
-                    metric(
-                        title: "Date",
-                        value: ride.startedAt.formatted(
-                            .dateTime.month(.abbreviated).day()
-                        ),
-                        systemImage: "calendar"
-                    )
+                    HStack(spacing: 0) {
+                        metric(
+                            title: "Start Time",
+                            value: ride.startedAt.formatted(
+                                .dateTime.hour().minute()
+                            ),
+                            systemImage: "clock"
+                        )
+
+                        Divider()
+                            .overlay(.white.opacity(0.1))
+                            .padding(.vertical, 16)
+
+                        metric(
+                            title: "Date",
+                            value: ride.startedAt.formatted(
+                                .dateTime.month(.abbreviated).day()
+                            ),
+                            systemImage: "calendar"
+                        )
+                    }
                     .frame(height: 84)
                 }
                 .background(
