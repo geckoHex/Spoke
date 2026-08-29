@@ -30,7 +30,7 @@ When app audio finishes, deactivate the session with .notifyOthersOnDeactivation
 
 After making changes, do the following:
 1. Check the app compiles without issues.
-2. Deploy to my iPhone: use the Bearing scheme's configured Run build configuration, build for my paired physical iPhone, then install and launch the resulting `.app` with `xcrun devicectl`. Discover the device ID, bundle identifier, and built .app path automatically; do not use Simulator.
+2. Deploy to my iPhone: use the Spoke scheme's configured Run build configuration, build for my paired physical iPhone, then install and launch the resulting `.app` with `xcrun devicectl`. Discover the device ID, bundle identifier, and built .app path automatically; do not use Simulator.
 3. Run `git add .`
 4. Run `git -c commit.gpgsign=false commit -m "<message> - By Codex"`
 5. Run `git push`
