@@ -177,6 +177,29 @@ struct SpotifyNowPlayingView: View {
     }
 }
 
+struct SpotifyPausedView: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.white.opacity(0.12))
+                .frame(width: 64, height: 64)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Spotify Paused")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                Text("Nothing playing right now")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct SpotifyStatusView: View {
     let symbol: String
     let message: String

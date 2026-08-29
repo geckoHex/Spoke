@@ -9,6 +9,8 @@ import SwiftUI
 struct HomeView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
+    let onRideStarted: () -> Void
+    let onRideSummaryDone: (TrackedRide) -> Void
 
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
@@ -81,6 +83,7 @@ struct HomeView: View {
                     ride: completedRide,
                     onDone: {
                         self.completedRide = nil
+                        onRideSummaryDone(completedRide)
                     }
                 )
             }
@@ -118,7 +121,8 @@ struct HomeView: View {
             )
         } else {
             Button {
-                rideSession.startRide()
+                guard rideSession.startRide() != nil else { return }
+                onRideStarted()
             } label: {
                 Label("Start Ride", systemImage: "figure.outdoor.cycle")
             }
@@ -606,7 +610,9 @@ struct SpokePrimaryButtonStyle: ButtonStyle {
 #Preview {
     HomeView(
         settings: AppSettings(),
-        rideSession: RideSessionController()
+        rideSession: RideSessionController(),
+        onRideStarted: {},
+        onRideSummaryDone: { _ in }
     )
     .modelContainer(
         for: [

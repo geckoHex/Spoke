@@ -11,6 +11,13 @@ import UIKit
 struct HistoryView: View {
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
+    @Binding private var highlightedRideID: PersistentIdentifier?
+
+    init(
+        highlightedRideID: Binding<PersistentIdentifier?> = .constant(nil)
+    ) {
+        _highlightedRideID = highlightedRideID
+    }
 
     private var completedRides: [TrackedRide] {
         rides.filter { $0.endedAt != nil }
@@ -33,7 +40,11 @@ struct HistoryView: View {
                         } label: {
                             RideHistoryRow(ride: ride)
                         }
-                        .listRowBackground(Color.black)
+                        .listRowBackground(
+                            ride.persistentModelID == highlightedRideID
+                                ? Color.white.opacity(0.14)
+                                : Color.black
+                        )
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -42,6 +53,19 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.large)
+        }
+        .task(id: highlightedRideID) {
+            guard highlightedRideID != nil else { return }
+
+            do {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                return
+            }
+
+            withAnimation(.easeOut(duration: 0.45)) {
+                highlightedRideID = nil
+            }
         }
     }
 }

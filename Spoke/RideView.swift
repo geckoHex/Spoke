@@ -38,7 +38,12 @@ struct RideView: View {
 
                         if resources == nil || isShowingSkeleton {
                             RideSkeletonView()
-                                .transition(.opacity)
+                                .transition(
+                                    .asymmetric(
+                                        insertion: .identity,
+                                        removal: .opacity
+                                    )
+                                )
                                 .zIndex(1)
                                 .allowsHitTesting(false)
                         }
@@ -226,7 +231,7 @@ private struct RideDashboardView: View {
             case .idle, .loading:
                 SpotifyStatusView(symbol: "music.note", message: "Loading Spotify…")
             case .notPlaying:
-                SpotifyStatusView(symbol: "music.note", message: "Nothing is playing on Spotify.")
+                SpotifyPausedView()
             case .failed(let message):
                 SpotifyStatusView(symbol: "exclamationmark.triangle.fill", message: message)
             case .playing(let track):
@@ -412,18 +417,14 @@ private struct RideSkeletonView: View {
             let metrics = RideLayoutMetrics(size: proxy.size)
             let isLandscape = proxy.size.width > proxy.size.height
 
-            PhaseAnimator([false, true]) { isBright in
-                Group {
-                    if isLandscape {
-                        landscapeSkeleton(metrics: metrics)
-                    } else {
-                        portraitSkeleton(metrics: metrics)
-                    }
+            Group {
+                if isLandscape {
+                    landscapeSkeleton(metrics: metrics)
+                } else {
+                    portraitSkeleton(metrics: metrics)
                 }
-                .opacity(isBright ? 0.72 : 0.38)
-            } animation: { _ in
-                .easeInOut(duration: 0.9)
             }
+            .opacity(0.55)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black)
         }

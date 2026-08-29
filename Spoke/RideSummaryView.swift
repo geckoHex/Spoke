@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct RideSummaryView: View {
     let ride: TrackedRide
@@ -12,7 +13,7 @@ struct RideSummaryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black
+                Color(uiColor: .secondarySystemBackground)
                     .ignoresSafeArea()
 
                 VStack(spacing: 24) {
@@ -42,17 +43,20 @@ struct RideSummaryView: View {
                         )
                     }
 
+                    Spacer(minLength: 0)
+
                     Button("Done") {
                         onDone()
                     }
                     .buttonStyle(SpokePrimaryButtonStyle())
                 }
                 .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(24)
             }
         }
         .preferredColorScheme(.dark)
-        .presentationBackground(.black)
+        .presentationBackground(Color(uiColor: .secondarySystemBackground))
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }

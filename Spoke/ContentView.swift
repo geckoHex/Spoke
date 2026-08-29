@@ -14,12 +14,23 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var storedSettings: [AppSettings]
     @State private var selectedTab: AppTab = .home
+    @State private var highlightedRideID: PersistentIdentifier?
     @State private var rideSession = RideSessionController()
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "house.fill", value: .home) {
-                HomeView(settings: settings, rideSession: rideSession)
+                HomeView(
+                    settings: settings,
+                    rideSession: rideSession,
+                    onRideStarted: {
+                        selectedTab = .ride
+                    },
+                    onRideSummaryDone: { ride in
+                        highlightedRideID = ride.persistentModelID
+                        selectedTab = .history
+                    }
+                )
             }
 
             Tab("Ride", systemImage: "figure.outdoor.cycle", value: .ride) {
@@ -31,7 +42,7 @@ struct ContentView: View {
                 systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
                 value: .history
             ) {
-                HistoryView()
+                HistoryView(highlightedRideID: $highlightedRideID)
             }
 
             Tab("Settings", systemImage: "gear", value: .settings) {
