@@ -12,6 +12,7 @@ struct HistoryView: View {
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
     @Binding private var highlightedRideID: PersistentIdentifier?
+    @State private var relativeTimeSnapshot = Date.now
 
     init(
         highlightedRideID: Binding<PersistentIdentifier?> = .constant(nil)
@@ -35,26 +36,24 @@ struct HistoryView: View {
                     .background(Color.black)
                 } else {
                     ScrollView {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            LazyVStack(spacing: 14) {
-                                ForEach(completedRides) { ride in
-                                    NavigationLink {
-                                        RideHistoryDetailView(ride: ride)
-                                    } label: {
-                                        RideHistoryRow(
-                                            ride: ride,
-                                            currentDate: max(context.date, Date.now),
-                                            isHighlighted:
-                                                ride.persistentModelID == highlightedRideID
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
+                        LazyVStack(spacing: 14) {
+                            ForEach(completedRides) { ride in
+                                NavigationLink {
+                                    RideHistoryDetailView(ride: ride)
+                                } label: {
+                                    RideHistoryRow(
+                                        ride: ride,
+                                        currentDate: relativeTimeSnapshot,
+                                        isHighlighted:
+                                            ride.persistentModelID == highlightedRideID
+                                    )
                                 }
+                                .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 12)
-                            .padding(.bottom, 24)
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                        .padding(.bottom, 24)
                     }
                     .scrollIndicators(.hidden)
                     .background(Color.black)
@@ -62,6 +61,9 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.large)
+        }
+        .onAppear {
+            relativeTimeSnapshot = .now
         }
         .task(id: highlightedRideID) {
             guard highlightedRideID != nil else { return }
