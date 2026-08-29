@@ -7,6 +7,7 @@ Spoke is a premium cycling app. It should feel Apple-designed: polished, minimal
 Use a pure black background with white text and icons. For buttons, use white buttons with black content. 
 Use system blue only for native accent states, toggles, system components. 
 Always design in dark mode.
+Keep contrast in mind. Adjust the black or white to a dark/ light gray respectively when needed for contrast (like a sheet).
 
 Prefer SwiftUI, SF Symbols, system typography (SF Pro), native controls, and standard iOS patterns. 
 **Only add explicitly requested UI or behavior.**
