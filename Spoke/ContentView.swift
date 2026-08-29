@@ -33,7 +33,7 @@ struct ContentView: View {
                 )
             }
 
-            Tab("Ride", systemImage: "figure.outdoor.cycle", value: .ride) {
+            Tab("HUD", systemImage: "gauge.open.with.lines.needle.33percent", value: .ride) {
                 RideView(settings: settings, rideSession: rideSession)
             }
 
