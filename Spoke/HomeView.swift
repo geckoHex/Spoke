@@ -471,6 +471,9 @@ private enum TimeOfDay {
 private struct HomeSkyGradient: View {
     let period: HomeSkyPeriod
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isDrifting = false
+
     var body: some View {
         GeometryReader { proxy in
             LinearGradient(
@@ -491,15 +494,38 @@ private struct HomeSkyGradient: View {
             }
             .frame(
                 width: proxy.size.width,
-                height: min(max(proxy.size.height * 0.54, 360), 470),
+                height: min(max(proxy.size.height * 0.61, 390), 530),
                 alignment: .top
             )
+            .scaleEffect(
+                x: 1.08,
+                y: reduceMotion ? 1 : (isDrifting ? 1.025 : 1),
+                anchor: .top
+            )
+            .offset(
+                x: reduceMotion ? 0 : (isDrifting ? 10 : -10),
+                y: reduceMotion ? 0 : (isDrifting ? 5 : -3)
+            )
             .blur(radius: 22)
-            .opacity(0.34)
+            .opacity(0.31)
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeInOut(duration: 24).repeatForever(
+                        autoreverses: true
+                    ),
+                value: isDrifting
+            )
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .onAppear {
+            isDrifting = !reduceMotion
+        }
+        .onChange(of: reduceMotion) { _, shouldReduceMotion in
+            isDrifting = !shouldReduceMotion
+        }
     }
 }
 
