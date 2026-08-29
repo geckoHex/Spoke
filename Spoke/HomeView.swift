@@ -483,12 +483,6 @@ private struct ActiveRideControl: View {
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
 
-    @State private var isPressing = false
-    @State private var holdProgress: CGFloat = 0
-    @State private var holdTask: Task<Void, Never>?
-
-    private let holdDuration = 1.5
-
     var body: some View {
         let elapsedSeconds = max(
             Int(ride.elapsedDuration(at: date).rounded(.down)),
@@ -497,6 +491,23 @@ private struct ActiveRideControl: View {
 
         HStack(spacing: 12) {
             timer(elapsedSeconds: elapsedSeconds)
+
+            Button {
+                onEnd()
+            } label: {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.black)
+                    .frame(width: 56, height: 56)
+                    .background(.white, in: .circle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("End Ride")
+            .transition(
+                .offset(x: -68)
+                    .combined(with: .scale(scale: 0.8, anchor: .trailing))
+                    .combined(with: .opacity)
+            )
 
             Button {
                 onPauseToggle()
@@ -515,23 +526,12 @@ private struct ActiveRideControl: View {
                     .combined(with: .opacity)
             )
         }
-        .onDisappear {
-            holdTask?.cancel()
-        }
     }
 
     private func timer(elapsedSeconds: Int) -> some View {
         ZStack {
             Capsule()
                 .fill(.white)
-
-            GeometryReader { proxy in
-                Rectangle()
-                    .fill(.black.opacity(0.18))
-                    .frame(width: proxy.size.width * holdProgress)
-                    .frame(maxHeight: .infinity)
-            }
-            .clipShape(Capsule())
 
             Text(RideMetrics.duration(TimeInterval(elapsedSeconds)))
                 .font(.headline.monospacedDigit())
@@ -545,67 +545,12 @@ private struct ActiveRideControl: View {
         .frame(maxWidth: .infinity)
         .frame(height: 56)
         .matchedGeometryEffect(id: "rideTimer", in: namespace)
-        .contentShape(Capsule())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    beginPressIfNeeded()
-                }
-                .onEnded { _ in
-                    finishPress()
-                }
-        )
         .accessibilityElement(children: .ignore)
-        .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Ride timer")
         .accessibilityValue(
             "\(RideMetrics.duration(TimeInterval(elapsedSeconds))), "
                 + (ride.isPaused ? "paused" : "running")
         )
-        .accessibilityHint("Hold to end the ride.")
-        .accessibilityAction(named: "End Ride") {
-            onEnd()
-        }
-    }
-
-    private func beginPressIfNeeded() {
-        guard !isPressing else { return }
-
-        holdTask?.cancel()
-        isPressing = true
-        holdProgress = 0
-
-        withAnimation(.linear(duration: holdDuration)) {
-            holdProgress = 1
-        }
-
-        holdTask = Task { @MainActor in
-            do {
-                try await Task.sleep(for: .seconds(holdDuration))
-            } catch {
-                return
-            }
-
-            guard isPressing else { return }
-            isPressing = false
-            onEnd()
-
-            withAnimation(.easeOut(duration: 0.15)) {
-                holdProgress = 0
-            }
-        }
-    }
-
-    private func finishPress() {
-        guard isPressing else { return }
-
-        isPressing = false
-        holdTask?.cancel()
-        holdTask = nil
-
-        withAnimation(.easeOut(duration: 0.15)) {
-            holdProgress = 0
-        }
     }
 }
 
