@@ -87,12 +87,12 @@ private struct RideHistoryRow: View {
     let isHighlighted: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .center, spacing: 16) {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(ride.historyTitle)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white)
 
                     Text(
                         RideMetrics.ageDescription(
@@ -104,29 +104,28 @@ private struct RideHistoryRow: View {
                         .foregroundStyle(.white.opacity(0.55))
                 }
 
-                Spacer(minLength: 12)
+                HStack(spacing: 20) {
+                    metric(
+                        title: "Duration",
+                        value: RideMetrics.duration(ride.elapsedDuration()),
+                        systemImage: "timer"
+                    )
 
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.35))
-                    .accessibilityHidden(true)
+                    metric(
+                        title: "Distance",
+                        value: RideMetrics.distance(
+                            RideMetrics.distanceInMeters(for: ride)
+                        ),
+                        systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                    )
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 20) {
-                metric(
-                    title: "Duration",
-                    value: RideMetrics.duration(ride.elapsedDuration()),
-                    systemImage: "timer"
-                )
-
-                metric(
-                    title: "Distance",
-                    value: RideMetrics.distance(
-                        RideMetrics.distanceInMeters(for: ride)
-                    ),
-                    systemImage: "point.topleft.down.to.point.bottomright.curvepath"
-                )
-            }
+            Image(systemName: "chevron.right")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.35))
+                .accessibilityHidden(true)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
