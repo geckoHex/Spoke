@@ -241,62 +241,46 @@ private struct RideHistoryDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
-                VStack(spacing: 0) {
-                    HStack(spacing: 0) {
-                        metric(
-                            title: "Duration",
-                            value: RideMetrics.duration(
-                                ride.elapsedDuration(),
-                                omittingZeroHours: true
-                            ),
-                            systemImage: "timer"
-                        )
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: 12),
+                        GridItem(.flexible(), spacing: 12),
+                    ],
+                    spacing: 12
+                ) {
+                    metric(
+                        title: "Duration",
+                        value: RideMetrics.duration(
+                            ride.elapsedDuration(),
+                            omittingZeroHours: true
+                        ),
+                        systemImage: "timer"
+                    )
 
-                        Divider()
-                            .overlay(.white.opacity(0.1))
-                            .padding(.vertical, 18)
+                    metric(
+                        title: "Miles",
+                        value: RideMetrics.miles(
+                            RideMetrics.distanceInMeters(for: ride)
+                        ),
+                        systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                    )
 
-                        metric(
-                            title: "Miles",
-                            value: RideMetrics.miles(
-                                RideMetrics.distanceInMeters(for: ride)
-                            ),
-                            systemImage: "point.topleft.down.to.point.bottomright.curvepath"
-                        )
-                    }
-                    .frame(height: 92)
+                    metric(
+                        title: "Start Time",
+                        value: ride.startedAt.formatted(
+                            .dateTime.hour().minute()
+                        ),
+                        systemImage: "clock"
+                    )
 
-                    Divider()
-                        .overlay(.white.opacity(0.1))
-                        .padding(.horizontal, 20)
-
-                    HStack(spacing: 0) {
-                        metric(
-                            title: "Start Time",
-                            value: ride.startedAt.formatted(
-                                .dateTime.hour().minute()
-                            ),
-                            systemImage: "clock"
-                        )
-
-                        Divider()
-                            .overlay(.white.opacity(0.1))
-                            .padding(.vertical, 16)
-
-                        metric(
-                            title: "Date",
-                            value: ride.startedAt.formatted(
-                                .dateTime.month(.abbreviated).day()
-                            ),
-                            systemImage: "calendar"
-                        )
-                    }
-                    .frame(height: 84)
+                    metric(
+                        title: "Date",
+                        value: ride.startedAt.formatted(
+                            .dateTime.month(.abbreviated).day()
+                        ),
+                        systemImage: "calendar"
+                    )
                 }
-                .background(
-                    Color.white.opacity(0.075),
-                    in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-                )
 
                 Button("Ride soundtrack") {
                     isShowingSoundtrack = true
@@ -388,7 +372,12 @@ private struct RideHistoryDetailView: View {
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.white.opacity(0.55))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .frame(height: 82)
+        .background(
+            Color.white.opacity(0.075),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
     }
 }
 
