@@ -29,7 +29,7 @@ struct HomeView: View {
                     GeometryReader { proxy in
                         ScrollView {
                             VStack(alignment: .leading, spacing: 0) {
-                                VStack(alignment: .leading, spacing: 20) {
+                                VStack(alignment: .leading, spacing: 22) {
                                     HomeGreeting(
                                         timeOfDay: timeOfDay,
                                         name: displayName
@@ -49,28 +49,25 @@ struct HomeView: View {
                                     )
                                 }
 
-                                Divider()
-                                    .overlay(.white.opacity(0.16))
-                                    .padding(.top, 20)
+                                Spacer(minLength: 24)
 
                                 HomeRideActivity(
                                     rides: completedRides,
                                     date: currentDate
                                 )
-                                .padding(.top, 24)
 
-                                Spacer(minLength: 28)
+                                Spacer(minLength: 24)
 
                                 rideAction(date: currentDate)
                             }
                             .frame(
                                 maxWidth: .infinity,
-                                minHeight: max(proxy.size.height - 36, 0),
+                                minHeight: max(proxy.size.height - 44, 0),
                                 alignment: .topLeading
                             )
-                            .padding(.horizontal, 20)
-                            .padding(.top, 24)
-                            .padding(.bottom, 12)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 28)
+                            .padding(.bottom, 16)
                         }
                         .scrollIndicators(.hidden)
                         .scrollBounceBehavior(.basedOnSize)
@@ -120,10 +117,12 @@ struct HomeView: View {
                 onEnd: endRide
             )
         } else {
-            Button("Start Ride") {
+            Button {
                 rideSession.startRide()
+            } label: {
+                Label("Start Ride", systemImage: "figure.outdoor.cycle")
             }
-            .buttonStyle(SpokePrimaryButtonStyle())
+            .buttonStyle(SpokePrimaryButtonStyle(minHeight: 56))
         }
     }
 
@@ -167,59 +166,77 @@ private struct HomeRideActivity: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("This Week")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-
-                Spacer()
-
-                Text(rideCountDescription)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.55))
-            }
-
-            HStack(alignment: .top, spacing: 24) {
-                activityMetric(
-                    value: RideMetrics.distance(totalDistance),
-                    label: "Distance"
-                )
-
-                activityMetric(
-                    value: compactDuration(totalDuration),
-                    label: "Ride Time"
-                )
-            }
-
-            Divider()
-                .overlay(.white.opacity(0.16))
+        VStack(alignment: .leading, spacing: 16) {
+            weeklySummary
+                .homeCard()
 
             if let latestRide = rides.first {
                 latestRideRow(latestRide)
+                    .homeCard()
             } else {
                 Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
-                    .font(.subheadline)
+                    .font(.body.weight(.medium))
                     .foregroundStyle(.white.opacity(0.55))
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .homeCard()
                     .accessibilityLabel("No completed rides yet")
             }
         }
         .accessibilityElement(children: .contain)
     }
 
-    private func activityMetric(value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+    private var weeklySummary: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("This Week")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                Text(rideCountDescription)
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+
+            HStack(alignment: .top, spacing: 24) {
+                activityMetric(
+                    value: RideMetrics.distance(totalDistance),
+                    label: "Distance",
+                    systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                )
+
+                activityMetric(
+                    value: compactDuration(totalDuration),
+                    label: "Ride Time",
+                    systemImage: "timer"
+                )
+            }
+        }
+    }
+
+    private func activityMetric(
+        value: String,
+        label: String,
+        systemImage: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text(value)
-                .font(.title.weight(.semibold))
+                .font(.largeTitle.weight(.bold))
                 .foregroundStyle(.white)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
 
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.5))
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(.blue)
+                    .accessibilityHidden(true)
+
+                Text(label)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .font(.subheadline.weight(.medium))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
@@ -227,16 +244,16 @@ private struct HomeRideActivity: View {
     }
 
     private func latestRideRow(_ ride: TrackedRide) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             Image(systemName: "figure.outdoor.cycle")
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.white)
-                .frame(width: 24)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.blue)
+                .frame(width: 32)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text("Last Ride")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline)
                     .foregroundStyle(.white)
 
                 Text(
@@ -246,25 +263,25 @@ private struct HomeRideActivity: View {
                         .month(.abbreviated)
                         .day()
                 )
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.55))
             }
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 16)
 
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .trailing, spacing: 5) {
                 Text(
                     RideMetrics.distance(
                         RideMetrics.distanceInMeters(for: ride)
                     )
                 )
-                .font(.subheadline.weight(.semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(.white)
                 .monospacedDigit()
 
                 Text(compactDuration(ride.elapsedDuration()))
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.55))
                     .monospacedDigit()
             }
         }
@@ -309,11 +326,11 @@ private struct HomeWeatherView: View {
             if let snapshot {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(snapshot.temperature)
-                        .font(.title2.weight(.semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundStyle(.white)
 
                     Text(snapshot.condition)
-                        .font(.subheadline)
+                        .font(.body)
                         .foregroundStyle(.white.opacity(0.6))
                 }
 
@@ -340,29 +357,29 @@ private struct HomeWeatherView: View {
                 Spacer()
             }
         }
-        .padding(.horizontal, 4)
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 64)
+        .frame(minHeight: 72)
+        .homeCard(padding: 18)
     }
 
     @ViewBuilder
     private var weatherIcon: some View {
         if let snapshot {
             Image(systemName: snapshot.symbolName)
-                .font(.system(size: 32, weight: .medium))
+                .font(.system(size: 36, weight: .medium))
                 .symbolRenderingMode(.multicolor)
-                .frame(width: 38)
+                .frame(width: 44)
                 .accessibilityHidden(true)
         } else if isLoading || !isUnavailable {
             ProgressView()
                 .tint(.white)
-                .frame(width: 38)
+                .frame(width: 44)
                 .accessibilityLabel("Loading")
         } else {
             Image(systemName: "cloud.fill")
-                .font(.system(size: 27, weight: .medium))
+                .font(.system(size: 31, weight: .medium))
                 .foregroundStyle(.white.opacity(0.5))
-                .frame(width: 38)
+                .frame(width: 44)
                 .accessibilityHidden(true)
         }
     }
@@ -375,13 +392,14 @@ private struct HomeGreeting: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: timeOfDay.symbolName)
-                .font(.title2)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 27, weight: .medium))
+                .foregroundStyle(.blue)
+                .frame(width: 44)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text("\(timeOfDay.salutation),")
-                    .font(.title3.weight(.semibold))
+                    .font(.title2.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.65))
 
                 Text(name)
@@ -394,6 +412,18 @@ private struct HomeGreeting: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(timeOfDay.salutation), \(name)")
+    }
+}
+
+private extension View {
+    func homeCard(padding: CGFloat = 20) -> some View {
+        self
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                Color.white.opacity(0.075),
+                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            )
     }
 }
 
@@ -559,12 +589,14 @@ private struct ActiveRideControl: View {
 }
 
 struct SpokePrimaryButtonStyle: ButtonStyle {
+    var minHeight: CGFloat = 50
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
             .foregroundStyle(.black)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 50)
+            .frame(minHeight: minHeight)
             .padding(.horizontal, 16)
             .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .opacity(configuration.isPressed ? 0.75 : 1)
