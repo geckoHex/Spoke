@@ -317,7 +317,6 @@ private struct RideDashboardView: View {
                         style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
-                    .animation(.smooth(duration: 0.45), value: speed)
 
                 VStack(spacing: 2) {
                     Text(String(format: "%02d", speed))
@@ -331,8 +330,6 @@ private struct RideDashboardView: View {
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
-                        .contentTransition(.numericText(value: Double(speed)))
-                        .animation(.snappy(duration: 0.35), value: speed)
 
                     Text("mph")
                         .font(.subheadline.weight(.semibold))

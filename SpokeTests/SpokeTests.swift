@@ -5,12 +5,55 @@
 //  Created by Beck Orion on 8/27/26.
 //
 
+import CoreLocation
 import Foundation
 import SwiftData
 import Testing
 @testable import Spoke
 
 struct SpokeTests {
+    @Test func speedUsesItsOwnAccuracyRatherThanCoordinateAccuracy() async throws {
+        let processor = RideSpeedProcessor()
+        let now = Date(timeIntervalSince1970: 10_000)
+        let sample = RideLocationSample(
+            latitude: 0,
+            longitude: 0,
+            horizontalAccuracy: 250,
+            speed: 8,
+            speedAccuracy: 0.5,
+            timestamp: now
+        )
+
+        let update = await processor.process([sample], now: now)
+
+        #expect(update.speedInMilesPerHour == 18)
+    }
+
+    @Test func poorSpeedAccuracyIsStillRejected() async throws {
+        let processor = RideSpeedProcessor()
+        let now = Date(timeIntervalSince1970: 10_000)
+        let sample = RideLocationSample(
+            latitude: 0,
+            longitude: 0,
+            horizontalAccuracy: 5,
+            speed: 8,
+            speedAccuracy: 3.1,
+            timestamp: now
+        )
+
+        let update = await processor.process([sample], now: now)
+
+        #expect(update.speedInMilesPerHour == nil)
+    }
+
+    @Test func stationaryLocationEventClearsSpeedImmediately() async throws {
+        let processor = RideSpeedProcessor()
+
+        let update = await processor.processStationary()
+
+        #expect(update.speedInMilesPerHour == 0)
+    }
+
     @MainActor
     @Test func weatherCacheExpiresAfterTwentyMinutes() throws {
         let suiteName = "SpokeTests.WeatherCache.\(UUID().uuidString)"

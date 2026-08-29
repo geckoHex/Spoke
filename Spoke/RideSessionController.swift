@@ -205,6 +205,13 @@ final class RideSessionController {
             do {
                 for try await update in CLLocationUpdate.liveUpdates(.fitness) {
                     try Task.checkCancellation()
+
+                    if update.stationary {
+                        let processedUpdate = await processor.processStationary()
+                        await publish(processedUpdate)
+                        continue
+                    }
+
                     guard let location = update.location else { continue }
 
                     let processedUpdate = await processor.process(
@@ -283,6 +290,22 @@ struct RideLocationSample: Hashable, Sendable {
     let speedAccuracy: CLLocationSpeedAccuracy
     let timestamp: Date
 
+    nonisolated init(
+        latitude: Double,
+        longitude: Double,
+        horizontalAccuracy: CLLocationAccuracy,
+        speed: CLLocationSpeed,
+        speedAccuracy: CLLocationSpeedAccuracy,
+        timestamp: Date
+    ) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.horizontalAccuracy = horizontalAccuracy
+        self.speed = speed
+        self.speedAccuracy = speedAccuracy
+        self.timestamp = timestamp
+    }
+
     nonisolated init(location: CLLocation) {
         latitude = location.coordinate.latitude
         longitude = location.coordinate.longitude
@@ -302,16 +325,15 @@ struct RideLocationSample: Hashable, Sendable {
     }
 }
 
-private struct RideSpeedUpdate: Sendable {
+struct RideSpeedUpdate: Sendable {
     let mapLocation: RideLocationSample?
     let speedInMilesPerHour: Int?
 }
 
-private actor RideSpeedProcessor {
+actor RideSpeedProcessor {
     private let metersPerSecondToMilesPerHour = 2.236_936_292_1
     private let maximumLocationAge: TimeInterval = 2
     private let maximumMapHorizontalAccuracy: CLLocationAccuracy = 100
-    private let maximumHorizontalAccuracy: CLLocationAccuracy = 25
     private let maximumSpeedAccuracy: CLLocationSpeedAccuracy = 3
     private let maximumCyclingSpeed: CLLocationSpeed = 45
     private let maximumCyclingAcceleration: CLLocationSpeed = 4
@@ -347,12 +369,20 @@ private actor RideSpeedProcessor {
         lastAcceptedSample = nil
     }
 
+    func processStationary() -> RideSpeedUpdate {
+        filteredSpeed = 0
+        lastAcceptedSample = nil
+
+        return RideSpeedUpdate(
+            mapLocation: nil,
+            speedInMilesPerHour: 0
+        )
+    }
+
     private func isValid(_ sample: RideLocationSample, now: Date) -> Bool {
         let age = now.timeIntervalSince(sample.timestamp)
 
         return (-1...maximumLocationAge).contains(age)
-            && sample.horizontalAccuracy >= 0
-            && sample.horizontalAccuracy <= maximumHorizontalAccuracy
             && sample.speed >= 0
             && sample.speed <= maximumCyclingSpeed
             && sample.speedAccuracy >= 0
