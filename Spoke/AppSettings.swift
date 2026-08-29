@@ -11,6 +11,7 @@ final class AppSettings {
     @Attribute(.unique) var key: String = "app"
     var name: String = "User"
     var keepScreenOn: Bool = true
+    var speakSpeedEnabled: Bool = false
     var developerModeEnabled: Bool = false
     var spotifyClientID: String = ""
     var spotifyClientSecret: String = ""
@@ -19,6 +20,7 @@ final class AppSettings {
     init(
         name: String = "User",
         keepScreenOn: Bool = true,
+        speakSpeedEnabled: Bool = false,
         developerModeEnabled: Bool = false,
         spotifyClientID: String = "",
         spotifyClientSecret: String = "",
@@ -26,6 +28,7 @@ final class AppSettings {
     ) {
         self.name = name
         self.keepScreenOn = keepScreenOn
+        self.speakSpeedEnabled = speakSpeedEnabled
         self.developerModeEnabled = developerModeEnabled
         self.spotifyClientID = spotifyClientID
         self.spotifyClientSecret = spotifyClientSecret

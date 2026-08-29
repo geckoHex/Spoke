@@ -12,6 +12,14 @@ import Testing
 @testable import Spoke
 
 struct SpokeTests {
+    @Test func speedAnnouncementOnlyResolvesBundledMilePerHourRange() {
+        #expect(RideSpeedAnnouncer.resourceName(for: 0) == nil)
+        #expect(RideSpeedAnnouncer.resourceName(for: 1) == "1")
+        #expect(RideSpeedAnnouncer.resourceName(for: 13) == "13")
+        #expect(RideSpeedAnnouncer.resourceName(for: 45) == "45")
+        #expect(RideSpeedAnnouncer.resourceName(for: 46) == nil)
+    }
+
     @Test func speedUsesItsOwnAccuracyRatherThanCoordinateAccuracy() async throws {
         let processor = RideSpeedProcessor()
         let now = Date(timeIntervalSince1970: 10_000)

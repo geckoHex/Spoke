@@ -77,6 +77,7 @@ actor RideOverspeedAlertController {
 
 actor RideOverspeedAlertPlayer {
     private let resourceURL: URL?
+    private let audioSession = RideAudioSession.shared
     private var audioPlayer: AVAudioPlayer?
     private var deactivationTask: Task<Void, Never>?
     private var playbackID: UUID?
@@ -85,25 +86,23 @@ actor RideOverspeedAlertPlayer {
         self.resourceURL = resourceURL
     }
 
-    func play() {
+    func play() async {
         guard let resourceURL else { return }
 
-        stopPlayback(deactivateSession: true)
+        await stopPlayback()
 
         do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playback, mode: .default)
-            try audioSession.setActive(true)
-
             let player = try AVAudioPlayer(contentsOf: resourceURL)
             player.prepareToPlay()
+            let id = UUID()
+
+            guard await audioSession.activate(for: id) else { return }
 
             guard player.play() else {
-                deactivateAudioSession()
+                await audioSession.deactivate(for: id)
                 return
             }
 
-            let id = UUID()
             audioPlayer = player
             playbackID = id
             deactivationTask = Task { [weak self] in
@@ -116,35 +115,29 @@ actor RideOverspeedAlertPlayer {
                 await self?.finishPlayback(id: id)
             }
         } catch {
-            stopPlayback(deactivateSession: true)
+            await stopPlayback()
         }
     }
 
-    func stop() {
-        stopPlayback(deactivateSession: true)
+    func stop() async {
+        await stopPlayback()
     }
 
-    private func finishPlayback(id: UUID) {
+    private func finishPlayback(id: UUID) async {
         guard playbackID == id else { return }
-        stopPlayback(deactivateSession: true)
+        await stopPlayback()
     }
 
-    private func stopPlayback(deactivateSession: Bool) {
+    private func stopPlayback() async {
         deactivationTask?.cancel()
         deactivationTask = nil
         audioPlayer?.stop()
         audioPlayer = nil
+        let id = playbackID
         playbackID = nil
 
-        if deactivateSession {
-            deactivateAudioSession()
+        if let id {
+            await audioSession.deactivate(for: id)
         }
-    }
-
-    private func deactivateAudioSession() {
-        try? AVAudioSession.sharedInstance().setActive(
-            false,
-            options: .notifyOthersOnDeactivation
-        )
     }
 }

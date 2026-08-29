@@ -69,6 +69,7 @@ private struct SettingsForm: View {
 
             Section {
                 Toggle("Keep screen on", isOn: $settings.keepScreenOn)
+                Toggle("Speak Speed", isOn: $settings.speakSpeedEnabled)
             }
 
             Section("Developer") {
