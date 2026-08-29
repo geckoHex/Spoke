@@ -152,6 +152,16 @@ struct SpokeTests {
         #expect(ride.elapsedDuration() == 12)
     }
 
+    @Test func rideRenameTrimsWhitespaceAndCanBeCleared() {
+        let ride = TrackedRide()
+
+        ride.rename(to: "  Morning Loop  ")
+        #expect(ride.customName == "Morning Loop")
+
+        ride.rename(to: "   \n  ")
+        #expect(ride.customName == nil)
+    }
+
     @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([

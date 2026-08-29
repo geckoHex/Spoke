@@ -84,13 +84,7 @@ private struct RideHistoryRow: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .center, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(
-                        ride.startedAt,
-                        format: .dateTime
-                            .weekday(.wide)
-                            .month(.abbreviated)
-                            .day()
-                    )
+                    Text(ride.historyTitle)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
 
@@ -165,7 +159,16 @@ private struct RideHistoryRow: View {
 private struct RideHistoryDetailView: View {
     let ride: TrackedRide
 
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var rideName = ""
+    @State private var isShowingRenamePrompt = false
+    @State private var isShowingDeleteConfirmation = false
     @State private var isShowingSoundtrack = false
+
+    private var trimmedRideName: String {
+        rideName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     private var coordinates: [CLLocationCoordinate2D] {
         ride.routePoints
@@ -252,13 +255,70 @@ private struct RideHistoryDetailView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
         }
-        .navigationTitle(
-            ride.startedAt.formatted(date: .abbreviated, time: .omitted)
-        )
+        .navigationTitle(ride.detailTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        rideName = ride.customName ?? ride.detailTitle
+                        isShowingRenamePrompt = true
+                    } label: {
+                        Label("Rename Ride", systemImage: "pencil")
+                    }
+
+                    Button(role: .destructive) {
+                        isShowingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Ride", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Ride actions")
+            }
+        }
         .sheet(isPresented: $isShowingSoundtrack) {
             RideSoundtrackView(ride: ride)
         }
+        .alert("Rename Ride", isPresented: $isShowingRenamePrompt) {
+            TextField("", text: $rideName)
+                .accessibilityLabel("Ride name")
+                .textInputAutocapitalization(.words)
+                .submitLabel(.done)
+                .onSubmit {
+                    guard !trimmedRideName.isEmpty else { return }
+                    renameRide()
+                    isShowingRenamePrompt = false
+                }
+
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                renameRide()
+            }
+            .disabled(trimmedRideName.isEmpty)
+        } message: {
+            Text("Ride name")
+        }
+        .alert("Delete Ride?", isPresented: $isShowingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                deleteRide()
+            }
+        } message: {
+            Text("This ride and its soundtrack will be permanently deleted.")
+        }
+    }
+
+    private func renameRide() {
+        ride.rename(to: trimmedRideName)
+        try? modelContext.save()
+    }
+
+    private func deleteRide() {
+        modelContext.delete(ride)
+        try? modelContext.save()
+        dismiss()
     }
 
     private func metric(title: String, value: String) -> some View {
@@ -272,6 +332,21 @@ private struct RideHistoryDetailView: View {
                 .foregroundStyle(.white.opacity(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private extension TrackedRide {
+    var historyTitle: String {
+        customName ?? startedAt.formatted(
+            .dateTime
+                .weekday(.wide)
+                .month(.abbreviated)
+                .day()
+        )
+    }
+
+    var detailTitle: String {
+        customName ?? startedAt.formatted(date: .abbreviated, time: .omitted)
     }
 }
 

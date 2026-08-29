@@ -9,6 +9,7 @@ import SwiftData
 @Model
 final class TrackedRide {
     var startedAt: Date
+    var customName: String?
     var endedAt: Date?
     var pausedAt: Date?
     var accumulatedPausedDuration: TimeInterval
@@ -21,6 +22,7 @@ final class TrackedRide {
 
     init(startedAt: Date = .now) {
         self.startedAt = startedAt
+        customName = nil
         endedAt = nil
         pausedAt = nil
         accumulatedPausedDuration = 0
@@ -30,6 +32,11 @@ final class TrackedRide {
 
     var isPaused: Bool {
         pausedAt != nil && endedAt == nil
+    }
+
+    func rename(to name: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        customName = trimmedName.isEmpty ? nil : trimmedName
     }
 
     func elapsedDuration(at date: Date = .now) -> TimeInterval {
