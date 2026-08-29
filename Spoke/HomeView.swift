@@ -3,11 +3,15 @@
 //  Spoke
 //
 
+import SwiftData
 import SwiftUI
 
 struct HomeView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
+
+    @Query(sort: \TrackedRide.startedAt, order: .reverse)
+    private var rides: [TrackedRide]
 
     @State private var completedRide: TrackedRide?
     @State private var weatherModel = HomeWeatherModel()
@@ -22,47 +26,55 @@ struct HomeView: View {
                     Color.black
                         .ignoresSafeArea()
 
-                    VStack(alignment: .leading, spacing: 24) {
-                        HomeGreeting(
-                            timeOfDay: timeOfDay,
-                            name: displayName
-                        )
+                    GeometryReader { proxy in
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 0) {
+                                VStack(alignment: .leading, spacing: 20) {
+                                    HomeGreeting(
+                                        timeOfDay: timeOfDay,
+                                        name: displayName
+                                    )
 
-                        HomeWeatherView(
-                            snapshot: weatherModel.snapshot,
-                            isLoading: weatherModel.isLoading,
-                            isUnavailable: weatherModel.isUnavailable,
-                            isDeveloperModeEnabled:
-                                settings?.developerModeEnabled == true,
-                            onExpireAndReload: {
-                                Task {
-                                    await weatherModel.expireCacheAndReload()
+                                    HomeWeatherView(
+                                        snapshot: weatherModel.snapshot,
+                                        isLoading: weatherModel.isLoading,
+                                        isUnavailable: weatherModel.isUnavailable,
+                                        isDeveloperModeEnabled:
+                                            settings?.developerModeEnabled == true,
+                                        onExpireAndReload: {
+                                            Task {
+                                                await weatherModel.expireCacheAndReload()
+                                            }
+                                        }
+                                    )
                                 }
+
+                                Divider()
+                                    .overlay(.white.opacity(0.16))
+                                    .padding(.top, 20)
+
+                                HomeRideActivity(
+                                    rides: completedRides,
+                                    date: currentDate
+                                )
+                                .padding(.top, 24)
+
+                                Spacer(minLength: 28)
+
+                                rideAction(date: currentDate)
                             }
-                        )
-
-                        Spacer()
-
-                        if let ride = rideSession.activeRide {
-                            ActiveRideControl(
-                                ride: ride,
-                                date: currentDate,
-                                onPauseToggle: {
-                                    rideSession.togglePause()
-                                },
-                                onEnd: endRide
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: max(proxy.size.height - 36, 0),
+                                alignment: .topLeading
                             )
-                        } else {
-                            Button("Start Ride") {
-                                rideSession.startRide()
-                            }
-                            .buttonStyle(SpokePrimaryButtonStyle())
+                            .padding(.horizontal, 20)
+                            .padding(.top, 24)
+                            .padding(.bottom, 12)
                         }
+                        .scrollIndicators(.hidden)
+                        .scrollBounceBehavior(.basedOnSize)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 24)
-                    .padding(.bottom, 12)
                 }
             }
         }
@@ -96,9 +108,179 @@ struct HomeView: View {
         completedRide = rideSession.endRide()
     }
 
+    @ViewBuilder
+    private func rideAction(date: Date) -> some View {
+        if let ride = rideSession.activeRide {
+            ActiveRideControl(
+                ride: ride,
+                date: date,
+                onPauseToggle: {
+                    rideSession.togglePause()
+                },
+                onEnd: endRide
+            )
+        } else {
+            Button("Start Ride") {
+                rideSession.startRide()
+            }
+            .buttonStyle(SpokePrimaryButtonStyle())
+        }
+    }
+
+    private var completedRides: [TrackedRide] {
+        rides.filter { $0.endedAt != nil }
+    }
+
     private var displayName: String {
         let trimmedName = settings?.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmedName.flatMap { $0.isEmpty ? nil : $0 } ?? "User"
+    }
+}
+
+private struct HomeRideActivity: View {
+    let rides: [TrackedRide]
+    let date: Date
+
+    private var ridesThisWeek: [TrackedRide] {
+        guard let week = Calendar.current.dateInterval(of: .weekOfYear, for: date) else {
+            return []
+        }
+
+        return rides.filter { week.contains($0.startedAt) }
+    }
+
+    private var totalDistance: Double {
+        ridesThisWeek.reduce(0) { result, ride in
+            result + RideMetrics.distanceInMeters(for: ride)
+        }
+    }
+
+    private var totalDuration: TimeInterval {
+        ridesThisWeek.reduce(0) { result, ride in
+            result + ride.elapsedDuration()
+        }
+    }
+
+    private var rideCountDescription: String {
+        let count = ridesThisWeek.count
+        return "\(count) \(count == 1 ? "ride" : "rides")"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("This Week")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                Text(rideCountDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+
+            HStack(alignment: .top, spacing: 24) {
+                activityMetric(
+                    value: RideMetrics.distance(totalDistance),
+                    label: "Distance"
+                )
+
+                activityMetric(
+                    value: compactDuration(totalDuration),
+                    label: "Ride Time"
+                )
+            }
+
+            Divider()
+                .overlay(.white.opacity(0.16))
+
+            if let latestRide = rides.first {
+                latestRideRow(latestRide)
+            } else {
+                Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("No completed rides yet")
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func activityMetric(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value)
+                .font(.title.weight(.semibold))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.5))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(value)")
+    }
+
+    private func latestRideRow(_ ride: TrackedRide) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "figure.outdoor.cycle")
+                .font(.title3.weight(.medium))
+                .foregroundStyle(.white)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Last Ride")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                Text(
+                    ride.startedAt,
+                    format: .dateTime
+                        .weekday(.abbreviated)
+                        .month(.abbreviated)
+                        .day()
+                )
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.5))
+            }
+
+            Spacer(minLength: 12)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(
+                    RideMetrics.distance(
+                        RideMetrics.distanceInMeters(for: ride)
+                    )
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+
+                Text(compactDuration(ride.elapsedDuration()))
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.5))
+                    .monospacedDigit()
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func compactDuration(_ interval: TimeInterval) -> String {
+        let totalMinutes = max(Int(interval / 60), 0)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+
+        return "\(minutes)m"
     }
 }
 
@@ -394,5 +576,13 @@ struct SpokePrimaryButtonStyle: ButtonStyle {
         settings: AppSettings(),
         rideSession: RideSessionController()
     )
-        .preferredColorScheme(.dark)
+    .modelContainer(
+        for: [
+            TrackedRide.self,
+            RideRoutePoint.self,
+            RideSoundtrackEntry.self,
+        ],
+        inMemory: true
+    )
+    .preferredColorScheme(.dark)
 }
