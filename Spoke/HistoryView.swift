@@ -34,20 +34,26 @@ struct HistoryView: View {
                     )
                     .background(Color.black)
                 } else {
-                    List(completedRides) { ride in
-                        NavigationLink {
-                            RideHistoryDetailView(ride: ride)
-                        } label: {
-                            RideHistoryRow(ride: ride)
+                    ScrollView {
+                        LazyVStack(spacing: 14) {
+                            ForEach(completedRides) { ride in
+                                NavigationLink {
+                                    RideHistoryDetailView(ride: ride)
+                                } label: {
+                                    RideHistoryRow(
+                                        ride: ride,
+                                        isHighlighted:
+                                            ride.persistentModelID == highlightedRideID
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .listRowBackground(
-                            ride.persistentModelID == highlightedRideID
-                                ? Color.white.opacity(0.14)
-                                : Color.black
-                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                        .padding(.bottom, 24)
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
+                    .scrollIndicators(.hidden)
                     .background(Color.black)
                 }
             }
@@ -72,28 +78,87 @@ struct HistoryView: View {
 
 private struct RideHistoryRow: View {
     let ride: TrackedRide
+    let isHighlighted: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(ride.startedAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.headline)
-                .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(
+                        ride.startedAt,
+                        format: .dateTime
+                            .weekday(.wide)
+                            .month(.abbreviated)
+                            .day()
+                    )
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
 
-            HStack(spacing: 16) {
-                Label(
-                    RideMetrics.duration(ride.elapsedDuration()),
+                    Text(ride.startedAt, format: .dateTime.hour().minute())
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+
+                Spacer(minLength: 12)
+
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .accessibilityHidden(true)
+            }
+
+            HStack(spacing: 20) {
+                metric(
+                    title: "Duration",
+                    value: RideMetrics.duration(ride.elapsedDuration()),
                     systemImage: "timer"
                 )
 
-                Label(
-                    RideMetrics.distance(RideMetrics.distanceInMeters(for: ride)),
+                metric(
+                    title: "Distance",
+                    value: RideMetrics.distance(
+                        RideMetrics.distanceInMeters(for: ride)
+                    ),
                     systemImage: "point.topleft.down.to.point.bottomright.curvepath"
                 )
             }
-            .font(.subheadline)
-            .foregroundStyle(.white.opacity(0.6))
         }
-        .padding(.vertical, 8)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.white.opacity(isHighlighted ? 0.14 : 0.075),
+            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func metric(
+        title: String,
+        value: String,
+        systemImage: String
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.5))
+                .frame(width: 20)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(value)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
