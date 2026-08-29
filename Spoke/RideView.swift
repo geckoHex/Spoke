@@ -258,6 +258,7 @@ private struct RideDashboardView: View {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
+                        .contrast(1.18)
                         .transition(.opacity)
 
                     Circle()
@@ -615,7 +616,7 @@ private actor RideMapSnapshotRenderer {
         let options = MKMapSnapshotter.Options()
         let configuration = MKStandardMapConfiguration(
             elevationStyle: .flat,
-            emphasisStyle: .muted
+            emphasisStyle: .default
         )
         configuration.pointOfInterestFilter = .excludingAll
 
