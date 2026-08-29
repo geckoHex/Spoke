@@ -233,7 +233,7 @@ private struct RideDashboardView: View {
     private func runSpeedAnnouncements() async {
         while !Task.isCancelled {
             do {
-                try await Task.sleep(for: .milliseconds(1_500))
+                try await Task.sleep(for: .seconds(3))
             } catch {
                 break
             }
