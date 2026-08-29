@@ -35,23 +35,26 @@ struct HistoryView: View {
                     .background(Color.black)
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 14) {
-                            ForEach(completedRides) { ride in
-                                NavigationLink {
-                                    RideHistoryDetailView(ride: ride)
-                                } label: {
-                                    RideHistoryRow(
-                                        ride: ride,
-                                        isHighlighted:
-                                            ride.persistentModelID == highlightedRideID
-                                    )
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            LazyVStack(spacing: 14) {
+                                ForEach(completedRides) { ride in
+                                    NavigationLink {
+                                        RideHistoryDetailView(ride: ride)
+                                    } label: {
+                                        RideHistoryRow(
+                                            ride: ride,
+                                            currentDate: max(context.date, Date.now),
+                                            isHighlighted:
+                                                ride.persistentModelID == highlightedRideID
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
+                            .padding(.bottom, 24)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-                        .padding(.bottom, 24)
                     }
                     .scrollIndicators(.hidden)
                     .background(Color.black)
@@ -78,6 +81,7 @@ struct HistoryView: View {
 
 private struct RideHistoryRow: View {
     let ride: TrackedRide
+    let currentDate: Date
     let isHighlighted: Bool
 
     var body: some View {
@@ -88,7 +92,12 @@ private struct RideHistoryRow: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
 
-                    Text(ride.startedAt, format: .dateTime.hour().minute())
+                    Text(
+                        RideMetrics.ageDescription(
+                            since: ride.endedAt ?? ride.startedAt,
+                            relativeTo: currentDate
+                        )
+                    )
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.55))
                 }
@@ -247,6 +256,21 @@ private struct RideHistoryDetailView: View {
                 }
                 .frame(height: 72)
 
+                HStack(spacing: 0) {
+                    timestamp(title: "Started", date: ride.startedAt)
+
+                    Divider()
+                        .overlay(.white.opacity(0.12))
+                        .padding(.vertical, 12)
+
+                    timestamp(title: "Ended", date: ride.endedAt)
+                }
+                .frame(height: 78)
+                .background(
+                    Color.white.opacity(0.075),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+
                 Button("Ride soundtrack") {
                     isShowingSoundtrack = true
                 }
@@ -333,11 +357,36 @@ private struct RideHistoryDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    private func timestamp(title: String, date: Date?) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+
+            if let date {
+                Text(date, format: .dateTime.hour().minute())
+                    .font(.headline)
+                    .monospacedDigit()
+
+                Text(date, format: .dateTime.month(.abbreviated).day().year())
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            } else {
+                Text("—")
+                    .font(.headline)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+    }
 }
 
 private extension TrackedRide {
     var historyTitle: String {
-        customName ?? startedAt.formatted(
+        customName ?? automaticName ?? startedAt.formatted(
             .dateTime
                 .weekday(.wide)
                 .month(.abbreviated)
@@ -346,7 +395,8 @@ private extension TrackedRide {
     }
 
     var detailTitle: String {
-        customName ?? startedAt.formatted(date: .abbreviated, time: .omitted)
+        customName ?? automaticName
+            ?? startedAt.formatted(date: .abbreviated, time: .omitted)
     }
 }
 

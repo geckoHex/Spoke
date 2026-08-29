@@ -20,6 +20,8 @@ final class RideSessionController {
     @ObservationIgnored private var locationSessionGeneration = 0
     @ObservationIgnored private var lastRecordedPositionAt: Date?
     @ObservationIgnored private var lastSpotifyTrackIdentity: String?
+    @ObservationIgnored private var startAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
+    @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private let speedProcessor = RideSpeedProcessor()
 
     private let positionRecordingInterval: TimeInterval = 5
@@ -43,6 +45,10 @@ final class RideSessionController {
             .max { $0.startedAt < $1.startedAt }?
             .trackIdentity
         currentLocation = latestPoint.map(RideLocationSample.init)
+
+        if let firstPoint = ride.routePoints.min(by: { $0.recordedAt < $1.recordedAt }) {
+            resolveStartAddressIfNeeded(RideLocationSample(point: firstPoint), for: ride)
+        }
 
         if !ride.isPaused {
             beginLocationUpdates()
@@ -103,6 +109,9 @@ final class RideSessionController {
     func endRide(at date: Date = .now) -> TrackedRide? {
         guard let ride = activeRide, ride.endedAt == nil else { return nil }
 
+        let endingLocation = currentLocation ?? ride.routePoints
+            .max(by: { $0.recordedAt < $1.recordedAt })
+            .map(RideLocationSample.init)
         let wasPaused = ride.isPaused
         let previousPausedAt = ride.pausedAt
         let previousPausedDuration = ride.accumulatedPausedDuration
@@ -126,6 +135,11 @@ final class RideSessionController {
         currentLocation = nil
         lastRecordedPositionAt = nil
         lastSpotifyTrackIdentity = nil
+
+        if let endingLocation {
+            resolveEndAddressIfNeeded(endingLocation, for: ride)
+        }
+
         return ride
     }
 
@@ -243,6 +257,10 @@ final class RideSessionController {
         if let location = update.mapLocation {
             currentLocation = location
             recordPositionIfNeeded(location, for: ride)
+            let startingLocation = ride.routePoints
+                .min(by: { $0.recordedAt < $1.recordedAt })
+                .map(RideLocationSample.init) ?? location
+            resolveStartAddressIfNeeded(startingLocation, for: ride)
         }
 
         if let speedInMilesPerHour = update.speedInMilesPerHour {
@@ -278,6 +296,46 @@ final class RideSessionController {
         } catch {
             ride.routePoints.removeAll { $0 === point }
             modelContext.delete(point)
+        }
+    }
+
+    private func resolveStartAddressIfNeeded(
+        _ location: RideLocationSample,
+        for ride: TrackedRide
+    ) {
+        let rideID = ObjectIdentifier(ride)
+        guard ride.startAddress == nil, startAddressTasks[rideID] == nil else { return }
+
+        startAddressTasks[rideID] = Task { @MainActor [weak self, weak ride] in
+            defer { self?.startAddressTasks[rideID] = nil }
+            guard let address = await RideAddressResolver.streetAddress(for: location),
+                  let self,
+                  let ride,
+                  ride.startAddress == nil
+            else { return }
+
+            ride.startAddress = address
+            try? self.modelContext?.save()
+        }
+    }
+
+    private func resolveEndAddressIfNeeded(
+        _ location: RideLocationSample,
+        for ride: TrackedRide
+    ) {
+        let rideID = ObjectIdentifier(ride)
+        guard ride.endAddress == nil, endAddressTasks[rideID] == nil else { return }
+
+        endAddressTasks[rideID] = Task { @MainActor [weak self, weak ride] in
+            defer { self?.endAddressTasks[rideID] = nil }
+            guard let address = await RideAddressResolver.streetAddress(for: location),
+                  let self,
+                  let ride,
+                  ride.endAddress == nil
+            else { return }
+
+            ride.endAddress = address
+            try? self.modelContext?.save()
         }
     }
 }

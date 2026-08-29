@@ -30,4 +30,23 @@ enum RideMetrics {
     static func distance(_ meters: CLLocationDistance) -> String {
         String(format: "%.1f mi", meters / 1_609.344)
     }
+
+    static func ageDescription(since date: Date, relativeTo currentDate: Date) -> String {
+        let totalSeconds = max(Int(currentDate.timeIntervalSince(date)), 0)
+        let denominations: [(seconds: Int, name: String)] = [
+            (31_536_000, "year"),
+            (2_592_000, "month"),
+            (604_800, "week"),
+            (86_400, "day"),
+            (3_600, "hour"),
+            (60, "minute"),
+            (1, "second"),
+        ]
+
+        let denomination = denominations.first { totalSeconds >= $0.seconds }
+            ?? denominations[denominations.count - 1]
+        let value = totalSeconds / denomination.seconds
+        let unit = value == 1 ? denomination.name : "\(denomination.name)s"
+        return "\(value) \(unit) ago"
+    }
 }

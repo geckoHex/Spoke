@@ -162,6 +162,40 @@ struct SpokeTests {
         #expect(ride.customName == nil)
     }
 
+    @Test func rideAutomaticNameUsesBothStreetAddresses() {
+        let ride = TrackedRide()
+
+        #expect(ride.automaticName == nil)
+
+        ride.startAddress = "  1 Infinite Loop  "
+        ride.endAddress = "Apple Park Way"
+
+        #expect(ride.automaticName == "1 Infinite Loop → Apple Park Way")
+    }
+
+    @Test func rideAgeUsesOnlyTheLargestTimeDenomination() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+
+        #expect(
+            RideMetrics.ageDescription(
+                since: now.addingTimeInterval(-5),
+                relativeTo: now
+            ) == "5 seconds ago"
+        )
+        #expect(
+            RideMetrics.ageDescription(
+                since: now.addingTimeInterval(-40 * 60),
+                relativeTo: now
+            ) == "40 minutes ago"
+        )
+        #expect(
+            RideMetrics.ageDescription(
+                since: now.addingTimeInterval(-90 * 60),
+                relativeTo: now
+            ) == "1 hour ago"
+        )
+    }
+
     @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([

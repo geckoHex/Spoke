@@ -10,6 +10,8 @@ import SwiftData
 final class TrackedRide {
     var startedAt: Date
     var customName: String?
+    var startAddress: String?
+    var endAddress: String?
     var endedAt: Date?
     var pausedAt: Date?
     var accumulatedPausedDuration: TimeInterval
@@ -23,6 +25,8 @@ final class TrackedRide {
     init(startedAt: Date = .now) {
         self.startedAt = startedAt
         customName = nil
+        startAddress = nil
+        endAddress = nil
         endedAt = nil
         pausedAt = nil
         accumulatedPausedDuration = 0
@@ -34,9 +38,22 @@ final class TrackedRide {
         pausedAt != nil && endedAt == nil
     }
 
+    var automaticName: String? {
+        guard let startAddress = normalizedAddress(startAddress),
+              let endAddress = normalizedAddress(endAddress)
+        else { return nil }
+
+        return "\(startAddress) → \(endAddress)"
+    }
+
     func rename(to name: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         customName = trimmedName.isEmpty ? nil : trimmedName
+    }
+
+    private func normalizedAddress(_ address: String?) -> String? {
+        let trimmedAddress = address?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedAddress.flatMap { $0.isEmpty ? nil : $0 }
     }
 
     func elapsedDuration(at date: Date = .now) -> TimeInterval {
