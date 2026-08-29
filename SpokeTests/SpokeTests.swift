@@ -210,6 +210,16 @@ struct SpokeTests {
         )
     }
 
+    @Test func rideSummaryMetricsUseCompactDurationAndNumericMiles() {
+        #expect(
+            RideMetrics.duration(270, omittingZeroHours: true) == "04:30"
+        )
+        #expect(
+            RideMetrics.duration(3_870, omittingZeroHours: true) == "01:04:30"
+        )
+        #expect(RideMetrics.miles(1_609.344) == "1.0")
+    }
+
     @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([

@@ -241,34 +241,47 @@ private struct RideHistoryDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
-                HStack(spacing: 12) {
-                    metric(
-                        title: "Duration",
-                        value: RideMetrics.duration(ride.elapsedDuration())
-                    )
-
-                    metric(
-                        title: "Distance",
-                        value: RideMetrics.distance(
-                            RideMetrics.distanceInMeters(for: ride)
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        metric(
+                            title: "Duration",
+                            value: RideMetrics.duration(
+                                ride.elapsedDuration(),
+                                omittingZeroHours: true
+                            ),
+                            systemImage: "timer"
                         )
-                    )
-                }
-                .frame(height: 72)
 
-                HStack(spacing: 0) {
-                    timestamp(title: "Started", date: ride.startedAt)
+                        Divider()
+                            .overlay(.white.opacity(0.1))
+                            .padding(.vertical, 18)
+
+                        metric(
+                            title: "Miles",
+                            value: RideMetrics.miles(
+                                RideMetrics.distanceInMeters(for: ride)
+                            ),
+                            systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                        )
+                    }
+                    .frame(height: 92)
 
                     Divider()
-                        .overlay(.white.opacity(0.12))
-                        .padding(.vertical, 12)
+                        .overlay(.white.opacity(0.1))
+                        .padding(.horizontal, 20)
 
-                    timestamp(title: "Ended", date: ride.endedAt)
+                    metric(
+                        title: "Date",
+                        value: ride.startedAt.formatted(
+                            .dateTime.month(.abbreviated).day()
+                        ),
+                        systemImage: "calendar"
+                    )
+                    .frame(height: 84)
                 }
-                .frame(height: 78)
                 .background(
                     Color.white.opacity(0.075),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: 22, style: .continuous)
                 )
 
                 Button("Ride soundtrack") {
@@ -345,42 +358,23 @@ private struct RideHistoryDetailView: View {
         dismiss()
     }
 
-    private func metric(title: String, value: String) -> some View {
-        VStack(spacing: 5) {
+    private func metric(
+        title: String,
+        value: String,
+        systemImage: String
+    ) -> some View {
+        VStack(spacing: 7) {
             Text(value)
-                .font(.headline)
+                .font(.title2.weight(.semibold))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.6))
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.55))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func timestamp(title: String, date: Date?) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.6))
-
-            if let date {
-                Text(date, format: .dateTime.hour().minute())
-                    .font(.headline)
-                    .monospacedDigit()
-
-                Text(date, format: .dateTime.month(.abbreviated).day().year())
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            } else {
-                Text("—")
-                    .font(.headline)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
     }
 }
 

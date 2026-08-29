@@ -7,11 +7,18 @@ import CoreLocation
 import Foundation
 
 enum RideMetrics {
-    static func duration(_ interval: TimeInterval) -> String {
+    static func duration(
+        _ interval: TimeInterval,
+        omittingZeroHours: Bool = false
+    ) -> String {
         let totalSeconds = max(Int(interval.rounded(.down)), 0)
         let hours = totalSeconds / 3_600
         let minutes = (totalSeconds % 3_600) / 60
         let seconds = totalSeconds % 60
+
+        if omittingZeroHours, hours == 0 {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
 
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
@@ -28,7 +35,11 @@ enum RideMetrics {
     }
 
     static func distance(_ meters: CLLocationDistance) -> String {
-        String(format: "%.1f mi", meters / 1_609.344)
+        "\(miles(meters)) mi"
+    }
+
+    static func miles(_ meters: CLLocationDistance) -> String {
+        String(format: "%.1f", meters / 1_609.344)
     }
 
     static func ageDescription(since date: Date, relativeTo currentDate: Date) -> String {
