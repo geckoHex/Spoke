@@ -17,6 +17,7 @@ struct HomeView: View {
 
     @State private var completedRide: TrackedRide?
     @State private var weatherModel = HomeWeatherModel()
+    @Namespace private var rideControlNamespace
 
     var body: some View {
         NavigationStack {
@@ -114,6 +115,7 @@ struct HomeView: View {
             ActiveRideControl(
                 ride: ride,
                 date: date,
+                namespace: rideControlNamespace,
                 onPauseToggle: {
                     rideSession.togglePause()
                 },
@@ -121,12 +123,20 @@ struct HomeView: View {
             )
         } else {
             Button {
-                guard rideSession.startRide() != nil else { return }
-                onRideStarted()
+                let startedRide = withAnimation(.smooth(duration: 0.45)) {
+                    rideSession.startRide()
+                }
+                guard startedRide != nil else { return }
+
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(450))
+                    onRideStarted()
+                }
             } label: {
                 Label("Start Ride", systemImage: "figure.outdoor.cycle")
             }
             .buttonStyle(SpokePrimaryButtonStyle(minHeight: 56))
+            .matchedGeometryEffect(id: "rideTimer", in: rideControlNamespace)
         }
     }
 
@@ -469,6 +479,7 @@ private enum TimeOfDay {
 private struct ActiveRideControl: View {
     let ride: TrackedRide
     let date: Date
+    let namespace: Namespace.ID
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
 
@@ -498,6 +509,11 @@ private struct ActiveRideControl: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
+            .transition(
+                .offset(x: -68)
+                    .combined(with: .scale(scale: 0.8, anchor: .trailing))
+                    .combined(with: .opacity)
+            )
         }
         .onDisappear {
             holdTask?.cancel()
@@ -528,6 +544,7 @@ private struct ActiveRideControl: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
+        .matchedGeometryEffect(id: "rideTimer", in: namespace)
         .contentShape(Capsule())
         .gesture(
             DragGesture(minimumDistance: 0)
