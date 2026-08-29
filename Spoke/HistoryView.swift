@@ -273,7 +273,7 @@ private struct RideHistoryDetailView: View {
                         Label("Delete Ride", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                 }
                 .accessibilityLabel("Ride actions")
             }
