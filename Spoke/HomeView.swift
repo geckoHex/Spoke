@@ -123,13 +123,13 @@ struct HomeView: View {
             )
         } else {
             Button {
-                let startedRide = withAnimation(.smooth(duration: 0.45)) {
-                    rideSession.startRide()
-                }
-                guard startedRide != nil else { return }
-
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(450))
+                withAnimation(
+                    .smooth(duration: 0.45),
+                    completionCriteria: .logicallyComplete
+                ) {
+                    _ = rideSession.startRide()
+                } completion: {
+                    guard rideSession.activeRide != nil else { return }
                     onRideStarted()
                 }
             } label: {
@@ -483,6 +483,8 @@ private struct ActiveRideControl: View {
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
 
+    @State private var isConfirmingEndRide = false
+
     var body: some View {
         let elapsedSeconds = max(
             Int(ride.elapsedDuration(at: date).rounded(.down)),
@@ -493,7 +495,7 @@ private struct ActiveRideControl: View {
             timer(elapsedSeconds: elapsedSeconds)
 
             Button {
-                onEnd()
+                isConfirmingEndRide = true
             } label: {
                 Image(systemName: "stop.fill")
                     .font(.system(size: 16, weight: .semibold))
@@ -525,6 +527,14 @@ private struct ActiveRideControl: View {
                     .combined(with: .scale(scale: 0.8, anchor: .trailing))
                     .combined(with: .opacity)
             )
+        }
+        .alert("End Ride?", isPresented: $isConfirmingEndRide) {
+            Button("Cancel", role: .cancel) {}
+            Button("End Ride", role: .destructive) {
+                onEnd()
+            }
+        } message: {
+            Text("This ride will be saved to your history.")
         }
     }
 
