@@ -34,36 +34,36 @@ struct HomeView: View {
                     GeometryReader { proxy in
                         ScrollView {
                             VStack(alignment: .leading, spacing: 0) {
-                                VStack(alignment: .leading, spacing: 22) {
-                                    HomeGreeting(
-                                        timeOfDay: timeOfDay,
-                                        name: displayName
-                                    )
-
-                                    HomeWeatherView(
-                                        snapshot: weatherModel.snapshot,
-                                        isLoading: weatherModel.isLoading,
-                                        isUnavailable: weatherModel.isUnavailable,
-                                        isDeveloperModeEnabled:
-                                            settings?.developerModeEnabled == true,
-                                        onExpireAndReload: {
-                                            Task {
-                                                await weatherModel.expireCacheAndReload()
-                                            }
-                                        }
-                                    )
-                                }
-
-                                Spacer(minLength: 24)
-
-                                HomeRideActivity(
-                                    rides: completedRides,
-                                    date: currentDate
+                                HomeGreeting(
+                                    timeOfDay: timeOfDay,
+                                    name: displayName
                                 )
 
-                                Spacer(minLength: 24)
+                                Spacer(minLength: 28)
 
-                                rideAction(date: currentDate)
+                                HomeWeatherView(
+                                    snapshot: weatherModel.snapshot,
+                                    isLoading: weatherModel.isLoading,
+                                    isUnavailable: weatherModel.isUnavailable,
+                                    isDeveloperModeEnabled:
+                                        settings?.developerModeEnabled == true,
+                                    onExpireAndReload: {
+                                        Task {
+                                            await weatherModel.expireCacheAndReload()
+                                        }
+                                    }
+                                )
+
+                                Spacer(minLength: 28)
+
+                                VStack(spacing: 14) {
+                                    HomeRideActivity(
+                                        rides: completedRides,
+                                        date: currentDate
+                                    )
+
+                                    rideAction(date: currentDate)
+                                }
                             }
                             .frame(
                                 maxWidth: .infinity,
@@ -144,7 +144,7 @@ struct HomeView: View {
                         .font(.headline)
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
+                        .frame(height: 64)
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.tint(.white).interactive(), in: Capsule())
@@ -339,15 +339,15 @@ private struct HomeWeatherView: View {
     @ViewBuilder
     var body: some View {
         if isDeveloperModeEnabled {
-            weatherCard
+            weatherContent
                 .contentShape(.rect)
                 .onTapGesture(count: 5, perform: onExpireAndReload)
         } else {
-            weatherCard
+            weatherContent
         }
     }
 
-    private var weatherCard: some View {
+    private var weatherContent: some View {
         ZStack(alignment: .bottomTrailing) {
             HStack(spacing: 12) {
                 weatherIcon
@@ -367,9 +367,8 @@ private struct HomeWeatherView: View {
                         .font(.headline)
                         .foregroundStyle(.white.opacity(0.65))
                 }
-
-                Spacer(minLength: 12)
             }
+            .frame(maxWidth: .infinity, alignment: .center)
             .padding(.bottom, snapshot == nil ? 0 : 10)
 
             if let snapshot {
@@ -390,7 +389,8 @@ private struct HomeWeatherView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(minHeight: 76)
-        .homeCard(padding: 18)
+        .compositingGroup()
+        .shadow(color: .black.opacity(0.6), radius: 10, y: 4)
     }
 
     @ViewBuilder
