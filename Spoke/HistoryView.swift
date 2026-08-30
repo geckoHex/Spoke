@@ -36,7 +36,7 @@ struct HistoryView: View {
                     .background(Color.black)
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 14) {
+                        LazyVStack(spacing: 12) {
                             ForEach(completedRides) { ride in
                                 NavigationLink {
                                     RideHistoryDetailView(ride: ride)
@@ -87,12 +87,13 @@ private struct RideHistoryRow: View {
     let isHighlighted: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(ride.historyTitle)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
+                        .layoutPriority(1)
 
                     Text(
                         RideMetrics.ageDescription(
@@ -100,11 +101,11 @@ private struct RideHistoryRow: View {
                             relativeTo: currentDate
                         )
                     )
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.55))
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
 
-                HStack(spacing: 20) {
+                HStack(spacing: 16) {
                     metric(
                         title: "Duration",
                         value: RideMetrics.duration(ride.elapsedDuration()),
@@ -127,7 +128,8 @@ private struct RideHistoryRow: View {
                 .foregroundStyle(.white.opacity(0.35))
                 .accessibilityHidden(true)
         }
-        .padding(20)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 15)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             Color.white.opacity(isHighlighted ? 0.14 : 0.075),
@@ -142,24 +144,24 @@ private struct RideHistoryRow: View {
         value: String,
         systemImage: String
     ) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.5))
-                .frame(width: 20)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.42))
+                .frame(width: 16)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(value)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.8))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
                 Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.45))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
