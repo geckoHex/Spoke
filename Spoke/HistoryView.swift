@@ -172,6 +172,7 @@ private struct RideHistoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var rideName = ""
+    @State private var isShowingNoteEditor = false
     @State private var isShowingRenamePrompt = false
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingSoundtrack = false
@@ -335,17 +336,27 @@ private struct RideHistoryDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button {
-                        rideName = ride.customName ?? ride.detailTitle
-                        isShowingRenamePrompt = true
-                    } label: {
-                        Label("Rename Ride", systemImage: "pencil")
+                    Section {
+                        Button {
+                            isShowingNoteEditor = true
+                        } label: {
+                            Label("Add Note", systemImage: "square.and.pencil")
+                        }
                     }
 
-                    Button(role: .destructive) {
-                        isShowingDeleteConfirmation = true
-                    } label: {
-                        Label("Delete Ride", systemImage: "trash")
+                    Section {
+                        Button {
+                            rideName = ride.customName ?? ride.detailTitle
+                            isShowingRenamePrompt = true
+                        } label: {
+                            Label("Rename Ride", systemImage: "pencil")
+                        }
+
+                        Button(role: .destructive) {
+                            isShowingDeleteConfirmation = true
+                        } label: {
+                            Label("Delete Ride", systemImage: "trash")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -355,6 +366,9 @@ private struct RideHistoryDetailView: View {
         }
         .sheet(isPresented: $isShowingSoundtrack) {
             RideSoundtrackView(ride: ride)
+        }
+        .sheet(isPresented: $isShowingNoteEditor) {
+            RideNoteEditorView(ride: ride)
         }
         .sheet(isPresented: $isShowingReplay) {
             RideReplayView(routePoints: ride.routePoints)

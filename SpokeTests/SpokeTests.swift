@@ -282,6 +282,16 @@ struct SpokeTests {
         #expect(ride.customName == nil)
     }
 
+    @Test func rideNotePreservesTypedContentAndCanBeCleared() {
+        let ride = TrackedRide()
+
+        ride.updateNote(to: "  Strong headwind on the return  ")
+        #expect(ride.note == "  Strong headwind on the return  ")
+
+        ride.updateNote(to: "")
+        #expect(ride.note == nil)
+    }
+
     @Test func rideAutomaticNameUsesBothEndpointNames() {
         let ride = TrackedRide()
 

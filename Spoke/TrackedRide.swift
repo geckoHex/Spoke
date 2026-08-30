@@ -10,6 +10,7 @@ import SwiftData
 final class TrackedRide {
     var startedAt: Date
     var customName: String?
+    var note: String?
     var startAddress: String?
     var endAddress: String?
     var endedAt: Date?
@@ -25,6 +26,7 @@ final class TrackedRide {
     init(startedAt: Date = .now) {
         self.startedAt = startedAt
         customName = nil
+        note = nil
         startAddress = nil
         endAddress = nil
         endedAt = nil
@@ -49,6 +51,10 @@ final class TrackedRide {
     func rename(to name: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         customName = trimmedName.isEmpty ? nil : trimmedName
+    }
+
+    func updateNote(to note: String) {
+        self.note = note.isEmpty ? nil : note
     }
 
     func elapsedDuration(at date: Date = .now) -> TimeInterval {
