@@ -392,7 +392,8 @@ private struct HomeWeatherView: View {
             Image(systemName: baseWeatherSymbolName(snapshot.symbolName))
                 .font(.system(size: weatherIconSize, weight: .medium))
                 .symbolVariant(.circle.fill)
-                .symbolRenderingMode(.multicolor)
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.black, .white)
                 .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
         } else if isLoading || !isUnavailable {
@@ -406,7 +407,8 @@ private struct HomeWeatherView: View {
             Image(systemName: "cloud")
                 .font(.system(size: weatherIconSize - 8, weight: .medium))
                 .symbolVariant(.circle.fill)
-                .foregroundStyle(.white.opacity(0.5))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.black.opacity(0.55), .white.opacity(0.5))
                 .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
         }
