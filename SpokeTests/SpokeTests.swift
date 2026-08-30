@@ -230,6 +230,45 @@ struct SpokeTests {
         #expect(RideMetrics.miles(1_609.344) == "1.0")
     }
 
+    @Test func homeActivityUsesARollingSevenDayWindow() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let withinWindow = TrackedRide(
+            startedAt: now.addingTimeInterval(-(7 * 24 * 60 * 60) + 1)
+        )
+        let atWindowStart = TrackedRide(
+            startedAt: now.addingTimeInterval(-7 * 24 * 60 * 60)
+        )
+        let beforeWindow = TrackedRide(
+            startedAt: now.addingTimeInterval(-(7 * 24 * 60 * 60) - 1)
+        )
+        let futureRide = TrackedRide(startedAt: now.addingTimeInterval(1))
+
+        #expect(
+            RideMetrics.startedInLastSevenDays(
+                withinWindow,
+                relativeTo: now
+            )
+        )
+        #expect(
+            RideMetrics.startedInLastSevenDays(
+                atWindowStart,
+                relativeTo: now
+            )
+        )
+        #expect(
+            !RideMetrics.startedInLastSevenDays(
+                beforeWindow,
+                relativeTo: now
+            )
+        )
+        #expect(
+            !RideMetrics.startedInLastSevenDays(
+                futureRide,
+                relativeTo: now
+            )
+        )
+    }
+
     @Test func routeSpeedUsesTheMedianMovingSegmentAsNormal() {
         #expect(RideRouteSpeed.typicalMovingSpeed([0.2, 8, 10, 30]) == 10)
         #expect(RideRouteSpeed.typicalMovingSpeed([8, 12]) == 10)

@@ -7,6 +7,15 @@ import CoreLocation
 import Foundation
 
 enum RideMetrics {
+    private static let sevenDays: TimeInterval = 7 * 24 * 60 * 60
+
+    static func startedInLastSevenDays(
+        _ ride: TrackedRide,
+        relativeTo currentDate: Date
+    ) -> Bool {
+        (0...sevenDays).contains(currentDate.timeIntervalSince(ride.startedAt))
+    }
+
     static func duration(
         _ interval: TimeInterval,
         omittingZeroHours: Bool = false

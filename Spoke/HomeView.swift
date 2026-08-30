@@ -157,11 +157,9 @@ private struct HomeRideActivity: View {
     let date: Date
 
     private var ridesThisWeek: [TrackedRide] {
-        guard let week = Calendar.current.dateInterval(of: .weekOfYear, for: date) else {
-            return []
+        rides.filter {
+            RideMetrics.startedInLastSevenDays($0, relativeTo: date)
         }
-
-        return rides.filter { week.contains($0.startedAt) }
     }
 
     private var totalDistance: Double {
