@@ -384,6 +384,7 @@ struct SpokeTests {
             RideMetrics.duration(3_870, omittingZeroHours: true) == "01:04:30"
         )
         #expect(RideMetrics.miles(1_609.344) == "1.0")
+        #expect(RideMetrics.speedInMilesPerHour(12.345) == "12.3 mph")
     }
 
     @Test func unpaddedDurationOnlyPadsSeconds() {
@@ -450,6 +451,42 @@ struct SpokeTests {
         #expect(RideRouteSpeed.motion(for: 6, normalSpeed: 12) == .slower)
         #expect(RideRouteSpeed.motion(for: 1, normalSpeed: 12) == .stopped)
         #expect(RideRouteSpeed.motion(for: 0, normalSpeed: nil) == .stopped)
+    }
+
+    @MainActor
+    @Test func movingMetricsExcludeStoppedSegments() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let points = [
+            routePoint(at: start),
+            routePoint(at: start.addingTimeInterval(60)),
+            routePoint(
+                latitude: 0,
+                longitude: 0.001,
+                at: start.addingTimeInterval(120)
+            ),
+            routePoint(
+                latitude: 0,
+                longitude: 0.003,
+                at: start.addingTimeInterval(180)
+            ),
+        ]
+
+        let metrics = RideRouteSpeed.movingMetrics(for: points)
+        let expectedDistance = CLLocation(
+            latitude: 0,
+            longitude: 0
+        ).distance(
+            from: CLLocation(latitude: 0, longitude: 0.003)
+        )
+
+        #expect(metrics.duration == 120)
+        #expect(abs(metrics.distanceInMeters - expectedDistance) < 0.001)
+        #expect(
+            abs(
+                metrics.averageSpeedInMilesPerHour
+                    - expectedDistance / 120 * 2.236_936_292_1
+            ) < 0.001
+        )
     }
 
     @MainActor

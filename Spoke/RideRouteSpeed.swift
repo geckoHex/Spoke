@@ -41,6 +41,16 @@ struct RideRouteStop: Identifiable {
     }
 }
 
+struct RideMovingMetrics: Equatable {
+    let duration: TimeInterval
+    let distanceInMeters: CLLocationDistance
+
+    var averageSpeedInMilesPerHour: Double {
+        guard duration > 0 else { return 0 }
+        return distanceInMeters / duration * 2.236_936_292_1
+    }
+}
+
 enum RideRouteSpeed {
     static let littleMotionThreshold = 1.0
     static let minimumStopDuration: TimeInterval = 15
@@ -104,6 +114,20 @@ enum RideRouteSpeed {
         return stops
     }
 
+    static func movingMetrics(for points: [RideRoutePoint]) -> RideMovingMetrics {
+        measuredSegments(for: points)
+            .filter { $0.speedInMilesPerHour > littleMotionThreshold }
+            .reduce(
+                into: RideMovingMetrics(duration: 0, distanceInMeters: 0)
+            ) { metrics, segment in
+                metrics = RideMovingMetrics(
+                    duration: metrics.duration + segment.duration,
+                    distanceInMeters:
+                        metrics.distanceInMeters + segment.distanceInMeters
+                )
+            }
+    }
+
     static func typicalMovingSpeed(_ speeds: [Double]) -> Double? {
         let movingSpeeds = speeds
             .filter { $0 > littleMotionThreshold }
@@ -149,7 +173,8 @@ enum RideRouteSpeed {
                 latitude: endPoint.latitude,
                 longitude: endPoint.longitude
             )
-            let speedInMilesPerHour = endLocation.distance(from: startLocation)
+            let distanceInMeters = endLocation.distance(from: startLocation)
+            let speedInMilesPerHour = distanceInMeters
                 / duration
                 * 2.236_936_292_1
 
@@ -158,6 +183,8 @@ enum RideRouteSpeed {
                 end: endLocation.coordinate,
                 startedAt: startPoint.recordedAt,
                 endedAt: endPoint.recordedAt,
+                distanceInMeters: distanceInMeters,
+                duration: duration,
                 speedInMilesPerHour: speedInMilesPerHour
             )
         }
@@ -169,6 +196,8 @@ private struct MeasuredSegment {
     let end: CLLocationCoordinate2D
     let startedAt: Date
     let endedAt: Date
+    let distanceInMeters: CLLocationDistance
+    let duration: TimeInterval
     let speedInMilesPerHour: Double
 }
 

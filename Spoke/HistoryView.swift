@@ -200,6 +200,18 @@ private struct RideHistoryDetailView: View {
         RideRouteSpeed.stops(for: ride.routePoints)
     }
 
+    private var movingMetrics: RideMovingMetrics {
+        RideRouteSpeed.movingMetrics(for: ride.routePoints)
+    }
+
+    private var rideDateAndTime: String {
+        let time = ride.startedAt.formatted(.dateTime.hour().minute())
+        let date = ride.startedAt.formatted(
+            .dateTime.month(.abbreviated).day()
+        )
+        return "\(time) • \(date)"
+    }
+
     private var cameraPosition: MapCameraPosition {
         guard !coordinates.isEmpty else { return .automatic }
 
@@ -306,19 +318,20 @@ private struct RideHistoryDetailView: View {
                     )
 
                     metric(
-                        title: "Start Time",
-                        value: ride.startedAt.formatted(
-                            .dateTime.hour().minute()
+                        title: "Time Moving",
+                        value: RideMetrics.duration(
+                            movingMetrics.duration,
+                            omittingZeroHours: true
                         ),
-                        systemImage: "clock"
+                        systemImage: "timer"
                     )
 
                     metric(
-                        title: "Date",
-                        value: ride.startedAt.formatted(
-                            .dateTime.month(.abbreviated).day()
+                        title: "Average Moving Speed",
+                        value: RideMetrics.speedInMilesPerHour(
+                            movingMetrics.averageSpeedInMilesPerHour
                         ),
-                        systemImage: "calendar"
+                        systemImage: "speedometer"
                     )
                 }
 
@@ -333,6 +346,21 @@ private struct RideHistoryDetailView: View {
         .navigationTitle(ride.detailTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 1) {
+                    Text(ride.detailTitle)
+                        .font(.headline)
+                        .lineLimit(1)
+
+                    Text(rideDateAndTime)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+                .accessibilityElement(children: .combine)
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Section {

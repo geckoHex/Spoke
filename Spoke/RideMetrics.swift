@@ -64,6 +64,10 @@ enum RideMetrics {
         String(format: "%.1f", meters / 1_609.344)
     }
 
+    static func speedInMilesPerHour(_ speed: Double) -> String {
+        String(format: "%.1f mph", max(speed, 0))
+    }
+
     static func ageDescription(since date: Date, relativeTo currentDate: Date) -> String {
         let totalSeconds = max(Int(currentDate.timeIntervalSince(date)), 0)
         let denominations: [(seconds: Int, name: String)] = [
