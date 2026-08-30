@@ -597,6 +597,7 @@ private struct ActiveRideControl: View {
     @State private var isStopHoldActive = false
     @State private var stopHoldProgress: CGFloat = 0
     @State private var didCompleteStopHold = false
+    @State private var stopMessageDismissTask: Task<Void, Never>?
 
     var body: some View {
         let elapsedSeconds = max(
@@ -607,29 +608,28 @@ private struct ActiveRideControl: View {
         HStack(spacing: 12) {
             timer(elapsedSeconds: elapsedSeconds)
 
-            Button {} label: {
-                Image(systemName: "flag.pattern.checkered")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.black)
-                    .frame(width: 56, height: 56)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.tint(.red).interactive(), in: Circle())
-            .glassEffectID("rideStop", in: namespace)
-            .glassEffectTransition(.materialize)
-            .accessibilityLabel("Stop Ride")
-            .accessibilityHint("Hold for one second to stop the ride")
-            .onLongPressGesture(
-                minimumDuration: 1,
-                maximumDistance: 44,
-                perform: completeStopHold,
-                onPressingChanged: updateStopHold
-            )
-            .transition(
-                .offset(x: -68)
-                    .combined(with: .scale(scale: 0.8, anchor: .trailing))
-                    .combined(with: .opacity)
-            )
+            Image(systemName: "flag.pattern.checkered")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.black)
+                .frame(width: 56, height: 56)
+                .contentShape(Circle())
+                .glassEffect(.regular.tint(.red).interactive(), in: Circle())
+                .glassEffectID("rideStop", in: namespace)
+                .glassEffectTransition(.materialize)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel("Stop Ride")
+                .accessibilityHint("Hold for one second to stop the ride")
+                .onLongPressGesture(
+                    minimumDuration: 1,
+                    maximumDistance: 44,
+                    perform: completeStopHold,
+                    onPressingChanged: updateStopHold
+                )
+                .transition(
+                    .offset(x: -68)
+                        .combined(with: .scale(scale: 0.8, anchor: .trailing))
+                        .combined(with: .opacity)
+                )
 
             Button {
                 onPauseToggle()
@@ -649,6 +649,9 @@ private struct ActiveRideControl: View {
                     .combined(with: .scale(scale: 0.8, anchor: .trailing))
                     .combined(with: .opacity)
             )
+        }
+        .onDisappear {
+            stopMessageDismissTask?.cancel()
         }
     }
 
@@ -680,21 +683,14 @@ private struct ActiveRideControl: View {
         .frame(maxWidth: .infinity)
         .frame(height: 56)
         .clipShape(Capsule())
-        .contentShape(Capsule())
         .glassEffect(
-            .regular.tint(.white).interactive(),
+            .regular.tint(.white),
             in: Capsule()
         )
         .glassEffectID("rideTimer", in: namespace)
         .glassEffectTransition(.matchedGeometry)
         .matchedGeometryEffect(id: "rideTimer", in: namespace)
         .animation(.smooth(duration: 0.25), value: isStopHoldActive)
-        .onLongPressGesture(
-            minimumDuration: 1,
-            maximumDistance: 44,
-            perform: completeStopHold,
-            onPressingChanged: updateStopHold
-        )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(isStopHoldActive ? "Hold to Stop" : "Ride timer")
         .accessibilityValue(
@@ -703,13 +699,15 @@ private struct ActiveRideControl: View {
                 : "\(RideMetrics.duration(TimeInterval(elapsedSeconds))), "
                     + (ride.isPaused ? "paused" : "running")
         )
-        .accessibilityHint("Hold for one second to stop the ride")
     }
 
     private func updateStopHold(_ isPressing: Bool) {
         guard !didCompleteStopHold else { return }
 
         if isPressing {
+            stopMessageDismissTask?.cancel()
+            stopMessageDismissTask = nil
+
             withAnimation(.smooth(duration: 0.2)) {
                 isStopHoldActive = true
             }
@@ -718,13 +716,30 @@ private struct ActiveRideControl: View {
                 stopHoldProgress = 1
             }
         } else {
+            withAnimation(.easeOut(duration: 0.18)) {
+                stopHoldProgress = 0
+            }
+
+            scheduleStopMessageDismissal()
+        }
+    }
+
+    private func scheduleStopMessageDismissal() {
+        stopMessageDismissTask?.cancel()
+        stopMessageDismissTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .seconds(1.5))
+            } catch {
+                return
+            }
+
+            guard !didCompleteStopHold else { return }
+
             withAnimation(.smooth(duration: 0.25)) {
                 isStopHoldActive = false
             }
 
-            withAnimation(.easeOut(duration: 0.18)) {
-                stopHoldProgress = 0
-            }
+            stopMessageDismissTask = nil
         }
     }
 
@@ -732,6 +747,9 @@ private struct ActiveRideControl: View {
         guard !didCompleteStopHold else { return }
 
         didCompleteStopHold = true
+        stopMessageDismissTask?.cancel()
+        stopMessageDismissTask = nil
+        isStopHoldActive = true
         stopHoldProgress = 1
         onEnd()
     }
