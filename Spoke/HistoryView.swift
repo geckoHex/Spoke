@@ -209,7 +209,7 @@ private struct RideHistoryDetailView: View {
         let date = ride.startedAt.formatted(
             .dateTime.month(.abbreviated).day()
         )
-        return "\(time) • \(date)"
+        return "\(date)        \(time)"
     }
 
     private var cameraPosition: MapCameraPosition {
