@@ -327,6 +327,48 @@ struct SpokeTests {
     }
 
     @MainActor
+    @Test func routeStopsRequireMoreThanFifteenSeconds() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let fifteenSecondStop = [
+            routePoint(at: start),
+            routePoint(at: start.addingTimeInterval(15)),
+        ]
+        let twentySecondStop = [
+            routePoint(at: start),
+            routePoint(at: start.addingTimeInterval(10)),
+            routePoint(at: start.addingTimeInterval(20)),
+        ]
+
+        #expect(RideRouteSpeed.stops(for: fifteenSecondStop).isEmpty)
+        #expect(RideRouteSpeed.stops(for: twentySecondStop).count == 1)
+    }
+
+    @MainActor
+    @Test func routeStopsMergeConsecutiveStationarySegments() throws {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let points = [
+            routePoint(latitude: 34, longitude: -118, at: start),
+            routePoint(
+                latitude: 34.000_01,
+                longitude: -118.000_01,
+                at: start.addingTimeInterval(10)
+            ),
+            routePoint(
+                latitude: 34.000_02,
+                longitude: -118.000_02,
+                at: start.addingTimeInterval(20)
+            ),
+        ]
+
+        let stop = try #require(RideRouteSpeed.stops(for: points).first)
+
+        #expect(stop.startedAt == start)
+        #expect(stop.endedAt == start.addingTimeInterval(20))
+        #expect(abs(stop.coordinate.latitude - 34.000_01) < 0.000_001)
+        #expect(abs(stop.coordinate.longitude + 118.000_01) < 0.000_001)
+    }
+
+    @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([
             TrackedRide.self,
@@ -386,5 +428,18 @@ struct SpokeTests {
         #expect(entries.first?.title == "First Song")
         #expect(entries.first?.startedAt == rideStart.addingTimeInterval(30))
         #expect(entries.last?.title == "Second Song")
+    }
+
+    private func routePoint(
+        latitude: Double = 0,
+        longitude: Double = 0,
+        at date: Date
+    ) -> RideRoutePoint {
+        RideRoutePoint(
+            latitude: latitude,
+            longitude: longitude,
+            horizontalAccuracy: 5,
+            recordedAt: date
+        )
     }
 }

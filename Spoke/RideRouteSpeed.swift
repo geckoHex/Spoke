@@ -17,35 +17,22 @@ struct RideRouteSegment {
     let motion: RideRouteMotion
 }
 
+struct RideRouteStop: Identifiable {
+    let startedAt: Date
+    let endedAt: Date
+    let coordinate: CLLocationCoordinate2D
+
+    var id: Date {
+        startedAt
+    }
+}
+
 enum RideRouteSpeed {
     static let littleMotionThreshold = 1.0
+    static let minimumStopDuration: TimeInterval = 15
 
     static func segments(for points: [RideRoutePoint]) -> [RideRouteSegment] {
-        let sortedPoints = points.sorted { $0.recordedAt < $1.recordedAt }
-        let measuredSegments = zip(sortedPoints, sortedPoints.dropFirst()).compactMap {
-            startPoint,
-            endPoint -> MeasuredSegment? in
-            let duration = endPoint.recordedAt.timeIntervalSince(startPoint.recordedAt)
-            guard duration > 0 else { return nil }
-
-            let startLocation = CLLocation(
-                latitude: startPoint.latitude,
-                longitude: startPoint.longitude
-            )
-            let endLocation = CLLocation(
-                latitude: endPoint.latitude,
-                longitude: endPoint.longitude
-            )
-            let speedInMilesPerHour = endLocation.distance(from: startLocation)
-                / duration
-                * 2.236_936_292_1
-
-            return MeasuredSegment(
-                start: startLocation.coordinate,
-                end: endLocation.coordinate,
-                speedInMilesPerHour: speedInMilesPerHour
-            )
-        }
+        let measuredSegments = measuredSegments(for: points)
 
         let normalSpeed = typicalMovingSpeed(
             measuredSegments.map(\.speedInMilesPerHour)
@@ -68,6 +55,39 @@ enum RideRouteSpeed {
                 )
             }
         }
+    }
+
+    static func stops(for points: [RideRoutePoint]) -> [RideRouteStop] {
+        let measuredSegments = measuredSegments(for: points)
+        var stops: [RideRouteStop] = []
+        var candidate: StopCandidate?
+
+        for measuredSegment in measuredSegments {
+            let isStopped = measuredSegment.speedInMilesPerHour
+                <= littleMotionThreshold
+
+            if isStopped {
+                if candidate?.endedAt == measuredSegment.startedAt {
+                    candidate?.append(measuredSegment)
+                } else {
+                    if let stop = candidate?.stop {
+                        stops.append(stop)
+                    }
+                    candidate = StopCandidate(segment: measuredSegment)
+                }
+            } else {
+                if let stop = candidate?.stop {
+                    stops.append(stop)
+                }
+                candidate = nil
+            }
+        }
+
+        if let stop = candidate?.stop {
+            stops.append(stop)
+        }
+
+        return stops
     }
 
     static func typicalMovingSpeed(_ speeds: [Double]) -> Double? {
@@ -95,10 +115,83 @@ enum RideRouteSpeed {
 
         return .slower
     }
+
+    private static func measuredSegments(
+        for points: [RideRoutePoint]
+    ) -> [MeasuredSegment] {
+        let sortedPoints = points.sorted { $0.recordedAt < $1.recordedAt }
+
+        return zip(sortedPoints, sortedPoints.dropFirst()).compactMap {
+            startPoint,
+            endPoint -> MeasuredSegment? in
+            let duration = endPoint.recordedAt.timeIntervalSince(startPoint.recordedAt)
+            guard duration > 0 else { return nil }
+
+            let startLocation = CLLocation(
+                latitude: startPoint.latitude,
+                longitude: startPoint.longitude
+            )
+            let endLocation = CLLocation(
+                latitude: endPoint.latitude,
+                longitude: endPoint.longitude
+            )
+            let speedInMilesPerHour = endLocation.distance(from: startLocation)
+                / duration
+                * 2.236_936_292_1
+
+            return MeasuredSegment(
+                start: startLocation.coordinate,
+                end: endLocation.coordinate,
+                startedAt: startPoint.recordedAt,
+                endedAt: endPoint.recordedAt,
+                speedInMilesPerHour: speedInMilesPerHour
+            )
+        }
+    }
 }
 
 private struct MeasuredSegment {
     let start: CLLocationCoordinate2D
     let end: CLLocationCoordinate2D
+    let startedAt: Date
+    let endedAt: Date
     let speedInMilesPerHour: Double
+}
+
+private struct StopCandidate {
+    let startedAt: Date
+    private(set) var endedAt: Date
+    private var latitudeTotal: Double
+    private var longitudeTotal: Double
+    private var pointCount: Int
+
+    init(segment: MeasuredSegment) {
+        startedAt = segment.startedAt
+        endedAt = segment.endedAt
+        latitudeTotal = segment.start.latitude + segment.end.latitude
+        longitudeTotal = segment.start.longitude + segment.end.longitude
+        pointCount = 2
+    }
+
+    mutating func append(_ segment: MeasuredSegment) {
+        endedAt = segment.endedAt
+        latitudeTotal += segment.end.latitude
+        longitudeTotal += segment.end.longitude
+        pointCount += 1
+    }
+
+    var stop: RideRouteStop? {
+        guard endedAt.timeIntervalSince(startedAt)
+            > RideRouteSpeed.minimumStopDuration
+        else { return nil }
+
+        return RideRouteStop(
+            startedAt: startedAt,
+            endedAt: endedAt,
+            coordinate: CLLocationCoordinate2D(
+                latitude: latitudeTotal / Double(pointCount),
+                longitude: longitudeTotal / Double(pointCount)
+            )
+        )
+    }
 }

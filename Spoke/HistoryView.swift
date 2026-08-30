@@ -195,6 +195,10 @@ private struct RideHistoryDetailView: View {
         RideRouteSpeed.segments(for: ride.routePoints)
     }
 
+    private var routeStops: [RideRouteStop] {
+        RideRouteSpeed.stops(for: ride.routePoints)
+    }
+
     private var cameraPosition: MapCameraPosition {
         guard !coordinates.isEmpty else { return .automatic }
 
@@ -233,6 +237,16 @@ private struct RideHistoryDetailView: View {
                                 _, segment in
                                 MapPolyline(coordinates: segment.coordinates)
                                     .stroke(segment.motion.color, lineWidth: 5)
+                            }
+
+                            ForEach(routeStops) { stop in
+                                Annotation(
+                                    "Stopped",
+                                    coordinate: stop.coordinate,
+                                    anchor: .bottom
+                                ) {
+                                    RideStopBubble()
+                                }
                             }
                         } else if let coordinate = coordinates.first {
                             Annotation("Ride location", coordinate: coordinate) {
@@ -386,6 +400,52 @@ private struct RideHistoryDetailView: View {
             Color.white.opacity(0.075),
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
+    }
+}
+
+private struct RideStopBubble: View {
+    var body: some View {
+        Label {
+            Text("Stopped")
+                .foregroundStyle(.white)
+        } icon: {
+            Image(systemName: "stop.fill")
+                .foregroundStyle(.red)
+        }
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 9)
+        .padding(.top, 6)
+        .padding(.bottom, 12)
+        .background {
+            RideStopBubbleShape()
+                .fill(.black.opacity(0.88))
+        }
+        .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Stopped for more than 15 seconds")
+    }
+}
+
+private struct RideStopBubbleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let pointerHeight: CGFloat = 6
+        let bubbleRect = CGRect(
+            x: rect.minX,
+            y: rect.minY,
+            width: rect.width,
+            height: rect.height - pointerHeight
+        )
+        var path = Path(
+            roundedRect: bubbleRect,
+            cornerRadius: 9,
+            style: .continuous
+        )
+        path.move(to: CGPoint(x: rect.midX - 5, y: bubbleRect.maxY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.midX + 5, y: bubbleRect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 
