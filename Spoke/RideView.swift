@@ -333,7 +333,7 @@ private struct RideDashboardView: View {
                 SpeedometerArc()
                     .stroke(
                         .white.opacity(0.14),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 11, lineCap: .butt)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -341,7 +341,7 @@ private struct RideDashboardView: View {
                     .trim(from: 0, to: min(CGFloat(speed) / 30, 1))
                     .stroke(
                         arcColor(for: speed),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 11, lineCap: .butt)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -506,7 +506,7 @@ private struct RideSkeletonView: View {
                 SpeedometerArc()
                     .stroke(
                         .white.opacity(0.18),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 11, lineCap: .butt)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
