@@ -510,8 +510,28 @@ struct SpokeTests {
 
         #expect(stop.startedAt == start)
         #expect(stop.endedAt == start.addingTimeInterval(20))
+        #expect(stop.durationDescription == "20 secs")
         #expect(abs(stop.coordinate.latitude - 34.000_01) < 0.000_001)
         #expect(abs(stop.coordinate.longitude + 118.000_01) < 0.000_001)
+    }
+
+    @Test func routeStopDurationDescriptionUsesConciseUnits() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let coordinate = CLLocationCoordinate2D(latitude: 34, longitude: -118)
+
+        let oneMinuteStop = RideRouteStop(
+            startedAt: start,
+            endedAt: start.addingTimeInterval(60),
+            coordinate: coordinate
+        )
+        let twoMinuteStop = RideRouteStop(
+            startedAt: start,
+            endedAt: start.addingTimeInterval(120),
+            coordinate: coordinate
+        )
+
+        #expect(oneMinuteStop.durationDescription == "1 min")
+        #expect(twoMinuteStop.durationDescription == "2 mins")
     }
 
     @MainActor

@@ -241,11 +241,13 @@ private struct RideHistoryDetailView: View {
 
                             ForEach(routeStops) { stop in
                                 Annotation(
-                                    "Stopped",
+                                    "Stopped (\(stop.durationDescription))",
                                     coordinate: stop.coordinate,
                                     anchor: .bottom
                                 ) {
-                                    RideStopBubble()
+                                    RideStopBubble(
+                                        durationDescription: stop.durationDescription
+                                    )
                                 }
                             }
                         } else if let coordinate = coordinates.first {
@@ -404,9 +406,15 @@ private struct RideHistoryDetailView: View {
 }
 
 private struct RideStopBubble: View {
+    let durationDescription: String
+
+    private var label: String {
+        "Stopped (\(durationDescription))"
+    }
+
     var body: some View {
         Label {
-            Text("Stopped")
+            Text(label)
                 .foregroundStyle(.white)
         } icon: {
             Image(systemName: "stop.fill")
@@ -423,7 +431,7 @@ private struct RideStopBubble: View {
         .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
         .fixedSize()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Stopped for more than 15 seconds")
+        .accessibilityLabel(label)
     }
 }
 

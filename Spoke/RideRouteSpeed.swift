@@ -25,6 +25,20 @@ struct RideRouteStop: Identifiable {
     var id: Date {
         startedAt
     }
+
+    var durationDescription: String {
+        let totalSeconds = max(
+            Int(endedAt.timeIntervalSince(startedAt).rounded()),
+            1
+        )
+
+        if totalSeconds < 60 {
+            return "\(totalSeconds) \(totalSeconds == 1 ? "sec" : "secs")"
+        }
+
+        let minutes = max(Int((Double(totalSeconds) / 60).rounded()), 1)
+        return "\(minutes) \(minutes == 1 ? "min" : "mins")"
+    }
 }
 
 enum RideRouteSpeed {
