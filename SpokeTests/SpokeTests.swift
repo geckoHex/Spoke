@@ -63,6 +63,76 @@ struct SpokeTests {
         #expect(update.speedInMilesPerHour == 0)
     }
 
+    @Test func mapHeadingWaitsForThreeReliableConsistentSamples() async {
+        let processor = RideSpeedProcessor()
+        let now = Date(timeIntervalSince1970: 10_000)
+
+        let first = await processor.process(
+            [mapSample(course: 88, timestamp: now)],
+            now: now
+        )
+        let second = await processor.process(
+            [mapSample(course: 91, timestamp: now.addingTimeInterval(1))],
+            now: now.addingTimeInterval(1)
+        )
+        let third = await processor.process(
+            [mapSample(course: 89, timestamp: now.addingTimeInterval(2))],
+            now: now.addingTimeInterval(2)
+        )
+
+        #expect(first.mapHeading == nil)
+        #expect(second.mapHeading == nil)
+        #expect(abs((third.mapHeading ?? 0) - 89.333) < 0.01)
+    }
+
+    @Test func mapHeadingRejectsSlowOrInaccurateMovement() async {
+        let processor = RideSpeedProcessor()
+        let now = Date(timeIntervalSince1970: 10_000)
+
+        for offset in 0..<4 {
+            let update = await processor.process(
+                [
+                    mapSample(
+                        speed: offset.isMultiple(of: 2) ? 2 : 5,
+                        course: 180,
+                        courseAccuracy: offset.isMultiple(of: 2) ? 5 : 40,
+                        timestamp: now.addingTimeInterval(Double(offset))
+                    )
+                ],
+                now: now.addingTimeInterval(Double(offset))
+            )
+
+            #expect(update.mapHeading == nil)
+        }
+    }
+
+    @Test func mapHeadingRequiresAConfirmedTurnAndIgnoresAnOutlier() async {
+        var filter = RideMapHeadingFilter()
+        let now = Date(timeIntervalSince1970: 10_000)
+
+        _ = filter.update(with: mapSample(course: 90, timestamp: now))
+        _ = filter.update(
+            with: mapSample(course: 92, timestamp: now.addingTimeInterval(1))
+        )
+        let initialHeading = filter.update(
+            with: mapSample(course: 91, timestamp: now.addingTimeInterval(2))
+        )
+        let outlierHeading = filter.update(
+            with: mapSample(course: 220, timestamp: now.addingTimeInterval(3))
+        )
+        let pendingTurnHeading = filter.update(
+            with: mapSample(course: 178, timestamp: now.addingTimeInterval(4))
+        )
+        let confirmedTurnHeading = filter.update(
+            with: mapSample(course: 182, timestamp: now.addingTimeInterval(5))
+        )
+
+        #expect(abs((initialHeading ?? 0) - 91) < 0.01)
+        #expect(outlierHeading == initialHeading)
+        #expect(pendingTurnHeading == initialHeading)
+        #expect(abs((confirmedTurnHeading ?? 0) - 180) < 0.01)
+    }
+
     @MainActor
     @Test func weatherCacheExpiresAfterTwentyMinutes() throws {
         let suiteName = "SpokeTests.WeatherCache.\(UUID().uuidString)"
@@ -516,6 +586,24 @@ struct SpokeTests {
             longitude: longitude,
             horizontalAccuracy: 5,
             recordedAt: date
+        )
+    }
+
+    private func mapSample(
+        speed: CLLocationSpeed = 5,
+        course: CLLocationDirection,
+        courseAccuracy: CLLocationDirectionAccuracy = 5,
+        timestamp: Date
+    ) -> RideLocationSample {
+        RideLocationSample(
+            latitude: 34,
+            longitude: -118,
+            horizontalAccuracy: 5,
+            speed: speed,
+            speedAccuracy: 0.5,
+            course: course,
+            courseAccuracy: courseAccuracy,
+            timestamp: timestamp
         )
     }
 }

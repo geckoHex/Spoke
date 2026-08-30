@@ -13,7 +13,11 @@ import SwiftData
 final class RideSessionController {
     private(set) var activeRide: TrackedRide?
     private(set) var speedInMilesPerHour = 0
-    private(set) var currentLocation: RideLocationSample?
+    private(set) var currentMapState: RideMapState?
+
+    var currentLocation: RideLocationSample? {
+        currentMapState?.location
+    }
 
     @ObservationIgnored private var modelContext: ModelContext?
     @ObservationIgnored private var locationTask: Task<Void, Never>?
@@ -44,7 +48,9 @@ final class RideSessionController {
         lastSpotifyTrackIdentity = ride.soundtrackEntries
             .max { $0.startedAt < $1.startedAt }?
             .trackIdentity
-        currentLocation = latestPoint.map(RideLocationSample.init)
+        currentMapState = latestPoint.map {
+            RideMapState(location: RideLocationSample(point: $0), heading: nil)
+        }
 
         if let firstPoint = ride.routePoints.min(by: { $0.recordedAt < $1.recordedAt }) {
             resolveStartAddressIfNeeded(RideLocationSample(point: firstPoint), for: ride)
@@ -70,7 +76,7 @@ final class RideSessionController {
         }
 
         activeRide = ride
-        currentLocation = nil
+        currentMapState = nil
         speedInMilesPerHour = 0
         lastRecordedPositionAt = nil
         lastSpotifyTrackIdentity = nil
@@ -132,7 +138,7 @@ final class RideSessionController {
         }
 
         activeRide = nil
-        currentLocation = nil
+        currentMapState = nil
         lastRecordedPositionAt = nil
         lastSpotifyTrackIdentity = nil
 
@@ -277,7 +283,10 @@ final class RideSessionController {
         guard let ride = activeRide, !ride.isPaused, ride.endedAt == nil else { return }
 
         if let location = update.mapLocation {
-            currentLocation = location
+            currentMapState = RideMapState(
+                location: location,
+                heading: update.mapHeading ?? currentMapState?.heading
+            )
             recordPositionIfNeeded(location, for: ride)
             let startingLocation = ride.routePoints
                 .min(by: { $0.recordedAt < $1.recordedAt })
@@ -368,6 +377,8 @@ struct RideLocationSample: Hashable, Sendable {
     let horizontalAccuracy: CLLocationAccuracy
     let speed: CLLocationSpeed
     let speedAccuracy: CLLocationSpeedAccuracy
+    let course: CLLocationDirection
+    let courseAccuracy: CLLocationDirectionAccuracy
     let timestamp: Date
 
     nonisolated init(
@@ -376,6 +387,8 @@ struct RideLocationSample: Hashable, Sendable {
         horizontalAccuracy: CLLocationAccuracy,
         speed: CLLocationSpeed,
         speedAccuracy: CLLocationSpeedAccuracy,
+        course: CLLocationDirection = -1,
+        courseAccuracy: CLLocationDirectionAccuracy = -1,
         timestamp: Date
     ) {
         self.latitude = latitude
@@ -383,6 +396,8 @@ struct RideLocationSample: Hashable, Sendable {
         self.horizontalAccuracy = horizontalAccuracy
         self.speed = speed
         self.speedAccuracy = speedAccuracy
+        self.course = course
+        self.courseAccuracy = courseAccuracy
         self.timestamp = timestamp
     }
 
@@ -392,6 +407,8 @@ struct RideLocationSample: Hashable, Sendable {
         horizontalAccuracy = location.horizontalAccuracy
         speed = location.speed
         speedAccuracy = location.speedAccuracy
+        course = location.course
+        courseAccuracy = location.courseAccuracy
         timestamp = location.timestamp
     }
 
@@ -401,12 +418,20 @@ struct RideLocationSample: Hashable, Sendable {
         horizontalAccuracy = point.horizontalAccuracy
         speed = 0
         speedAccuracy = 0
+        course = -1
+        courseAccuracy = -1
         timestamp = point.recordedAt
     }
 }
 
+struct RideMapState: Hashable, Sendable {
+    let location: RideLocationSample
+    let heading: CLLocationDirection?
+}
+
 struct RideSpeedUpdate: Sendable {
     let mapLocation: RideLocationSample?
+    let mapHeading: CLLocationDirection?
     let speedInMilesPerHour: Int?
 }
 
@@ -422,6 +447,7 @@ actor RideSpeedProcessor {
 
     private var filteredSpeed: CLLocationSpeed?
     private var lastAcceptedSample: RideLocationSample?
+    private var mapHeadingFilter = RideMapHeadingFilter()
 
     func process(_ samples: [RideLocationSample], now: Date) -> RideSpeedUpdate {
         let mapLocation = samples.last { isValidForMap($0, now: now) }
@@ -440,6 +466,7 @@ actor RideSpeedProcessor {
 
         return RideSpeedUpdate(
             mapLocation: mapLocation,
+            mapHeading: mapLocation.flatMap { mapHeadingFilter.update(with: $0) },
             speedInMilesPerHour: speed
         )
     }
@@ -447,6 +474,7 @@ actor RideSpeedProcessor {
     func reset() {
         filteredSpeed = nil
         lastAcceptedSample = nil
+        mapHeadingFilter.reset()
     }
 
     func processStationary() -> RideSpeedUpdate {
@@ -455,6 +483,7 @@ actor RideSpeedProcessor {
 
         return RideSpeedUpdate(
             mapLocation: nil,
+            mapHeading: nil,
             speedInMilesPerHour: 0
         )
     }

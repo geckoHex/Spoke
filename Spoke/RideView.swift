@@ -269,9 +269,9 @@ private struct RideDashboardView: View {
 
     private var currentLocationMap: some View {
         GeometryReader { proxy in
-            let request = rideSession.currentLocation.map {
+            let request = rideSession.currentMapState.map {
                 RideMapSnapshotRequest(
-                    location: $0,
+                    mapState: $0,
                     size: proxy.size,
                     scale: displayScale,
                     cameraDistance: mapCameraDistance
@@ -286,7 +286,6 @@ private struct RideDashboardView: View {
                         .resizable()
                         .scaledToFill()
                         .contrast(1.18)
-                        .transition(.opacity)
 
                     Circle()
                         .fill(Color(uiColor: .systemBlue))
@@ -619,19 +618,22 @@ private struct RideMapSnapshotRequest: Hashable, Sendable {
     let height: Double
     let scale: Double
     let cameraDistance: Double
+    let heading: Double
 
     init(
-        location: RideLocationSample,
+        mapState: RideMapState,
         size: CGSize,
         scale: CGFloat,
         cameraDistance: CLLocationDistance
     ) {
+        let location = mapState.location
         latitude = (location.latitude * 10_000).rounded() / 10_000
         longitude = (location.longitude * 10_000).rounded() / 10_000
         width = max(size.width.rounded(.up), 1)
         height = max(size.height.rounded(.up), 1)
         self.scale = scale
         self.cameraDistance = cameraDistance
+        heading = ((mapState.heading ?? 0) / 5).rounded() * 5
     }
 }
 
@@ -654,7 +656,7 @@ private actor RideMapSnapshotRenderer {
             ),
             fromDistance: request.cameraDistance,
             pitch: 0,
-            heading: 0
+            heading: request.heading
         )
         options.size = CGSize(width: request.width, height: request.height)
         options.scale = request.scale
@@ -686,9 +688,7 @@ private final class RideMapSnapshotStore: ObservableObject {
             let renderedImage = try await renderer.render(request)
             guard !Task.isCancelled else { return }
 
-            withAnimation(.easeOut(duration: 0.2)) {
-                image = renderedImage
-            }
+            image = renderedImage
         } catch {
             // Keep the existing snapshot while a newer request is rendered.
         }
