@@ -427,6 +427,7 @@ private struct HomeWeatherAttribution: View {
             }
             .frame(width: 72, height: 10, alignment: .trailing)
         }
+        .padding(.trailing, 4)
         .frame(maxWidth: .infinity, alignment: .trailing)
         .accessibilityLabel("Apple Weather attribution")
     }
