@@ -30,7 +30,7 @@ struct SpokeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .ignoresSafeArea(.keyboard, edges: .bottom)
+                .disablesKeyboardSafeArea()
         }
         .modelContainer(sharedModelContainer)
     }
