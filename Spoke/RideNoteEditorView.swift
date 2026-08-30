@@ -30,15 +30,6 @@ struct RideNoteEditorView: View {
                     }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Note")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.65))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            isNoteFocused = false
-                        }
-
                     TextEditor(text: $noteText)
                         .focused($isNoteFocused)
                         .font(.body)
@@ -50,7 +41,7 @@ struct RideNoteEditorView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 20)
             }
-            .navigationTitle("Ride Note")
+            .navigationTitle("Ride Notes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
