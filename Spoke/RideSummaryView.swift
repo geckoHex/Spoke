@@ -21,7 +21,7 @@ struct RideSummaryView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "flag.pattern.checkered.2.crossed")
                             .font(.system(size: 38, weight: .semibold))
                             .foregroundStyle(.black)
                             .accessibilityHidden(true)
