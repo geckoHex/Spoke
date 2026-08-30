@@ -389,8 +389,9 @@ private struct HomeWeatherView: View {
     @ViewBuilder
     private var weatherIcon: some View {
         if let snapshot {
-            Image(systemName: snapshot.symbolName)
+            Image(systemName: baseWeatherSymbolName(snapshot.symbolName))
                 .font(.system(size: weatherIconSize, weight: .medium))
+                .symbolVariant(.circle.fill)
                 .symbolRenderingMode(.multicolor)
                 .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
@@ -402,12 +403,22 @@ private struct HomeWeatherView: View {
                 .frame(width: weatherIconSize + 16)
                 .accessibilityLabel("Loading")
         } else {
-            Image(systemName: "cloud.fill")
+            Image(systemName: "cloud")
                 .font(.system(size: weatherIconSize - 8, weight: .medium))
+                .symbolVariant(.circle.fill)
                 .foregroundStyle(.white.opacity(0.5))
                 .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
         }
+    }
+
+    private func baseWeatherSymbolName(_ symbolName: String) -> String {
+        for suffix in [".circle.fill", ".circle", ".fill"]
+        where symbolName.hasSuffix(suffix) {
+            return String(symbolName.dropLast(suffix.count))
+        }
+
+        return symbolName
     }
 }
 
