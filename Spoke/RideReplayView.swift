@@ -92,6 +92,7 @@ struct RideReplayRoute {
 
 struct RideReplayView: View {
     private let route: RideReplayRoute
+    private let routeSegments: [RideRouteSegment]
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentCoordinate: CLLocationCoordinate2D?
@@ -99,6 +100,7 @@ struct RideReplayView: View {
     init(routePoints: [RideRoutePoint]) {
         let route = RideReplayRoute(points: routePoints)
         self.route = route
+        routeSegments = RideRouteSpeed.segments(for: routePoints)
         _currentCoordinate = State(initialValue: route.firstCoordinate)
     }
 
@@ -122,13 +124,20 @@ struct RideReplayView: View {
     var body: some View {
         NavigationStack {
             Map(initialPosition: cameraPosition, interactionModes: []) {
+                ForEach(Array(routeSegments.enumerated()), id: \.offset) {
+                    _, segment in
+                    MapPolyline(coordinates: segment.coordinates)
+                        .stroke(segment.motion.color, lineWidth: 5)
+                }
+
                 if let currentCoordinate {
                     Annotation(
-                        "Bike position",
+                        "",
                         coordinate: currentCoordinate,
                         anchor: .bottom
                     ) {
                         ReplayBikeMarker()
+                            .accessibilityHidden(true)
                     }
                 }
             }
@@ -198,41 +207,47 @@ struct RideReplayView: View {
 private struct ReplayBikeMarker: View {
     var body: some View {
         ZStack(alignment: .top) {
-            ReplayBikeMarkerShape()
+            ReplayBikePointerShape()
                 .fill(.white)
+                .frame(width: 16, height: 12)
+                .offset(y: 40)
+
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(.white)
+                .frame(width: 44, height: 44)
 
             Image(systemName: "bicycle")
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(.black)
                 .frame(width: 44, height: 44)
         }
-        .frame(width: 44, height: 52)
+        .frame(width: 44, height: 52, alignment: .top)
+        .compositingGroup()
         .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Bike position")
     }
 }
 
-private struct ReplayBikeMarkerShape: Shape {
+private struct ReplayBikePointerShape: Shape {
     func path(in rect: CGRect) -> Path {
-        let pointerHeight: CGFloat = 8
-        let squareSize = min(rect.width, rect.height - pointerHeight)
-        let squareRect = CGRect(
-            x: rect.midX - squareSize / 2,
-            y: rect.minY,
-            width: squareSize,
-            height: squareSize
-        )
-        var path = Path(
-            roundedRect: squareRect,
-            cornerRadius: 11,
-            style: .continuous
-        )
-        path.move(to: CGPoint(x: rect.midX - 7, y: squareRect.maxY - 1))
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
         path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.midX + 7, y: squareRect.maxY - 1))
         path.closeSubpath()
         return path
+    }
+}
+
+private extension RideRouteMotion {
+    var color: Color {
+        switch self {
+        case .normalOrFaster:
+            .green
+        case .slower:
+            .yellow
+        case .stopped:
+            .red
+        }
     }
 }
 
