@@ -594,7 +594,7 @@ private struct ActiveRideControl: View {
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
 
-    @State private var isStopArmed = false
+    @State private var isStopHoldActive = false
     @State private var stopHoldProgress: CGFloat = 0
     @State private var didCompleteStopHold = false
 
@@ -607,13 +607,7 @@ private struct ActiveRideControl: View {
         HStack(spacing: 12) {
             timer(elapsedSeconds: elapsedSeconds)
 
-            Button {
-                guard !isStopArmed else { return }
-
-                withAnimation(.smooth(duration: 0.3)) {
-                    isStopArmed = true
-                }
-            } label: {
+            Button {} label: {
                 Image(systemName: "flag.pattern.checkered")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.black)
@@ -624,6 +618,13 @@ private struct ActiveRideControl: View {
             .glassEffectID("rideStop", in: namespace)
             .glassEffectTransition(.materialize)
             .accessibilityLabel("Stop Ride")
+            .accessibilityHint("Hold for one second to stop the ride")
+            .onLongPressGesture(
+                minimumDuration: 1,
+                maximumDistance: 44,
+                perform: completeStopHold,
+                onPressingChanged: updateStopHold
+            )
             .transition(
                 .offset(x: -68)
                     .combined(with: .scale(scale: 0.8, anchor: .trailing))
@@ -660,7 +661,7 @@ private struct ActiveRideControl: View {
             }
             .allowsHitTesting(false)
 
-            if isStopArmed {
+            if isStopHoldActive {
                 Text("Hold to Stop")
                     .font(.headline)
                     .transition(.opacity)
@@ -681,13 +682,13 @@ private struct ActiveRideControl: View {
         .clipShape(Capsule())
         .contentShape(Capsule())
         .glassEffect(
-            .regular.tint(.white).interactive(isStopArmed),
+            .regular.tint(.white).interactive(),
             in: Capsule()
         )
         .glassEffectID("rideTimer", in: namespace)
         .glassEffectTransition(.matchedGeometry)
         .matchedGeometryEffect(id: "rideTimer", in: namespace)
-        .animation(.smooth(duration: 0.25), value: isStopArmed)
+        .animation(.smooth(duration: 0.25), value: isStopHoldActive)
         .onLongPressGesture(
             minimumDuration: 1,
             maximumDistance: 44,
@@ -695,23 +696,32 @@ private struct ActiveRideControl: View {
             onPressingChanged: updateStopHold
         )
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(isStopArmed ? "Hold to Stop" : "Ride timer")
+        .accessibilityLabel(isStopHoldActive ? "Hold to Stop" : "Ride timer")
         .accessibilityValue(
-            isStopArmed
+            isStopHoldActive
                 ? "Hold for one second to end the ride"
                 : "\(RideMetrics.duration(TimeInterval(elapsedSeconds))), "
                     + (ride.isPaused ? "paused" : "running")
         )
+        .accessibilityHint("Hold for one second to stop the ride")
     }
 
     private func updateStopHold(_ isPressing: Bool) {
-        guard isStopArmed, !didCompleteStopHold else { return }
+        guard !didCompleteStopHold else { return }
 
         if isPressing {
+            withAnimation(.smooth(duration: 0.2)) {
+                isStopHoldActive = true
+            }
+
             withAnimation(.linear(duration: 1)) {
                 stopHoldProgress = 1
             }
         } else {
+            withAnimation(.smooth(duration: 0.25)) {
+                isStopHoldActive = false
+            }
+
             withAnimation(.easeOut(duration: 0.18)) {
                 stopHoldProgress = 0
             }
@@ -719,7 +729,7 @@ private struct ActiveRideControl: View {
     }
 
     private func completeStopHold() {
-        guard isStopArmed else { return }
+        guard !didCompleteStopHold else { return }
 
         didCompleteStopHold = true
         stopHoldProgress = 1
