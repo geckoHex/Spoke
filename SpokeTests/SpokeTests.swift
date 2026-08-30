@@ -386,6 +386,12 @@ struct SpokeTests {
         #expect(RideMetrics.miles(1_609.344) == "1.0")
     }
 
+    @Test func unpaddedDurationOnlyPadsSeconds() {
+        #expect(RideMetrics.unpaddedDuration(243) == "4:03")
+        #expect(RideMetrics.unpaddedDuration(3_843) == "1:4:03")
+        #expect(RideMetrics.unpaddedDuration(3_605) == "1:0:05")
+    }
+
     @Test func homeActivityUsesARollingSevenDayWindow() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         let withinWindow = TrackedRide(

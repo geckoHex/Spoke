@@ -32,6 +32,19 @@ enum RideMetrics {
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
+    static func unpaddedDuration(_ interval: TimeInterval) -> String {
+        let totalSeconds = max(Int(interval.rounded(.down)), 0)
+        let hours = totalSeconds / 3_600
+        let minutes = (totalSeconds % 3_600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours == 0 {
+            return String(format: "%d:%02d", minutes, seconds)
+        }
+
+        return String(format: "%d:%d:%02d", hours, minutes, seconds)
+    }
+
     static func distanceInMeters(for ride: TrackedRide) -> CLLocationDistance {
         let points = ride.routePoints.sorted { $0.recordedAt < $1.recordedAt }
         guard points.count > 1 else { return 0 }
