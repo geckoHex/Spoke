@@ -74,7 +74,7 @@ struct RideSummaryView: View {
                         Color(uiColor: .systemGray6),
                         in: RoundedRectangle(cornerRadius: 22, style: .continuous)
                     )
-                    .padding(.top, 36)
+                    .padding(.top, 24)
 
                     Spacer(minLength: 0)
 
@@ -95,8 +95,10 @@ struct RideSummaryView: View {
                         }
                         .buttonStyle(.plain)
 
-                        Button("discard") {
+                        Button {
                             isConfirmingDiscard = true
+                        } label: {
+                            Label("Discard", systemImage: "trash")
                         }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.red)
@@ -106,7 +108,7 @@ struct RideSummaryView: View {
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.top, 28)
                 .padding(.bottom, 24)
             }
         }
