@@ -151,20 +151,15 @@ private struct RideHistoryRow: View {
                 .frame(width: 16)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Text(title)
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.45))
-            }
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white.opacity(0.8))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel("\(title), \(value)")
     }
 }
 
