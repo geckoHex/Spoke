@@ -535,6 +535,33 @@ struct SpokeTests {
     }
 
     @MainActor
+    @Test func rideReplayPreservesRecordedTimingWithinTenSeconds() throws {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let route = RideReplayRoute(
+            points: [
+                routePoint(latitude: 0, longitude: 0, at: start),
+                routePoint(
+                    latitude: 0,
+                    longitude: 0.001,
+                    at: start.addingTimeInterval(1)
+                ),
+                routePoint(
+                    latitude: 0,
+                    longitude: 0.002,
+                    at: start.addingTimeInterval(4)
+                ),
+            ]
+        )
+
+        let quarterCoordinate = try #require(route.coordinate(at: 0.25))
+        let fiveEighthsCoordinate = try #require(route.coordinate(at: 0.625))
+
+        #expect(RideReplayRoute.playbackDuration == 10)
+        #expect(abs(quarterCoordinate.longitude - 0.001) < 0.000_001)
+        #expect(abs(fiveEighthsCoordinate.longitude - 0.0015) < 0.000_001)
+    }
+
+    @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([
             TrackedRide.self,

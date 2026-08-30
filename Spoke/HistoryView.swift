@@ -175,6 +175,7 @@ private struct RideHistoryDetailView: View {
     @State private var isShowingRenamePrompt = false
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingSoundtrack = false
+    @State private var isShowingReplay = false
 
     private var trimmedRideName: String {
         rideName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -263,6 +264,21 @@ private struct RideHistoryDetailView: View {
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(alignment: .bottomTrailing) {
+                        Button {
+                            isShowingReplay = true
+                        } label: {
+                            Label("Replay", systemImage: "play.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 44)
+                                .background(.white, in: Capsule())
+                                .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(12)
+                    }
                 }
 
                 LazyVGrid(
@@ -339,6 +355,9 @@ private struct RideHistoryDetailView: View {
         }
         .sheet(isPresented: $isShowingSoundtrack) {
             RideSoundtrackView(ride: ride)
+        }
+        .sheet(isPresented: $isShowingReplay) {
+            RideReplayView(routePoints: ride.routePoints)
         }
         .alert("Rename Ride", isPresented: $isShowingRenamePrompt) {
             TextField("", text: $rideName)
