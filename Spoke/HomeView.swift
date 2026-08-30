@@ -336,6 +336,9 @@ private struct HomeWeatherView: View {
     let isDeveloperModeEnabled: Bool
     let onExpireAndReload: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 54
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 64
+
     @ViewBuilder
     var body: some View {
         if isDeveloperModeEnabled {
@@ -349,27 +352,27 @@ private struct HomeWeatherView: View {
 
     private var weatherContent: some View {
         ZStack(alignment: .bottomTrailing) {
-            HStack(spacing: 12) {
+            HStack(spacing: 18) {
                 weatherIcon
 
                 if let snapshot {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(snapshot.temperature)
-                            .font(.title.weight(.semibold))
+                            .font(.system(size: temperatureSize, weight: .bold))
                             .foregroundStyle(.white)
 
                         Text(snapshot.condition)
-                            .font(.body)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.75))
                     }
                 } else {
                     Text(isUnavailable ? "Weather unavailable" : "Loading weather")
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.65))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.bottom, snapshot == nil ? 0 : 10)
+            .padding(.bottom, snapshot == nil ? 0 : 14)
 
             if let snapshot {
                 Link(destination: snapshot.legalPageURL) {
@@ -388,29 +391,31 @@ private struct HomeWeatherView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 76)
+        .frame(minHeight: 128)
         .compositingGroup()
-        .shadow(color: .black.opacity(0.6), radius: 10, y: 4)
+        .shadow(color: .black.opacity(0.72), radius: 16, y: 7)
     }
 
     @ViewBuilder
     private var weatherIcon: some View {
         if let snapshot {
             Image(systemName: snapshot.symbolName)
-                .font(.system(size: 36, weight: .medium))
+                .font(.system(size: weatherIconSize, weight: .medium))
                 .symbolRenderingMode(.multicolor)
-                .frame(width: 44)
+                .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
         } else if isLoading || !isUnavailable {
             ProgressView()
+                .controlSize(.large)
+                .scaleEffect(1.35)
                 .tint(.white)
-                .frame(width: 44)
+                .frame(width: weatherIconSize + 16)
                 .accessibilityLabel("Loading")
         } else {
             Image(systemName: "cloud.fill")
-                .font(.system(size: 31, weight: .medium))
+                .font(.system(size: weatherIconSize - 8, weight: .medium))
                 .foregroundStyle(.white.opacity(0.5))
-                .frame(width: 44)
+                .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
         }
     }
