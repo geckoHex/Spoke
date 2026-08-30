@@ -43,7 +43,7 @@ final class TrackedRide {
               let endAddress = RideAddressFormatter.street(from: endAddress)
         else { return nil }
 
-        return "\(startAddress) to \(endAddress)"
+        return "\(startAddress) → \(endAddress)"
     }
 
     func rename(to name: String) {

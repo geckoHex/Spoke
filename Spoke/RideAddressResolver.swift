@@ -9,11 +9,77 @@ import MapKit
 
 @MainActor
 enum RideAddressResolver {
+    private static let minimumPointOfInterestRadius: CLLocationDistance = 100
+    private static let maximumPointOfInterestRadius: CLLocationDistance = 150
+
     static func endpointName(for location: RideLocationSample) async -> String? {
-        let location = CLLocation(
+        let endpointLocation = CLLocation(
             latitude: location.latitude,
             longitude: location.longitude
         )
+
+        let searchRadius = min(
+            max(
+                minimumPointOfInterestRadius,
+                max(location.horizontalAccuracy, 0) + 50
+            ),
+            maximumPointOfInterestRadius
+        )
+
+        if let placeName = await nearbyPointOfInterestName(
+            for: endpointLocation,
+            radius: searchRadius
+        ) {
+            return placeName
+        }
+
+        return await reverseGeocodedName(for: endpointLocation)
+    }
+
+    static func nearestPointOfInterestName(
+        to location: CLLocation,
+        among mapItems: [MKMapItem],
+        maximumDistance: CLLocationDistance
+    ) -> String? {
+        mapItems
+            .filter { $0.pointOfInterestCategory != nil }
+            .compactMap { mapItem -> (name: String, distance: CLLocationDistance)? in
+                guard let name = RideAddressFormatter.placeName(from: mapItem.name)
+                else { return nil }
+
+                return (
+                    name: name,
+                    distance: mapItem.location.distance(from: location)
+                )
+            }
+            .filter { $0.distance <= maximumDistance }
+            .min { $0.distance < $1.distance }?
+            .name
+    }
+
+    private static func nearbyPointOfInterestName(
+        for location: CLLocation,
+        radius: CLLocationDistance
+    ) async -> String? {
+        let request = MKLocalPointsOfInterestRequest(
+            center: location.coordinate,
+            radius: radius
+        )
+        request.pointOfInterestFilter = .includingAll
+
+        do {
+            let response = try await MKLocalSearch(request: request).start()
+            return nearestPointOfInterestName(
+                to: location,
+                among: response.mapItems,
+                maximumDistance: radius
+            )
+        } catch {
+            return nil
+        }
+    }
+
+    private static func reverseGeocodedName(for location: CLLocation) async -> String? {
         guard let request = MKReverseGeocodingRequest(location: location) else {
             return nil
         }

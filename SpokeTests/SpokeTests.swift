@@ -7,6 +7,7 @@
 
 import CoreLocation
 import Foundation
+import MapKit
 import SwiftData
 import Testing
 @testable import Spoke
@@ -211,15 +212,41 @@ struct SpokeTests {
         #expect(ride.customName == nil)
     }
 
-    @Test func rideAutomaticNameUsesBothStreetAddresses() {
+    @Test func rideAutomaticNameUsesBothEndpointNames() {
         let ride = TrackedRide()
 
         #expect(ride.automaticName == nil)
 
-        ride.startAddress = "  123 Tree St, Los Angeles, CA 90001  "
-        ride.endAddress = "456 Acorn Ln\nPasadena, CA 91101\nUnited States"
+        ride.startAddress = "Target"
+        ride.endAddress = "Walmart"
 
-        #expect(ride.automaticName == "123 Tree St to 456 Acorn Ln")
+        #expect(ride.automaticName == "Target → Walmart")
+    }
+
+    @MainActor
+    @Test func endpointResolverChoosesTheNearestMapKitPointOfInterest() {
+        let endpoint = CLLocation(latitude: 34, longitude: -118)
+        let target = MKMapItem(
+            location: CLLocation(latitude: 34.000_1, longitude: -118),
+            address: nil
+        )
+        target.name = "Target"
+        target.pointOfInterestCategory = .store
+
+        let walmart = MKMapItem(
+            location: CLLocation(latitude: 34.000_5, longitude: -118),
+            address: nil
+        )
+        walmart.name = "Walmart"
+        walmart.pointOfInterestCategory = .store
+
+        #expect(
+            RideAddressResolver.nearestPointOfInterestName(
+                to: endpoint,
+                among: [walmart, target],
+                maximumDistance: 100
+            ) == "Target"
+        )
     }
 
     @Test func placeNameFormatterTruncatesAfterFourteenCharacters() {
