@@ -32,19 +32,18 @@ struct RideNoteEditorView: View {
                     Text("Note")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.65))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isNoteFocused = false
+                        }
 
                     TextEditor(text: $noteText)
                         .focused($isNoteFocused)
                         .font(.body)
                         .foregroundStyle(.white)
                         .scrollContentBackground(.hidden)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
                         .padding(.trailing, isNoteFocused && !noteText.isEmpty ? 30 : 0)
-                        .background(
-                            Color.white.opacity(0.09),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
                         .overlay(alignment: .topTrailing) {
                             if isNoteFocused && !noteText.isEmpty {
                                 Button {
@@ -56,7 +55,7 @@ struct RideNoteEditorView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Clear note")
-                                .padding(14)
+                                .padding(8)
                             }
                         }
                         .accessibilityLabel("Note")
@@ -78,6 +77,7 @@ struct RideNoteEditorView: View {
                 }
             }
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .preferredColorScheme(.dark)
         .presentationBackground(.black)
         .presentationDragIndicator(.visible)
