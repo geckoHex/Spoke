@@ -191,6 +191,10 @@ private struct RideHistoryDetailView: View {
             }
     }
 
+    private var routeSegments: [RideRouteSegment] {
+        RideRouteSpeed.segments(for: ride.routePoints)
+    }
+
     private var cameraPosition: MapCameraPosition {
         guard !coordinates.isEmpty else { return .automatic }
 
@@ -225,8 +229,11 @@ private struct RideHistoryDetailView: View {
                 } else {
                     Map(initialPosition: cameraPosition) {
                         if coordinates.count > 1 {
-                            MapPolyline(coordinates: coordinates)
-                                .stroke(.white, lineWidth: 5)
+                            ForEach(Array(routeSegments.enumerated()), id: \.offset) {
+                                _, segment in
+                                MapPolyline(coordinates: segment.coordinates)
+                                    .stroke(segment.motion.color, lineWidth: 5)
+                            }
                         } else if let coordinate = coordinates.first {
                             Annotation("Ride location", coordinate: coordinate) {
                                 Circle()
@@ -379,6 +386,19 @@ private struct RideHistoryDetailView: View {
             Color.white.opacity(0.075),
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
+    }
+}
+
+private extension RideRouteMotion {
+    var color: Color {
+        switch self {
+        case .normalOrFaster:
+            .green
+        case .slower:
+            .yellow
+        case .stopped:
+            .red
+        }
     }
 }
 

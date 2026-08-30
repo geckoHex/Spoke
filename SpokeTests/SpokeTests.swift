@@ -230,6 +230,63 @@ struct SpokeTests {
         #expect(RideMetrics.miles(1_609.344) == "1.0")
     }
 
+    @Test func routeSpeedUsesTheMedianMovingSegmentAsNormal() {
+        #expect(RideRouteSpeed.typicalMovingSpeed([0.2, 8, 10, 30]) == 10)
+        #expect(RideRouteSpeed.typicalMovingSpeed([8, 12]) == 10)
+        #expect(RideRouteSpeed.typicalMovingSpeed([0, 0.5, 1]) == nil)
+    }
+
+    @MainActor
+    @Test func routeSpeedClassifiesNormalSlowAndStoppedMotion() {
+        #expect(
+            RideRouteSpeed.motion(for: 12, normalSpeed: 12)
+                == .normalOrFaster
+        )
+        #expect(
+            RideRouteSpeed.motion(for: 16, normalSpeed: 12)
+                == .normalOrFaster
+        )
+        #expect(RideRouteSpeed.motion(for: 6, normalSpeed: 12) == .slower)
+        #expect(RideRouteSpeed.motion(for: 1, normalSpeed: 12) == .stopped)
+        #expect(RideRouteSpeed.motion(for: 0, normalSpeed: nil) == .stopped)
+    }
+
+    @MainActor
+    @Test func routeSegmentsDeriveMotionFromSavedPositionsAndTimes() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let points = [
+            RideRoutePoint(
+                latitude: 0,
+                longitude: 0,
+                horizontalAccuracy: 5,
+                recordedAt: start
+            ),
+            RideRoutePoint(
+                latitude: 0,
+                longitude: 0,
+                horizontalAccuracy: 5,
+                recordedAt: start.addingTimeInterval(60)
+            ),
+            RideRoutePoint(
+                latitude: 0,
+                longitude: 0.001,
+                horizontalAccuracy: 5,
+                recordedAt: start.addingTimeInterval(120)
+            ),
+            RideRoutePoint(
+                latitude: 0,
+                longitude: 0.003,
+                horizontalAccuracy: 5,
+                recordedAt: start.addingTimeInterval(180)
+            ),
+        ]
+
+        #expect(
+            RideRouteSpeed.segments(for: points).map(\.motion)
+                == [.stopped, .slower, .normalOrFaster]
+        )
+    }
+
     @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([
