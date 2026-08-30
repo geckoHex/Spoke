@@ -152,6 +152,55 @@ struct SpokeTests {
         #expect(ride.elapsedDuration() == 12)
     }
 
+    @MainActor
+    @Test func completedRideCanBeDiscardedFromPersistence() throws {
+        let schema = Schema([
+            TrackedRide.self,
+            RideRoutePoint.self,
+            RideSoundtrackEntry.self,
+        ])
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true
+        )
+        let container = try ModelContainer(
+            for: schema,
+            configurations: [configuration]
+        )
+        let controller = RideSessionController()
+        controller.configure(modelContext: container.mainContext)
+
+        let start = Date(timeIntervalSince1970: 1_000)
+        let ride = try #require(controller.startRide(at: start))
+        _ = controller.endRide(at: start.addingTimeInterval(60))
+
+        #expect(controller.discardRide(ride))
+        #expect(try container.mainContext.fetch(FetchDescriptor<TrackedRide>()).isEmpty)
+    }
+
+    @MainActor
+    @Test func activeRideCannotBeDiscarded() throws {
+        let schema = Schema([
+            TrackedRide.self,
+            RideRoutePoint.self,
+            RideSoundtrackEntry.self,
+        ])
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true
+        )
+        let container = try ModelContainer(
+            for: schema,
+            configurations: [configuration]
+        )
+        let controller = RideSessionController()
+        controller.configure(modelContext: container.mainContext)
+        let ride = try #require(controller.startRide())
+
+        #expect(!controller.discardRide(ride))
+        #expect(try container.mainContext.fetch(FetchDescriptor<TrackedRide>()).count == 1)
+    }
+
     @Test func rideRenameTrimsWhitespaceAndCanBeCleared() {
         let ride = TrackedRide()
 

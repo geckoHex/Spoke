@@ -87,6 +87,10 @@ struct HomeView: View {
                     onDone: {
                         self.completedRide = nil
                         onRideSummaryDone(completedRide)
+                    },
+                    onDiscard: {
+                        guard rideSession.discardRide(completedRide) else { return }
+                        self.completedRide = nil
                     }
                 )
             }
@@ -113,32 +117,41 @@ struct HomeView: View {
 
     @ViewBuilder
     private func rideAction(date: Date) -> some View {
-        if let ride = rideSession.activeRide {
-            ActiveRideControl(
-                ride: ride,
-                date: date,
-                namespace: rideControlNamespace,
-                onPauseToggle: {
-                    rideSession.togglePause()
-                },
-                onEnd: endRide
-            )
-        } else {
-            Button {
-                withAnimation(
-                    .smooth(duration: 0.45),
-                    completionCriteria: .logicallyComplete
-                ) {
-                    _ = rideSession.startRide()
-                } completion: {
-                    guard rideSession.activeRide != nil else { return }
-                    onRideStarted()
+        GlassEffectContainer(spacing: 12) {
+            if let ride = rideSession.activeRide {
+                ActiveRideControl(
+                    ride: ride,
+                    date: date,
+                    namespace: rideControlNamespace,
+                    onPauseToggle: {
+                        rideSession.togglePause()
+                    },
+                    onEnd: endRide
+                )
+            } else {
+                Button {
+                    withAnimation(
+                        .smooth(duration: 0.55),
+                        completionCriteria: .logicallyComplete
+                    ) {
+                        _ = rideSession.startRide()
+                    } completion: {
+                        guard rideSession.activeRide != nil else { return }
+                        onRideStarted()
+                    }
+                } label: {
+                    Label("Start Ride", systemImage: "figure.outdoor.cycle")
+                        .font(.headline)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
                 }
-            } label: {
-                Label("Start Ride", systemImage: "figure.outdoor.cycle")
+                .buttonStyle(.plain)
+                .glassEffect(.regular.tint(.white).interactive(), in: Capsule())
+                .glassEffectID("rideTimer", in: rideControlNamespace)
+                .glassEffectTransition(.matchedGeometry)
+                .matchedGeometryEffect(id: "rideTimer", in: rideControlNamespace)
             }
-            .buttonStyle(SpokePrimaryButtonStyle(minHeight: 56))
-            .matchedGeometryEffect(id: "rideTimer", in: rideControlNamespace)
         }
     }
 
@@ -581,7 +594,9 @@ private struct ActiveRideControl: View {
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
 
-    @State private var isConfirmingEndRide = false
+    @State private var isStopArmed = false
+    @State private var stopHoldProgress: CGFloat = 0
+    @State private var didCompleteStopHold = false
 
     var body: some View {
         let elapsedSeconds = max(
@@ -593,16 +608,22 @@ private struct ActiveRideControl: View {
             timer(elapsedSeconds: elapsedSeconds)
 
             Button {
-                isConfirmingEndRide = true
+                guard !isStopArmed else { return }
+
+                withAnimation(.smooth(duration: 0.3)) {
+                    isStopArmed = true
+                }
             } label: {
-                Image(systemName: "stop.fill")
+                Image(systemName: "flag.pattern.checkered")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.black)
                     .frame(width: 56, height: 56)
-                    .background(.white, in: .circle)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("End Ride")
+            .glassEffect(.regular.tint(.red).interactive(), in: Circle())
+            .glassEffectID("rideStop", in: namespace)
+            .glassEffectTransition(.materialize)
+            .accessibilityLabel("Stop Ride")
             .transition(
                 .offset(x: -68)
                     .combined(with: .scale(scale: 0.8, anchor: .trailing))
@@ -616,9 +637,11 @@ private struct ActiveRideControl: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.black)
                     .frame(width: 56, height: 56)
-                    .background(.white, in: .circle)
             }
             .buttonStyle(.plain)
+            .glassEffect(.regular.tint(.yellow).interactive(), in: Circle())
+            .glassEffectID("ridePause", in: namespace)
+            .glassEffectTransition(.materialize)
             .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
             .transition(
                 .offset(x: -68)
@@ -626,39 +649,81 @@ private struct ActiveRideControl: View {
                     .combined(with: .opacity)
             )
         }
-        .alert("End Ride?", isPresented: $isConfirmingEndRide) {
-            Button("Cancel", role: .cancel) {}
-            Button("End Ride", role: .destructive) {
-                onEnd()
-            }
-        } message: {
-            Text("This ride will be saved to your history.")
-        }
     }
 
     private func timer(elapsedSeconds: Int) -> some View {
         ZStack {
-            Capsule()
-                .fill(.white)
+            GeometryReader { proxy in
+                Color.red.opacity(0.78)
+                    .frame(width: proxy.size.width * stopHoldProgress)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .allowsHitTesting(false)
 
-            Text(RideMetrics.duration(TimeInterval(elapsedSeconds)))
-                .font(.headline.monospacedDigit())
-                .foregroundStyle(.black)
-                .contentTransition(.numericText(value: Double(elapsedSeconds)))
-                .animation(
-                    ride.isPaused ? nil : .snappy(duration: 0.35),
-                    value: elapsedSeconds
-                )
+            if isStopArmed {
+                Text("Hold to Stop")
+                    .font(.headline)
+                    .transition(.opacity)
+            } else {
+                Text(RideMetrics.duration(TimeInterval(elapsedSeconds)))
+                    .font(.headline.monospacedDigit())
+                    .contentTransition(.numericText(value: Double(elapsedSeconds)))
+                    .animation(
+                        ride.isPaused ? nil : .snappy(duration: 0.35),
+                        value: elapsedSeconds
+                    )
+                    .transition(.opacity)
+            }
         }
+        .foregroundStyle(.black)
         .frame(maxWidth: .infinity)
         .frame(height: 56)
-        .matchedGeometryEffect(id: "rideTimer", in: namespace)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Ride timer")
-        .accessibilityValue(
-            "\(RideMetrics.duration(TimeInterval(elapsedSeconds))), "
-                + (ride.isPaused ? "paused" : "running")
+        .clipShape(Capsule())
+        .contentShape(Capsule())
+        .glassEffect(
+            .regular.tint(.white).interactive(isStopArmed),
+            in: Capsule()
         )
+        .glassEffectID("rideTimer", in: namespace)
+        .glassEffectTransition(.matchedGeometry)
+        .matchedGeometryEffect(id: "rideTimer", in: namespace)
+        .animation(.smooth(duration: 0.25), value: isStopArmed)
+        .onLongPressGesture(
+            minimumDuration: 1,
+            maximumDistance: 44,
+            perform: completeStopHold,
+            onPressingChanged: updateStopHold
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isStopArmed ? "Hold to Stop" : "Ride timer")
+        .accessibilityValue(
+            isStopArmed
+                ? "Hold for one second to end the ride"
+                : "\(RideMetrics.duration(TimeInterval(elapsedSeconds))), "
+                    + (ride.isPaused ? "paused" : "running")
+        )
+    }
+
+    private func updateStopHold(_ isPressing: Bool) {
+        guard isStopArmed, !didCompleteStopHold else { return }
+
+        if isPressing {
+            withAnimation(.linear(duration: 1)) {
+                stopHoldProgress = 1
+            }
+        } else {
+            withAnimation(.easeOut(duration: 0.18)) {
+                stopHoldProgress = 0
+            }
+        }
+    }
+
+    private func completeStopHold() {
+        guard isStopArmed else { return }
+
+        didCompleteStopHold = true
+        stopHoldProgress = 1
+        onEnd()
     }
 }
 

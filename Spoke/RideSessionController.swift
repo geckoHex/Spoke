@@ -143,6 +143,28 @@ final class RideSessionController {
         return ride
     }
 
+    @discardableResult
+    func discardRide(_ ride: TrackedRide) -> Bool {
+        guard let modelContext,
+              activeRide !== ride,
+              ride.endedAt != nil
+        else { return false }
+
+        modelContext.delete(ride)
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            return false
+        }
+
+        let rideID = ObjectIdentifier(ride)
+        startAddressTasks.removeValue(forKey: rideID)?.cancel()
+        endAddressTasks.removeValue(forKey: rideID)?.cancel()
+        return true
+    }
+
     func recordSpotifyCheck(_ track: SpotifyTrack?) {
         let observedIdentity = track?.identity
         defer { lastSpotifyTrackIdentity = observedIdentity }

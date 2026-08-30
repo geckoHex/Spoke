@@ -9,6 +9,9 @@ import UIKit
 struct RideSummaryView: View {
     let ride: TrackedRide
     let onDone: () -> Void
+    let onDiscard: () -> Void
+
+    @State private var isConfirmingDiscard = false
 
     var body: some View {
         NavigationStack {
@@ -19,13 +22,14 @@ struct RideSummaryView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 10) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 34, weight: .semibold))
+                            .font(.system(size: 38, weight: .semibold))
                             .foregroundStyle(.black)
                             .accessibilityHidden(true)
 
                         Text("Ride Complete")
-                            .font(.title2.weight(.bold))
+                            .font(.largeTitle.weight(.bold))
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
 
                     VStack(alignment: .leading, spacing: 0) {
                         VStack(alignment: .leading, spacing: 5) {
@@ -70,22 +74,34 @@ struct RideSummaryView: View {
                         Color(uiColor: .systemGray6),
                         in: RoundedRectangle(cornerRadius: 22, style: .continuous)
                     )
-                    .padding(.top, 20)
+                    .padding(.top, 36)
 
                     Spacer(minLength: 0)
 
-                    Button(action: onDone) {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 50)
-                            .background(
-                                .black,
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            )
+                    VStack(spacing: 10) {
+                        Button(action: onDone) {
+                            Text("Done")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(minHeight: 50)
+                                .background(
+                                    .black,
+                                    in: RoundedRectangle(
+                                        cornerRadius: 14,
+                                        style: .continuous
+                                    )
+                                )
+                        }
+                        .buttonStyle(.plain)
+
+                        Button("discard") {
+                            isConfirmingDiscard = true
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.red)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -98,6 +114,12 @@ struct RideSummaryView: View {
         .presentationBackground(.white)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+        .alert("Discard Ride?", isPresented: $isConfirmingDiscard) {
+            Button("Cancel", role: .cancel) {}
+            Button("Discard", role: .destructive, action: onDiscard)
+        } message: {
+            Text("This ride will be permanently deleted.")
+        }
     }
 
     private func summaryItem(title: String, value: String) -> some View {
