@@ -44,21 +44,6 @@ struct RideNoteEditorView: View {
                         .font(.body)
                         .foregroundStyle(.white)
                         .scrollContentBackground(.hidden)
-                        .padding(.trailing, isNoteFocused && !noteText.isEmpty ? 30 : 0)
-                        .overlay(alignment: .topTrailing) {
-                            if isNoteFocused && !noteText.isEmpty {
-                                Button {
-                                    noteText = ""
-                                    isNoteFocused = true
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Clear note")
-                                .padding(8)
-                            }
-                        }
                         .accessibilityLabel("Note")
                 }
                 .padding(.horizontal, 20)
