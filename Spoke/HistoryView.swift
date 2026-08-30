@@ -327,7 +327,7 @@ private struct RideHistoryDetailView: View {
                     )
 
                     metric(
-                        title: "Average Moving Speed",
+                        title: "Moving Avg.",
                         value: RideMetrics.speedInMilesPerHour(
                             movingMetrics.averageSpeedInMilesPerHour
                         ),
