@@ -170,7 +170,17 @@ struct SpokeTests {
         ride.startAddress = "  123 Tree St, Los Angeles, CA 90001  "
         ride.endAddress = "456 Acorn Ln\nPasadena, CA 91101\nUnited States"
 
-        #expect(ride.automaticName == "123 Tree St → 456 Acorn Ln")
+        #expect(ride.automaticName == "123 Tree St to 456 Acorn Ln")
+    }
+
+    @Test func placeNameFormatterTruncatesAfterFourteenCharacters() {
+        #expect(RideAddressFormatter.placeName(from: "Starbucks") == "Starbucks")
+        #expect(
+            RideAddressFormatter.placeName(from: "Apple Palo Alto")
+                == "Apple Palo Alt..."
+        )
+        #expect(RideAddressFormatter.placeName(from: "  Peet's  ") == "Peet's")
+        #expect(RideAddressFormatter.placeName(from: "  \n ") == nil)
     }
 
     @Test func streetAddressFormatterRemovesLocality() {

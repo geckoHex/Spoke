@@ -308,7 +308,7 @@ final class RideSessionController {
 
         startAddressTasks[rideID] = Task { @MainActor [weak self, weak ride] in
             defer { self?.startAddressTasks[rideID] = nil }
-            guard let address = await RideAddressResolver.streetAddress(for: location),
+            guard let address = await RideAddressResolver.endpointName(for: location),
                   let self,
                   let ride,
                   ride.startAddress == nil
@@ -328,7 +328,7 @@ final class RideSessionController {
 
         endAddressTasks[rideID] = Task { @MainActor [weak self, weak ride] in
             defer { self?.endAddressTasks[rideID] = nil }
-            guard let address = await RideAddressResolver.streetAddress(for: location),
+            guard let address = await RideAddressResolver.endpointName(for: location),
                   let self,
                   let ride,
                   ride.endAddress == nil
