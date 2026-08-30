@@ -93,6 +93,7 @@ struct RideReplayRoute {
 struct RideReplayView: View {
     private let route: RideReplayRoute
 
+    @Environment(\.dismiss) private var dismiss
     @State private var currentCoordinate: CLLocationCoordinate2D?
 
     init(routePoints: [RideRoutePoint]) {
@@ -127,7 +128,7 @@ struct RideReplayView: View {
                         coordinate: currentCoordinate,
                         anchor: .bottom
                     ) {
-                        ReplayBikePin()
+                        ReplayBikeMarker()
                     }
                 }
             }
@@ -141,6 +142,17 @@ struct RideReplayView: View {
             )
             .navigationTitle("Replay")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label("Close", systemImage: "xmark")
+                            .labelStyle(.iconOnly)
+                    }
+                    .tint(.white)
+                }
+            }
         }
         .preferredColorScheme(.dark)
         .presentationBackground(.black)
@@ -152,44 +164,75 @@ struct RideReplayView: View {
     }
 
     private func playRoute() async {
-        guard route.points.count > 1 else { return }
+        if route.points.count > 1 {
+            let clock = ContinuousClock()
+            let startedAt = clock.now
 
-        let clock = ContinuousClock()
-        let startedAt = clock.now
+            while !Task.isCancelled {
+                let elapsed = startedAt.duration(to: clock.now).timeInterval
+                let progress = min(elapsed / RideReplayRoute.playbackDuration, 1)
+                currentCoordinate = route.coordinate(at: progress)
 
-        while !Task.isCancelled {
-            let elapsed = startedAt.duration(to: clock.now).timeInterval
-            let progress = min(elapsed / RideReplayRoute.playbackDuration, 1)
-            currentCoordinate = route.coordinate(at: progress)
+                guard progress < 1 else { break }
 
-            guard progress < 1 else { break }
-
-            do {
-                try await Task.sleep(for: .milliseconds(16))
-            } catch {
-                return
+                do {
+                    try await Task.sleep(for: .milliseconds(16))
+                } catch {
+                    return
+                }
             }
         }
 
         currentCoordinate = route.lastCoordinate
+
+        do {
+            try await Task.sleep(for: .seconds(1))
+        } catch {
+            return
+        }
+
+        dismiss()
     }
 }
 
-private struct ReplayBikePin: View {
+private struct ReplayBikeMarker: View {
     var body: some View {
-        ZStack {
-            Image(systemName: "mappin.circle.fill")
-                .font(.system(size: 46, weight: .semibold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+        ZStack(alignment: .top) {
+            ReplayBikeMarkerShape()
+                .fill(.white)
 
             Image(systemName: "bicycle")
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(.black)
-                .offset(y: -4)
+                .frame(width: 44, height: 44)
         }
+        .frame(width: 44, height: 52)
+        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Bike position")
+    }
+}
+
+private struct ReplayBikeMarkerShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let pointerHeight: CGFloat = 8
+        let squareSize = min(rect.width, rect.height - pointerHeight)
+        let squareRect = CGRect(
+            x: rect.midX - squareSize / 2,
+            y: rect.minY,
+            width: squareSize,
+            height: squareSize
+        )
+        var path = Path(
+            roundedRect: squareRect,
+            cornerRadius: 11,
+            style: .continuous
+        )
+        path.move(to: CGPoint(x: rect.midX - 7, y: squareRect.maxY - 1))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.midX + 7, y: squareRect.maxY - 1))
+        path.closeSubpath()
+        return path
     }
 }
 
