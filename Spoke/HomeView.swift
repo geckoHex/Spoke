@@ -56,6 +56,11 @@ struct HomeView: View {
 
                                 Spacer(minLength: 28)
 
+                                if let snapshot = weatherModel.snapshot {
+                                    HomeWeatherAttribution(snapshot: snapshot)
+                                        .padding(.bottom, 8)
+                                }
+
                                 VStack(spacing: 14) {
                                     HomeRideActivity(
                                         rides: completedRides,
@@ -336,8 +341,8 @@ private struct HomeWeatherView: View {
     let isDeveloperModeEnabled: Bool
     let onExpireAndReload: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 54
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 70
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 88
 
     @ViewBuilder
     var body: some View {
@@ -351,49 +356,34 @@ private struct HomeWeatherView: View {
     }
 
     private var weatherContent: some View {
-        ZStack(alignment: .bottomTrailing) {
-            HStack(spacing: 18) {
-                weatherIcon
-
-                if let snapshot {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(snapshot.temperature)
-                            .font(.system(size: temperatureSize, weight: .bold))
-                            .foregroundStyle(.white)
-
-                        Text(snapshot.condition)
-                            .font(.title3.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
-                } else {
-                    Text(isUnavailable ? "Weather unavailable" : "Loading weather")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.75))
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.bottom, snapshot == nil ? 0 : 14)
+        HStack(spacing: 22) {
+            weatherIcon
 
             if let snapshot {
-                Link(destination: snapshot.legalPageURL) {
-                    AsyncImage(url: snapshot.attributionMarkURL) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } placeholder: {
-                        Text("Apple Weather")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.55))
-                    }
-                    .frame(width: 72, height: 10, alignment: .trailing)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(snapshot.temperature)
+                        .font(.system(size: temperatureSize, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+
+                    Text(snapshot.condition)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.78))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
                 }
-                .accessibilityLabel("Apple Weather attribution")
+                .layoutPriority(1)
+            } else {
+                Text(isUnavailable ? "Weather unavailable" : "Loading weather")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.78))
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 128)
+        .frame(minHeight: 168)
         .compositingGroup()
-        .shadow(color: .black.opacity(0.72), radius: 16, y: 7)
+        .shadow(color: .black.opacity(0.75), radius: 20, y: 8)
     }
 
     @ViewBuilder
@@ -418,6 +408,27 @@ private struct HomeWeatherView: View {
                 .frame(width: weatherIconSize + 16)
                 .accessibilityHidden(true)
         }
+    }
+}
+
+private struct HomeWeatherAttribution: View {
+    let snapshot: HomeWeatherSnapshot
+
+    var body: some View {
+        Link(destination: snapshot.legalPageURL) {
+            AsyncImage(url: snapshot.attributionMarkURL) { image in
+                image
+                    .resizable()
+                    .scaledToFit()
+            } placeholder: {
+                Text("Apple Weather")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .frame(width: 72, height: 10, alignment: .trailing)
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .accessibilityLabel("Apple Weather attribution")
     }
 }
 
