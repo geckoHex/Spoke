@@ -108,7 +108,10 @@ private struct RideHistoryRow: View {
                 HStack(spacing: 16) {
                     metric(
                         title: "Duration",
-                        value: RideMetrics.duration(ride.elapsedDuration()),
+                        value: RideMetrics.duration(
+                            ride.elapsedDuration(),
+                            omittingZeroHours: true
+                        ),
                         systemImage: "timer"
                     )
 
