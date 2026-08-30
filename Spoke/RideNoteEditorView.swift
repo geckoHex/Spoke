@@ -5,6 +5,7 @@
 
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct RideNoteEditorView: View {
     let ride: TrackedRide
@@ -22,7 +23,7 @@ struct RideNoteEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black
+                Color(uiColor: .secondarySystemBackground)
                     .ignoresSafeArea()
                     .onTapGesture {
                         isNoteFocused = false
@@ -79,7 +80,7 @@ struct RideNoteEditorView: View {
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .preferredColorScheme(.dark)
-        .presentationBackground(.black)
+        .presentationBackground(Color(uiColor: .secondarySystemBackground))
         .presentationDragIndicator(.visible)
         .onChange(of: noteText) {
             ride.updateNote(to: noteText)
