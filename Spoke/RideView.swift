@@ -297,6 +297,10 @@ private struct RideDashboardView: View {
                         .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
                         .accessibilityHidden(true)
                 }
+
+                distanceBadge
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .padding(12)
             }
             .task(id: request) {
                 guard let request else { return }
@@ -305,6 +309,26 @@ private struct RideDashboardView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityLabel("Current location map")
+    }
+
+    private var distanceBadge: some View {
+        Text(RideMetrics.distance(activeRideDistanceInMeters))
+            .font(.subheadline.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.black.opacity(0.82))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .accessibilityLabel("Distance traveled")
+            .accessibilityValue(
+                "\(RideMetrics.miles(activeRideDistanceInMeters)) miles"
+            )
+    }
+
+    private var activeRideDistanceInMeters: CLLocationDistance {
+        guard let activeRide = rideSession.activeRide else { return 0 }
+        return RideMetrics.distanceInMeters(for: activeRide)
     }
 
     private var mapLoadingPlaceholder: some View {
