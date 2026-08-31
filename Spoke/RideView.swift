@@ -5,9 +5,6 @@
 
 import SwiftUI
 import CoreLocation
-import Combine
-import MapKit
-import UIKit
 
 struct RideView: View {
     let settings: AppSettings?
@@ -96,9 +93,7 @@ private struct RideDashboardView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
 
-    @Environment(\.displayScale) private var displayScale
     @StateObject private var spotifyStore: SpotifyNowPlayingStore
-    @StateObject private var mapStore: RideMapSnapshotStore
     private let overspeedAlertController: RideOverspeedAlertController
     private let speedAnnouncer: RideSpeedAnnouncer
     @State private var developerSpeedInMilesPerHour = 0
@@ -116,9 +111,6 @@ private struct RideDashboardView: View {
         self.rideSession = rideSession
         _spotifyStore = StateObject(
             wrappedValue: SpotifyNowPlayingStore(client: resources.spotifyClient)
-        )
-        _mapStore = StateObject(
-            wrappedValue: RideMapSnapshotStore(renderer: resources.mapRenderer)
         )
         overspeedAlertController = resources.overspeedAlertController
         speedAnnouncer = resources.speedAnnouncer
@@ -268,35 +260,15 @@ private struct RideDashboardView: View {
     }
 
     private var currentLocationMap: some View {
-        GeometryReader { proxy in
-            let request = rideSession.currentMapState.map {
-                RideMapSnapshotRequest(
-                    mapState: $0,
-                    routePoints: rideSession.activeRide?.routePoints ?? [],
-                    size: proxy.size,
-                    scale: displayScale,
-                    cameraDistance: mapCameraDistance
-                )
-            }
+        ZStack {
+            RideHUDMapView(
+                initialMapState: rideSession.currentMapState,
+                cameraDistance: mapCameraDistance
+            )
 
-            ZStack {
-                mapLoadingPlaceholder
-
-                if let image = mapStore.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .contrast(1.18)
-                }
-
-                distanceBadge
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                    .padding(12)
-            }
-            .task(id: request) {
-                guard let request else { return }
-                await mapStore.load(request)
-            }
+            distanceBadge
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(12)
         }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityLabel("Current location map")
@@ -341,21 +313,6 @@ private struct RideDashboardView: View {
 
     private func activeRideElapsedDuration(at date: Date) -> TimeInterval {
         rideSession.activeRide?.elapsedDuration(at: date) ?? 0
-    }
-
-    private var mapLoadingPlaceholder: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "map")
-                .font(.system(size: 34, weight: .medium))
-
-            Text("Loading Map")
-                .font(.headline)
-        }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.black)
-        .opacity(mapStore.image == nil ? 1 : 0)
-        .accessibilityElement(children: .combine)
     }
 
     private var speedometer: some View {
@@ -606,13 +563,11 @@ private struct RideLayoutMetrics {
 
 private struct RideSessionResources: Sendable {
     let spotifyClient: SpotifyAPIClient
-    let mapRenderer: RideMapSnapshotRenderer
     let overspeedAlertController: RideOverspeedAlertController
     let speedAnnouncer: RideSpeedAnnouncer
 
     nonisolated init() {
         spotifyClient = SpotifyAPIClient()
-        mapRenderer = RideMapSnapshotRenderer()
         let alertPlayer = RideOverspeedAlertPlayer(
             resourceURL: Bundle.main.url(
                 forResource: "overspeed-alert",
@@ -644,143 +599,6 @@ private struct SpeedometerArc: Shape {
         )
 
         return path
-    }
-}
-
-private struct RideMapSnapshotRequest: Hashable, Sendable {
-    let latitude: Double
-    let longitude: Double
-    let width: Double
-    let height: Double
-    let scale: Double
-    let cameraDistance: Double
-    let heading: Double
-    let route: [RideMapRouteCoordinate]
-
-    init(
-        mapState: RideMapState,
-        routePoints: [RideRoutePoint],
-        size: CGSize,
-        scale: CGFloat,
-        cameraDistance: CLLocationDistance
-    ) {
-        let location = mapState.location
-        latitude = (location.latitude * 10_000).rounded() / 10_000
-        longitude = (location.longitude * 10_000).rounded() / 10_000
-        width = max(size.width.rounded(.up), 1)
-        height = max(size.height.rounded(.up), 1)
-        self.scale = scale
-        self.cameraDistance = cameraDistance
-        heading = ((mapState.heading ?? 0) / 5).rounded() * 5
-        route = routePoints
-            .sorted { $0.recordedAt < $1.recordedAt }
-            .map {
-                RideMapRouteCoordinate(
-                    latitude: $0.latitude,
-                    longitude: $0.longitude
-                )
-            } + [
-                RideMapRouteCoordinate(
-                    latitude: latitude,
-                    longitude: longitude
-                )
-            ]
-    }
-}
-
-private struct RideMapRouteCoordinate: Hashable, Sendable {
-    let latitude: Double
-    let longitude: Double
-}
-
-private actor RideMapSnapshotRenderer {
-    func render(_ request: RideMapSnapshotRequest) async throws -> UIImage {
-        try Task.checkCancellation()
-
-        let options = MKMapSnapshotter.Options()
-        let configuration = MKStandardMapConfiguration(
-            elevationStyle: .flat,
-            emphasisStyle: .default
-        )
-        configuration.pointOfInterestFilter = .excludingAll
-
-        options.preferredConfiguration = configuration
-        options.camera = MKMapCamera(
-            lookingAtCenter: CLLocationCoordinate2D(
-                latitude: request.latitude,
-                longitude: request.longitude
-            ),
-            fromDistance: request.cameraDistance,
-            pitch: 0,
-            heading: request.heading
-        )
-        options.size = CGSize(width: request.width, height: request.height)
-        options.scale = request.scale
-        options.traitCollection = UITraitCollection(userInterfaceStyle: .dark)
-
-        let snapshotter = MKMapSnapshotter(options: options)
-        let snapshot = try await withTaskCancellationHandler {
-            try await snapshotter.start()
-        } onCancel: {
-            snapshotter.cancel()
-        }
-
-        try Task.checkCancellation()
-        guard request.route.count > 1 else { return snapshot.image }
-
-        let rendererFormat = UIGraphicsImageRendererFormat()
-        rendererFormat.scale = snapshot.image.scale
-        rendererFormat.opaque = true
-
-        return UIGraphicsImageRenderer(
-            size: snapshot.image.size,
-            format: rendererFormat
-        ).image { _ in
-            snapshot.image.draw(at: .zero)
-
-            let path = UIBezierPath()
-            for (index, routePoint) in request.route.enumerated() {
-                let point = snapshot.point(
-                    for: CLLocationCoordinate2D(
-                        latitude: routePoint.latitude,
-                        longitude: routePoint.longitude
-                    )
-                )
-
-                if index == 0 {
-                    path.move(to: point)
-                } else {
-                    path.addLine(to: point)
-                }
-            }
-
-            path.lineWidth = 4
-            path.lineCapStyle = .round
-            path.lineJoinStyle = .round
-            UIColor.white.withAlphaComponent(0.96).setStroke()
-            path.stroke()
-        }
-    }
-}
-
-private final class RideMapSnapshotStore: ObservableObject {
-    @Published private(set) var image: UIImage?
-
-    private let renderer: RideMapSnapshotRenderer
-
-    init(renderer: RideMapSnapshotRenderer) {
-        self.renderer = renderer
-    }
-
-    func load(_ request: RideMapSnapshotRequest) async {
-        do {
-            let renderedImage = try await renderer.render(request)
-            guard !Task.isCancelled else { return }
-
-            image = renderedImage
-        } catch {
-            // Keep the existing snapshot while a newer request is rendered.
-        }
     }
 }
 
