@@ -287,16 +287,6 @@ private struct RideDashboardView: View {
                         .resizable()
                         .scaledToFill()
                         .contrast(1.18)
-
-                    Circle()
-                        .fill(Color(uiColor: .systemBlue))
-                        .frame(width: 16, height: 16)
-                        .overlay {
-                            Circle()
-                                .stroke(.white, lineWidth: 3)
-                        }
-                        .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-                        .accessibilityHidden(true)
                 }
 
                 distanceBadge
@@ -325,14 +315,10 @@ private struct RideDashboardView: View {
                     .font(.title2.weight(.bold))
                     .monospacedDigit()
 
-                HStack(spacing: 6) {
-                    Image(systemName: "stopwatch")
-
-                    Text(RideMetrics.duration(elapsedDuration))
-                        .monospacedDigit()
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.82))
+                Text(RideMetrics.duration(elapsedDuration))
+                    .monospacedDigit()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.82))
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 13)
