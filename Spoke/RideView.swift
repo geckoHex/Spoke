@@ -395,7 +395,7 @@ private struct RideDashboardView: View {
                     .frame(width: arcWidth, height: arcHeight)
 
                 VStack(spacing: 2) {
-                    Text(String(format: "%02d", speed))
+                    Text(String(speed))
                         .font(
                             .system(
                                 size: min(92, arcWidth * 0.29),
