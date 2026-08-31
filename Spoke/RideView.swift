@@ -272,6 +272,7 @@ private struct RideDashboardView: View {
             let request = rideSession.currentMapState.map {
                 RideMapSnapshotRequest(
                     mapState: $0,
+                    routePoints: rideSession.activeRide?.routePoints ?? [],
                     size: proxy.size,
                     scale: displayScale,
                     cameraDistance: mapCameraDistance
@@ -312,23 +313,48 @@ private struct RideDashboardView: View {
     }
 
     private var distanceBadge: some View {
-        Text(RideMetrics.distance(activeRideDistanceInMeters))
-            .font(.subheadline.weight(.semibold))
-            .monospacedDigit()
+        let distanceInMeters = activeRideDistanceInMeters
+
+        return TimelineView(.periodic(from: .now, by: 1)) { context in
+            let elapsedDuration = activeRideElapsedDuration(
+                at: max(context.date, Date.now)
+            )
+
+            VStack(alignment: .trailing, spacing: 5) {
+                Text(RideMetrics.distance(distanceInMeters))
+                    .font(.title2.weight(.bold))
+                    .monospacedDigit()
+
+                HStack(spacing: 6) {
+                    Image(systemName: "stopwatch")
+
+                    Text(RideMetrics.duration(elapsedDuration))
+                        .monospacedDigit()
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.82))
+            }
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 10)
             .background(.black.opacity(0.82))
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .accessibilityLabel("Distance traveled")
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Ride progress")
             .accessibilityValue(
-                "\(RideMetrics.miles(activeRideDistanceInMeters)) miles"
+                "\(RideMetrics.miles(distanceInMeters)) miles, ride time "
+                    + RideMetrics.duration(elapsedDuration)
             )
+        }
     }
 
     private var activeRideDistanceInMeters: CLLocationDistance {
         guard let activeRide = rideSession.activeRide else { return 0 }
         return RideMetrics.distanceInMeters(for: activeRide)
+    }
+
+    private func activeRideElapsedDuration(at date: Date) -> TimeInterval {
+        rideSession.activeRide?.elapsedDuration(at: date) ?? 0
     }
 
     private var mapLoadingPlaceholder: some View {
@@ -643,9 +669,11 @@ private struct RideMapSnapshotRequest: Hashable, Sendable {
     let scale: Double
     let cameraDistance: Double
     let heading: Double
+    let route: [RideMapRouteCoordinate]
 
     init(
         mapState: RideMapState,
+        routePoints: [RideRoutePoint],
         size: CGSize,
         scale: CGFloat,
         cameraDistance: CLLocationDistance
@@ -658,7 +686,25 @@ private struct RideMapSnapshotRequest: Hashable, Sendable {
         self.scale = scale
         self.cameraDistance = cameraDistance
         heading = ((mapState.heading ?? 0) / 5).rounded() * 5
+        route = routePoints
+            .sorted { $0.recordedAt < $1.recordedAt }
+            .map {
+                RideMapRouteCoordinate(
+                    latitude: $0.latitude,
+                    longitude: $0.longitude
+                )
+            } + [
+                RideMapRouteCoordinate(
+                    latitude: latitude,
+                    longitude: longitude
+                )
+            ]
     }
+}
+
+private struct RideMapRouteCoordinate: Hashable, Sendable {
+    let latitude: Double
+    let longitude: Double
 }
 
 private actor RideMapSnapshotRenderer {
@@ -694,7 +740,40 @@ private actor RideMapSnapshotRenderer {
         }
 
         try Task.checkCancellation()
-        return snapshot.image
+        guard request.route.count > 1 else { return snapshot.image }
+
+        let rendererFormat = UIGraphicsImageRendererFormat()
+        rendererFormat.scale = snapshot.image.scale
+        rendererFormat.opaque = true
+
+        return UIGraphicsImageRenderer(
+            size: snapshot.image.size,
+            format: rendererFormat
+        ).image { _ in
+            snapshot.image.draw(at: .zero)
+
+            let path = UIBezierPath()
+            for (index, routePoint) in request.route.enumerated() {
+                let point = snapshot.point(
+                    for: CLLocationCoordinate2D(
+                        latitude: routePoint.latitude,
+                        longitude: routePoint.longitude
+                    )
+                )
+
+                if index == 0 {
+                    path.move(to: point)
+                } else {
+                    path.addLine(to: point)
+                }
+            }
+
+            path.lineWidth = 4
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            UIColor.white.withAlphaComponent(0.96).setStroke()
+            path.stroke()
+        }
     }
 }
 
