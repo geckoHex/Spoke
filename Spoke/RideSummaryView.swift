@@ -78,7 +78,7 @@ struct RideSummaryView: View {
 
                     Spacer(minLength: 0)
 
-                    VStack(spacing: 10) {
+                    VStack(spacing: 18) {
                         Button(action: onDone) {
                             Text("Done")
                                 .font(.headline)
@@ -109,7 +109,7 @@ struct RideSummaryView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.horizontal, 24)
                 .padding(.top, 28)
-                .padding(.bottom, 24)
+                .padding(.bottom, 16)
             }
         }
         .preferredColorScheme(.light)
