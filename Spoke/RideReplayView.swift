@@ -96,6 +96,7 @@ struct RideReplayView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentCoordinate: CLLocationCoordinate2D?
+    @State private var isBikeFacingLeft = false
 
     init(routePoints: [RideRoutePoint]) {
         let route = RideReplayRoute(points: routePoints)
@@ -136,7 +137,7 @@ struct RideReplayView: View {
                         coordinate: currentCoordinate,
                         anchor: .bottom
                     ) {
-                        ReplayBikeMarker()
+                        ReplayBikeMarker(isFacingLeft: isBikeFacingLeft)
                             .accessibilityHidden(true)
                     }
                 }
@@ -180,7 +181,18 @@ struct RideReplayView: View {
             while !Task.isCancelled {
                 let elapsed = startedAt.duration(to: clock.now).timeInterval
                 let progress = min(elapsed / RideReplayRoute.playbackDuration, 1)
-                currentCoordinate = route.coordinate(at: progress)
+                let nextCoordinate = route.coordinate(at: progress)
+
+                if let currentCoordinate, let nextCoordinate {
+                    let currentX = MKMapPoint(currentCoordinate).x
+                    let nextX = MKMapPoint(nextCoordinate).x
+
+                    if nextX != currentX {
+                        isBikeFacingLeft = nextX < currentX
+                    }
+                }
+
+                currentCoordinate = nextCoordinate
 
                 guard progress < 1 else { break }
 
@@ -205,6 +217,8 @@ struct RideReplayView: View {
 }
 
 private struct ReplayBikeMarker: View {
+    let isFacingLeft: Bool
+
     var body: some View {
         ZStack(alignment: .top) {
             ReplayBikePointerShape()
@@ -220,6 +234,7 @@ private struct ReplayBikeMarker: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(.black)
                 .frame(width: 44, height: 44)
+                .scaleEffect(x: isFacingLeft ? -1 : 1, y: 1)
         }
         .frame(width: 44, height: 52, alignment: .top)
         .compositingGroup()
