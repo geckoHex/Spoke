@@ -469,7 +469,7 @@ private struct RideStopBubble: View {
     let durationDescription: String
 
     private var label: String {
-        "Stopped (\(durationDescription))"
+        "\(durationDescription)"
     }
 
     var body: some View {
@@ -477,7 +477,7 @@ private struct RideStopBubble: View {
             Text(label)
                 .foregroundStyle(.white)
         } icon: {
-            Image(systemName: "stop.fill")
+            Image(systemName: "octagon.fill")
                 .foregroundStyle(.red)
         }
         .font(.caption2.weight(.semibold))
