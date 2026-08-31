@@ -56,8 +56,7 @@ struct HomeView: View {
                                 }
                             )
 
-                            Spacer()
-                                .frame(height: usesCompactSpacing ? 12 : 16)
+                            Spacer(minLength: usesCompactSpacing ? 10 : 16)
 
                             HomeRideActivity(
                                 rides: completedRides,
