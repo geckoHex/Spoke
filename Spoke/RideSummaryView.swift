@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct RideSummaryView: View {
     let ride: TrackedRide
@@ -16,20 +15,25 @@ struct RideSummaryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white
+                Color.black
                     .ignoresSafeArea()
 
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 14) {
                         Image(systemName: "flag.pattern.checkered.2.crossed")
-                            .font(.system(size: 38, weight: .semibold))
-                            .foregroundStyle(.black)
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 48, height: 48)
+                            .background(
+                                .white.opacity(0.1),
+                                in: Circle()
+                            )
                             .accessibilityHidden(true)
 
                         Text("Ride Complete")
-                            .font(.largeTitle.weight(.bold))
+                            .font(.title.weight(.bold))
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 0) {
                         VStack(alignment: .leading, spacing: 5) {
@@ -38,7 +42,7 @@ struct RideSummaryView: View {
                                 .foregroundStyle(.secondary)
 
                             Text(RideMetrics.duration(ride.elapsedDuration()))
-                                .font(.system(size: 50, weight: .semibold))
+                                .font(.system(size: 48, weight: .bold))
                                 .monospacedDigit()
                                 .minimumScaleFactor(0.75)
                                 .lineLimit(1)
@@ -47,7 +51,7 @@ struct RideSummaryView: View {
                         .padding(20)
 
                         Divider()
-                            .overlay(.black.opacity(0.08))
+                            .overlay(.white.opacity(0.12))
 
                         HStack(spacing: 0) {
                             summaryItem(
@@ -58,7 +62,7 @@ struct RideSummaryView: View {
                             )
 
                             Divider()
-                                .overlay(.black.opacity(0.08))
+                                .overlay(.white.opacity(0.12))
 
                             summaryItem(
                                 title: "Started",
@@ -71,7 +75,7 @@ struct RideSummaryView: View {
                         .frame(height: 88)
                     }
                     .background(
-                        Color(uiColor: .systemGray6),
+                        .white.opacity(0.075),
                         in: RoundedRectangle(cornerRadius: 22, style: .continuous)
                     )
                     .padding(.top, 24)
@@ -82,11 +86,11 @@ struct RideSummaryView: View {
                         Button(action: onDone) {
                             Text("Done")
                                 .font(.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.black)
                                 .frame(maxWidth: .infinity)
                                 .frame(minHeight: 50)
                                 .background(
-                                    .black,
+                                    .white,
                                     in: RoundedRectangle(
                                         cornerRadius: 14,
                                         style: .continuous
@@ -105,15 +109,15 @@ struct RideSummaryView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.horizontal, 24)
                 .padding(.top, 28)
                 .padding(.bottom, 16)
             }
         }
-        .preferredColorScheme(.light)
-        .presentationBackground(.white)
+        .preferredColorScheme(.dark)
+        .presentationBackground(.black)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
         .alert("Discard Ride?", isPresented: $isConfirmingDiscard) {
