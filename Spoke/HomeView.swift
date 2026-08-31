@@ -32,50 +32,51 @@ struct HomeView: View {
                     HomeSkyGradient(period: HomeSkyPeriod(date: currentDate))
 
                     GeometryReader { proxy in
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 0) {
-                                HomeGreeting(
-                                    timeOfDay: timeOfDay,
-                                    name: displayName
-                                )
+                        let usesCompactSpacing = proxy.size.height < 760
 
-                                Spacer(minLength: 28)
-
-                                HomeWeatherView(
-                                    snapshot: weatherModel.snapshot,
-                                    isLoading: weatherModel.isLoading,
-                                    isUnavailable: weatherModel.isUnavailable,
-                                    isDeveloperModeEnabled:
-                                        settings?.developerModeEnabled == true,
-                                    onExpireAndReload: {
-                                        Task {
-                                            await weatherModel.expireCacheAndReload()
-                                        }
-                                    }
-                                )
-
-                                Spacer(minLength: 28)
-
-                                VStack(spacing: 14) {
-                                    HomeRideActivity(
-                                        rides: completedRides,
-                                        date: currentDate
-                                    )
-
-                                    rideAction(date: currentDate)
-                                }
-                            }
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: max(proxy.size.height - 44, 0),
-                                alignment: .topLeading
+                        VStack(alignment: .leading, spacing: 0) {
+                            HomeGreeting(
+                                timeOfDay: timeOfDay,
+                                name: displayName
                             )
-                            .padding(.horizontal, 24)
-                            .padding(.top, 28)
-                            .padding(.bottom, 16)
+
+                            Spacer()
+                                .frame(height: usesCompactSpacing ? 14 : 20)
+
+                            HomeWeatherView(
+                                snapshot: weatherModel.snapshot,
+                                isLoading: weatherModel.isLoading,
+                                isUnavailable: weatherModel.isUnavailable,
+                                isDeveloperModeEnabled:
+                                    settings?.developerModeEnabled == true,
+                                usesCompactHeight: usesCompactSpacing,
+                                onExpireAndReload: {
+                                    Task {
+                                        await weatherModel.expireCacheAndReload()
+                                    }
+                                }
+                            )
+
+                            Spacer()
+                                .frame(height: usesCompactSpacing ? 14 : 20)
+
+                            VStack(spacing: usesCompactSpacing ? 10 : 14) {
+                                HomeRideActivity(
+                                    rides: completedRides,
+                                    date: currentDate
+                                )
+
+                                rideAction(date: currentDate)
+                            }
                         }
-                        .scrollIndicators(.hidden)
-                        .scrollBounceBehavior(.basedOnSize)
+                        .frame(
+                            maxWidth: .infinity,
+                            maxHeight: .infinity,
+                            alignment: .topLeading
+                        )
+                        .padding(.horizontal, 24)
+                        .padding(.top, usesCompactSpacing ? 16 : 24)
+                        .padding(.bottom, 10)
                     }
                 }
             }
@@ -334,10 +335,11 @@ private struct HomeWeatherView: View {
     let isLoading: Bool
     let isUnavailable: Bool
     let isDeveloperModeEnabled: Bool
+    let usesCompactHeight: Bool
     let onExpireAndReload: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 76
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 76
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 68
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 62
 
     @ViewBuilder
     var body: some View {
@@ -351,42 +353,43 @@ private struct HomeWeatherView: View {
     }
 
     private var weatherContent: some View {
-        GlassEffectContainer(spacing: 16) {
-            ZStack(alignment: .topTrailing) {
-                VStack(alignment: .leading, spacing: 22) {
-                    weatherSummary
+        VStack(alignment: .leading, spacing: usesCompactHeight ? 12 : 16) {
+            HStack(alignment: .top, spacing: 16) {
+                weatherSummary
 
-                    if let snapshot {
-                        HStack(alignment: .center, spacing: 12) {
-                            windBadge(snapshot: snapshot)
-
-                            Spacer(minLength: 8)
-
-                            HomeWeatherAttribution(snapshot: snapshot)
-                        }
-                    }
-                }
-                .padding(24)
-                .padding(.top, 10)
-                .frame(maxWidth: .infinity, minHeight: 212, alignment: .leading)
-                .glassEffect(
-                    .regular.tint(.white.opacity(0.025)),
-                    in: .rect(cornerRadius: 28)
-                )
+                Spacer(minLength: 12)
 
                 weatherIcon
-                    .padding(.trailing, 22)
-                    .offset(y: -15)
+            }
+
+            if let snapshot {
+                HStack(alignment: .center, spacing: 12) {
+                    windBadge(snapshot: snapshot)
+
+                    Spacer(minLength: 8)
+
+                    HomeWeatherAttribution(snapshot: snapshot)
+                }
             }
         }
-        .padding(.top, 15)
-        .shadow(color: .black.opacity(0.32), radius: 24, y: 14)
+        .padding(.horizontal, 22)
+        .padding(.vertical, usesCompactHeight ? 15 : 18)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: usesCompactHeight ? 164 : 176,
+            alignment: .leading
+        )
+        .glassEffect(
+            .regular.tint(.white.opacity(0.025)),
+            in: .rect(cornerRadius: 28)
+        )
+        .shadow(color: .black.opacity(0.28), radius: 20, y: 12)
     }
 
     @ViewBuilder
     private var weatherSummary: some View {
         if let snapshot {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(snapshot.temperature)
                     .font(.system(size: temperatureSize, weight: .bold))
                     .foregroundStyle(.white)
@@ -394,18 +397,17 @@ private struct HomeWeatherView: View {
                     .minimumScaleFactor(0.72)
 
                 Text(snapshot.condition)
-                    .font(.title2.weight(.semibold))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.76))
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
             }
-            .padding(.trailing, weatherIconSize + 28)
             .layoutPriority(1)
         } else {
             Text(isUnavailable ? "Weather unavailable" : "Loading weather")
-                .font(.title2.weight(.semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.76))
-                .frame(maxHeight: .infinity, alignment: .center)
+                .frame(minHeight: weatherIconSize + 8, alignment: .center)
         }
     }
 
