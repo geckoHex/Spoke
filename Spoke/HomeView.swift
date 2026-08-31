@@ -483,6 +483,7 @@ private struct HomeWeatherAttribution: View {
             }
             .frame(width: 72, height: 10, alignment: .trailing)
         }
+        .offset(y: 3)
         .accessibilityLabel("Apple Weather attribution")
     }
 }
