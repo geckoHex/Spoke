@@ -56,11 +56,6 @@ struct HomeView: View {
 
                                 Spacer(minLength: 28)
 
-                                if let snapshot = weatherModel.snapshot {
-                                    HomeWeatherAttribution(snapshot: snapshot)
-                                        .padding(.bottom, 8)
-                                }
-
                                 VStack(spacing: 14) {
                                     HomeRideActivity(
                                         rides: completedRides,
@@ -341,8 +336,8 @@ private struct HomeWeatherView: View {
     let isDeveloperModeEnabled: Bool
     let onExpireAndReload: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 70
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 88
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 76
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 76
 
     @ViewBuilder
     var body: some View {
@@ -356,82 +351,111 @@ private struct HomeWeatherView: View {
     }
 
     private var weatherContent: some View {
-        HStack(spacing: 22) {
-            weatherIcon
+        GlassEffectContainer(spacing: 16) {
+            ZStack(alignment: .topTrailing) {
+                VStack(alignment: .leading, spacing: 22) {
+                    weatherSummary
 
-            if let snapshot {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(snapshot.temperature)
-                        .font(.system(size: temperatureSize, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                    if let snapshot {
+                        HStack(alignment: .center, spacing: 12) {
+                            windBadge(snapshot: snapshot)
 
-                    Text(snapshot.condition)
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.78))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                            Spacer(minLength: 8)
 
-                    if let windSpeed = snapshot.windSpeed,
-                       let windDirection = snapshot.windDirection
-                    {
-                        Label {
-                            Text("\(windSpeed) \(windDirection)")
-                        } icon: {
-                            Image(systemName: "wind")
-                                .accessibilityHidden(true)
+                            HomeWeatherAttribution(snapshot: snapshot)
                         }
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.68))
-                        .padding(.top, 4)
-                        .accessibilityLabel(
-                            "Wind, \(windSpeed), \(windDirection)"
-                        )
                     }
                 }
-                .layoutPriority(1)
-            } else {
-                Text(isUnavailable ? "Weather unavailable" : "Loading weather")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.78))
+                .padding(24)
+                .padding(.top, 10)
+                .frame(maxWidth: .infinity, minHeight: 212, alignment: .leading)
+                .glassEffect(
+                    .regular.tint(.white.opacity(0.025)),
+                    in: .rect(cornerRadius: 28)
+                )
+
+                weatherIcon
+                    .padding(.trailing, 22)
+                    .offset(y: -15)
             }
         }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 168)
-        .compositingGroup()
-        .shadow(color: .black.opacity(0.75), radius: 20, y: 8)
+        .padding(.top, 15)
+        .shadow(color: .black.opacity(0.32), radius: 24, y: 14)
+    }
+
+    @ViewBuilder
+    private var weatherSummary: some View {
+        if let snapshot {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(snapshot.temperature)
+                    .font(.system(size: temperatureSize, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Text(snapshot.condition)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.76))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .padding(.trailing, weatherIconSize + 28)
+            .layoutPriority(1)
+        } else {
+            Text(isUnavailable ? "Weather unavailable" : "Loading weather")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.76))
+                .frame(maxHeight: .infinity, alignment: .center)
+        }
+    }
+
+    @ViewBuilder
+    private func windBadge(snapshot: HomeWeatherSnapshot) -> some View {
+        if let windSpeed = snapshot.windSpeed,
+           let windDirection = snapshot.windDirection
+        {
+            Label {
+                Text("\(windSpeed) \(windDirection)")
+            } icon: {
+                Image(systemName: "wind")
+                    .accessibilityHidden(true)
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.82))
+            .padding(.horizontal, 13)
+            .frame(height: 36)
+            .background(.white.opacity(0.09), in: Capsule())
+            .accessibilityLabel("Wind, \(windSpeed), \(windDirection)")
+        }
     }
 
     @ViewBuilder
     private var weatherIcon: some View {
         if let snapshot {
-            Image(systemName: baseWeatherSymbolName(snapshot.symbolName))
-                .font(.system(size: weatherIconSize, weight: .medium))
-                .symbolVariant(.circle.fill)
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.black, .white)
-                .frame(width: weatherIconSize + 16)
+            Image(systemName: plainWeatherSymbolName(snapshot.symbolName))
+                .font(.system(size: weatherIconSize, weight: .regular))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(.white)
+                .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
+                .shadow(color: .black.opacity(0.4), radius: 12, y: 8)
                 .accessibilityHidden(true)
         } else if isLoading || !isUnavailable {
             ProgressView()
                 .controlSize(.large)
-                .scaleEffect(1.35)
                 .tint(.white)
-                .frame(width: weatherIconSize + 16)
+                .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
                 .accessibilityLabel("Loading")
         } else {
             Image(systemName: "cloud")
-                .font(.system(size: weatherIconSize - 8, weight: .medium))
-                .symbolVariant(.circle.fill)
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.black.opacity(0.55), .white.opacity(0.5))
-                .frame(width: weatherIconSize + 16)
+                .font(.system(size: weatherIconSize - 8, weight: .regular))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(.white.opacity(0.48))
+                .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
                 .accessibilityHidden(true)
         }
     }
 
-    private func baseWeatherSymbolName(_ symbolName: String) -> String {
+    private func plainWeatherSymbolName(_ symbolName: String) -> String {
         for suffix in [".circle.fill", ".circle", ".fill"]
         where symbolName.hasSuffix(suffix) {
             return String(symbolName.dropLast(suffix.count))
@@ -457,8 +481,6 @@ private struct HomeWeatherAttribution: View {
             }
             .frame(width: 72, height: 10, alignment: .trailing)
         }
-        .padding(.trailing, 4)
-        .frame(maxWidth: .infinity, alignment: .trailing)
         .accessibilityLabel("Apple Weather attribution")
     }
 }
