@@ -146,6 +146,8 @@ struct SpokeTests {
             temperature: "72°F",
             condition: "Clear",
             symbolName: "sun.max.fill",
+            windSpeed: "12 mph",
+            windDirection: "NW",
             attributionMarkURL: URL(string: "https://example.com/mark")!,
             legalPageURL: URL(string: "https://example.com/legal")!
         )

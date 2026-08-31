@@ -372,6 +372,23 @@ private struct HomeWeatherView: View {
                         .foregroundStyle(.white.opacity(0.78))
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
+
+                    if let windSpeed = snapshot.windSpeed,
+                       let windDirection = snapshot.windDirection
+                    {
+                        Label {
+                            Text("\(windSpeed) \(windDirection)")
+                        } icon: {
+                            Image(systemName: "wind")
+                                .accessibilityHidden(true)
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.68))
+                        .padding(.top, 4)
+                        .accessibilityLabel(
+                            "Wind, \(windSpeed), \(windDirection)"
+                        )
+                    }
                 }
                 .layoutPriority(1)
             } else {

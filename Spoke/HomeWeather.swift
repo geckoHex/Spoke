@@ -13,6 +13,8 @@ struct HomeWeatherSnapshot: Codable, Equatable, Sendable {
     let temperature: String
     let condition: String
     let symbolName: String
+    let windSpeed: String?
+    let windDirection: String?
     let attributionMarkURL: URL
     let legalPageURL: URL
 }
@@ -167,6 +169,14 @@ final class HomeWeatherModel {
                 ),
                 condition: weather.condition.description,
                 symbolName: weather.symbolName,
+                windSpeed: weather.wind.speed.formatted(
+                    .measurement(
+                        width: .abbreviated,
+                        usage: .wind,
+                        numberFormatStyle: .number.precision(.fractionLength(0))
+                    )
+                ),
+                windDirection: weather.wind.compassDirection.abbreviation,
                 attributionMarkURL: weatherAttribution.combinedMarkDarkURL,
                 legalPageURL: weatherAttribution.legalPageURL
             )
