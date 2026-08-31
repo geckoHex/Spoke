@@ -40,8 +40,7 @@ struct HomeView: View {
                                 name: displayName
                             )
 
-                            Spacer()
-                                .frame(height: usesCompactSpacing ? 14 : 20)
+                            Spacer(minLength: usesCompactSpacing ? 10 : 16)
 
                             HomeWeatherView(
                                 snapshot: weatherModel.snapshot,
@@ -58,16 +57,17 @@ struct HomeView: View {
                             )
 
                             Spacer()
-                                .frame(height: usesCompactSpacing ? 14 : 20)
+                                .frame(height: usesCompactSpacing ? 12 : 16)
 
-                            VStack(spacing: usesCompactSpacing ? 10 : 14) {
-                                HomeRideActivity(
-                                    rides: completedRides,
-                                    date: currentDate
-                                )
+                            HomeRideActivity(
+                                rides: completedRides,
+                                date: currentDate
+                            )
 
-                                rideAction(date: currentDate)
-                            }
+                            Spacer()
+                                .frame(height: usesCompactSpacing ? 8 : 10)
+
+                            rideAction(date: currentDate)
                         }
                         .frame(
                             maxWidth: .infinity,
@@ -76,7 +76,7 @@ struct HomeView: View {
                         )
                         .padding(.horizontal, 24)
                         .padding(.top, usesCompactSpacing ? 16 : 24)
-                        .padding(.bottom, 10)
+                        .padding(.bottom, 4)
                     }
                 }
             }
@@ -373,10 +373,10 @@ private struct HomeWeatherView: View {
             }
         }
         .padding(.horizontal, 22)
-        .padding(.vertical, usesCompactHeight ? 15 : 18)
+        .padding(.vertical, usesCompactHeight ? 16 : 20)
         .frame(
             maxWidth: .infinity,
-            minHeight: usesCompactHeight ? 164 : 176,
+            minHeight: usesCompactHeight ? 184 : 192,
             alignment: .leading
         )
         .glassEffect(
