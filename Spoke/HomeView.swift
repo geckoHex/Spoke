@@ -67,6 +67,7 @@ struct HomeView: View {
                                 .frame(height: usesCompactSpacing ? 8 : 10)
 
                             rideAction(date: currentDate)
+                                .padding(.vertical, 6)
                         }
                         .frame(
                             maxWidth: .infinity,
