@@ -118,7 +118,7 @@ struct HomeView: View {
 
     @ViewBuilder
     private func rideAction(date: Date) -> some View {
-        GlassEffectContainer(spacing: 12) {
+        Group {
             if let ride = rideSession.activeRide {
                 ActiveRideControl(
                     ride: ride,
@@ -148,9 +148,7 @@ struct HomeView: View {
                         .frame(height: 64)
                 }
                 .buttonStyle(.plain)
-                .glassEffect(.regular.tint(.white).interactive(), in: Capsule())
-                .glassEffectID("rideTimer", in: rideControlNamespace)
-                .glassEffectTransition(.matchedGeometry)
+                .background(.white, in: Capsule())
                 .matchedGeometryEffect(id: "rideTimer", in: rideControlNamespace)
             }
         }
@@ -379,11 +377,10 @@ private struct HomeWeatherView: View {
             minHeight: usesCompactHeight ? 184 : 192,
             alignment: .leading
         )
-        .glassEffect(
-            .regular.tint(.white.opacity(0.025)),
+        .background(
+            Color(uiColor: .secondarySystemBackground),
             in: .rect(cornerRadius: 28)
         )
-        .shadow(color: .black.opacity(0.28), radius: 20, y: 12)
     }
 
     @ViewBuilder
@@ -518,7 +515,7 @@ private extension View {
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                Color.white.opacity(0.075),
+                Color(white: 0.075),
                 in: RoundedRectangle(cornerRadius: 22, style: .continuous)
             )
     }
@@ -685,9 +682,7 @@ private struct ActiveRideControl: View {
                 .foregroundStyle(.black)
                 .frame(width: 56, height: 56)
                 .contentShape(Circle())
-                .glassEffect(.regular.tint(.red).interactive(), in: Circle())
-                .glassEffectID("rideStop", in: namespace)
-                .glassEffectTransition(.materialize)
+                .background(.white, in: Circle())
                 .accessibilityAddTraits(.isButton)
                 .accessibilityLabel("Stop Ride")
                 .accessibilityHint("Hold for one second to stop the ride")
@@ -712,9 +707,7 @@ private struct ActiveRideControl: View {
                     .frame(width: 56, height: 56)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.tint(.yellow).interactive(), in: Circle())
-            .glassEffectID("ridePause", in: namespace)
-            .glassEffectTransition(.materialize)
+            .background(.white, in: Circle())
             .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
             .transition(
                 .offset(x: -68)
@@ -755,12 +748,7 @@ private struct ActiveRideControl: View {
         .frame(maxWidth: .infinity)
         .frame(height: 56)
         .clipShape(Capsule())
-        .glassEffect(
-            .regular.tint(.white),
-            in: Capsule()
-        )
-        .glassEffectID("rideTimer", in: namespace)
-        .glassEffectTransition(.matchedGeometry)
+        .background(.white, in: Capsule())
         .matchedGeometryEffect(id: "rideTimer", in: namespace)
         .animation(.smooth(duration: 0.25), value: isStopHoldActive)
         .accessibilityElement(children: .ignore)

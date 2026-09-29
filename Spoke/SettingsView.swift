@@ -28,6 +28,9 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
     }
 }
@@ -148,6 +151,7 @@ private struct SettingsForm: View {
         .scrollDismissesKeyboard(.interactively)
         .background(Color.black)
         .tint(.blue)
+        .toggleStyle(SpokeToggleStyle())
         .coordinateSpace(name: "settingsForm")
         .onPreferenceChange(SettingsInputFramePreferenceKey.self) {
             inputFrames = $0

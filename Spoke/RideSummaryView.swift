@@ -120,11 +120,13 @@ struct RideSummaryView: View {
         .presentationBackground(.black)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        .alert("Discard Ride?", isPresented: $isConfirmingDiscard) {
-            Button("Cancel", role: .cancel) {}
-            Button("Discard", role: .destructive, action: onDiscard)
-        } message: {
-            Text("This ride will be permanently deleted.")
+        .sheet(isPresented: $isConfirmingDiscard) {
+            SpokeConfirmationView(
+                title: "Discard Ride?",
+                message: "This ride will be permanently deleted.",
+                actionTitle: "Discard",
+                onConfirm: onDiscard
+            )
         }
     }
 

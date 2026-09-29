@@ -50,9 +50,14 @@ struct RideNoteEditorView: View {
                     } label: {
                         Image(systemName: "checkmark")
                     }
+                    .buttonStyle(SpokeToolbarButtonStyle())
                     .accessibilityLabel("Done")
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
+            .toolbarBackground(Color(uiColor: .secondarySystemBackground), for: .navigationBar)
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .preferredColorScheme(.dark)

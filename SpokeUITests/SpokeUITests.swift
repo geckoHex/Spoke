@@ -40,4 +40,77 @@ final class SpokeUITests: XCTestCase {
             XCUIApplication().launch()
         }
     }
+
+    @MainActor
+    func testSolidNavigationAndControls() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        for title in ["Home", "HUD", "History", "Settings"] {
+            let tab = app.buttons[title]
+            XCTAssertTrue(tab.waitForExistence(timeout: 5))
+            tab.tap()
+            XCTAssertTrue(tab.isSelected)
+        }
+
+        do {
+            let developerToggle = app.switches["Enable Developer Mode"]
+            XCTAssertTrue(developerToggle.waitForExistence(timeout: 5))
+            let originalValue = developerToggle.value as? String
+            defer {
+                if developerToggle.value as? String != originalValue {
+                    developerToggle.tap()
+                }
+            }
+            developerToggle.tap()
+            XCTAssertNotEqual(developerToggle.value as? String, originalValue)
+            developerToggle.tap()
+            XCTAssertEqual(developerToggle.value as? String, originalValue)
+        }
+
+        let settingsScreenshot = XCTAttachment(screenshot: app.screenshot())
+        settingsScreenshot.name = "Solid Settings"
+        settingsScreenshot.lifetime = .keepAlways
+        add(settingsScreenshot)
+
+        XCTAssertTrue(app.navigationBars["Settings"].exists)
+
+        app.buttons["Home"].tap()
+        let startRide = app.buttons["Start Ride"]
+        if startRide.exists {
+            XCTAssertLessThanOrEqual(startRide.frame.maxY, app.buttons["Home"].frame.minY)
+        }
+        let homeScreenshot = XCTAttachment(screenshot: app.screenshot())
+        homeScreenshot.name = "Solid Home"
+        homeScreenshot.lifetime = .keepAlways
+        add(homeScreenshot)
+
+        app.buttons["History"].tap()
+        let ride = app.scrollViews.buttons.firstMatch
+        guard ride.waitForExistence(timeout: 3) else { return }
+        ride.tap()
+
+        let actions = app.buttons["Ride actions"]
+        XCTAssertTrue(actions.waitForExistence(timeout: 5))
+        actions.tap()
+        app.buttons["Rename Ride"].tap()
+        XCTAssertTrue(app.textFields["Ride name"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+
+        actions.tap()
+        app.buttons["Delete Ride"].tap()
+        XCTAssertTrue(app.staticTexts["Delete Ride?"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+
+        let detailScreenshot = XCTAttachment(screenshot: app.screenshot())
+        detailScreenshot.name = "Solid Ride Detail"
+        detailScreenshot.lifetime = .keepAlways
+        add(detailScreenshot)
+
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        let destination = app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        edge.press(forDuration: 0.1, thenDragTo: destination)
+        XCTAssertTrue(ride.waitForExistence(timeout: 5))
+        XCTAssertFalse(actions.exists)
+    }
 }

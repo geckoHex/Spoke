@@ -61,6 +61,9 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .onAppear {
             relativeTimeSnapshot = .now
@@ -171,9 +174,7 @@ private struct RideHistoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var rideName = ""
-    @State private var isShowingNoteEditor = false
-    @State private var isShowingRenamePrompt = false
-    @State private var isShowingDeleteConfirmation = false
+    @State private var actionSheet: RideActionSheet?
     @State private var isShowingSoundtrack = false
     @State private var isShowingReplay = false
 
@@ -345,7 +346,26 @@ private struct RideHistoryDetailView: View {
         }
         .navigationTitle(ride.detailTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
+        .toolbarBackground(.black, for: .navigationBar)
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .background {
+            SpokeBackSwipeSupport()
+                .frame(width: 0, height: 0)
+        }
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(SpokeToolbarButtonStyle())
+                .accessibilityLabel("Back")
+            }
+            .sharedBackgroundVisibility(.hidden)
+
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 1) {
                     Text(ride.detailTitle)
@@ -362,71 +382,68 @@ private struct RideHistoryDetailView: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Section {
-                        Button {
-                            isShowingNoteEditor = true
-                        } label: {
-                            Label("Add Note", systemImage: "square.and.pencil")
-                        }
-                    }
-
-                    Section {
-                        Button {
-                            rideName = ride.customName ?? ride.detailTitle
-                            isShowingRenamePrompt = true
-                        } label: {
-                            Label("Rename Ride", systemImage: "pencil")
-                        }
-
-                        Button(role: .destructive) {
-                            isShowingDeleteConfirmation = true
-                        } label: {
-                            Label("Delete Ride", systemImage: "trash")
-                        }
-                    }
+                Button {
+                    actionSheet = .actions
                 } label: {
                     Image(systemName: "ellipsis")
                 }
+                .buttonStyle(SpokeToolbarButtonStyle())
                 .accessibilityLabel("Ride actions")
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         .sheet(isPresented: $isShowingSoundtrack) {
             RideSoundtrackView(ride: ride)
         }
-        .sheet(isPresented: $isShowingNoteEditor) {
-            RideNoteEditorView(ride: ride)
-        }
         .sheet(isPresented: $isShowingReplay) {
             RideReplayView(routePoints: ride.routePoints)
         }
-        .alert("Rename Ride", isPresented: $isShowingRenamePrompt) {
-            TextField("", text: $rideName)
-                .accessibilityLabel("Ride name")
-                .textInputAutocapitalization(.words)
-                .submitLabel(.done)
-                .onSubmit {
-                    guard !trimmedRideName.isEmpty else { return }
-                    renameRide()
-                    isShowingRenamePrompt = false
-                }
+        .sheet(item: $actionSheet) { sheet in
+            switch sheet {
+            case .actions:
+                rideActions
+            case .note:
+                RideNoteEditorView(ride: ride)
+            case .rename:
+                RideRenameView(name: $rideName, onSave: renameRide)
+            case .delete:
+                SpokeConfirmationView(
+                    title: "Delete Ride?",
+                    message: "This ride and its soundtrack will be permanently deleted.",
+                    actionTitle: "Delete",
+                    onConfirm: deleteRide
+                )
+            }
+        }
+    }
 
-            Button("Cancel", role: .cancel) {}
-            Button("Save") {
-                renameRide()
+    private var rideActions: some View {
+        VStack(spacing: 12) {
+            Button {
+                actionSheet = .note
+            } label: {
+                Label("Add Note", systemImage: "square.and.pencil")
             }
-            .disabled(trimmedRideName.isEmpty)
-        } message: {
-            Text("Ride name")
-        }
-        .alert("Delete Ride?", isPresented: $isShowingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                deleteRide()
+
+            Button {
+                rideName = ride.customName ?? ride.detailTitle
+                actionSheet = .rename
+            } label: {
+                Label("Rename Ride", systemImage: "pencil")
             }
-        } message: {
-            Text("This ride and its soundtrack will be permanently deleted.")
+
+            Button(role: .destructive) {
+                actionSheet = .delete
+            } label: {
+                Label("Delete Ride", systemImage: "trash")
+            }
         }
+        .buttonStyle(SpokePrimaryButtonStyle())
+        .padding(24)
+        .presentationDetents([.medium, .large])
+        .presentationBackground(Color(uiColor: .secondarySystemBackground))
+        .presentationDragIndicator(.visible)
+        .preferredColorScheme(.dark)
     }
 
     private func renameRide() {
@@ -463,6 +480,12 @@ private struct RideHistoryDetailView: View {
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
     }
+}
+
+private enum RideActionSheet: String, Identifiable {
+    case actions, note, rename, delete
+
+    var id: String { rawValue }
 }
 
 private struct RideStopBubble: View {
@@ -575,6 +598,9 @@ private struct RideSoundtrackView: View {
             }
             .navigationTitle("Ride soundtrack")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .preferredColorScheme(.dark)
         .presentationBackground(.black)

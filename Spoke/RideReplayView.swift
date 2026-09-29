@@ -152,6 +152,9 @@ struct RideReplayView: View {
             )
             .navigationTitle("Replay")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -160,8 +163,9 @@ struct RideReplayView: View {
                         Label("Close", systemImage: "xmark")
                             .labelStyle(.iconOnly)
                     }
-                    .tint(.white)
+                    .buttonStyle(SpokeToolbarButtonStyle())
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .preferredColorScheme(.dark)
