@@ -59,6 +59,29 @@ struct ContentView: View {
         }
         .background(.black)
         .preferredColorScheme(.dark)
+        .fullScreenCover(isPresented: Binding(
+            get: { rideSession.emergencyCheckIn.isPresented },
+            set: { if !$0 { rideSession.emergencyCheckIn.dismiss(at: .now) } }
+        )) {
+            RideEmergencyCheckInView {
+                rideSession.emergencyCheckIn.dismiss(at: .now)
+            }
+        }
+        .task {
+            while !Task.isCancelled {
+                if let ride = rideSession.activeRide, !ride.isPaused {
+                    rideSession.emergencyCheckIn.evaluate(
+                        at: .now,
+                        timeoutMinutes: settings?.emergencyCheckInMinutes ?? 3
+                    )
+                }
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    return
+                }
+            }
+        }
         .task {
             createSettingsIfNeeded()
             rideSession.configure(modelContext: modelContext)
@@ -70,8 +93,13 @@ struct ContentView: View {
         .onChange(of: shouldKeepScreenOn) {
             updateIdleTimer()
         }
+        .onChange(of: rideSession.emergencyCheckIn.isPresented) {
+            updateIdleTimer()
+        }
         .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false
+            if !rideSession.emergencyCheckIn.isPresented {
+                UIApplication.shared.isIdleTimerDisabled = false
+            }
         }
     }
 
@@ -125,7 +153,7 @@ struct ContentView: View {
 
     private func updateIdleTimer() {
         UIApplication.shared.isIdleTimerDisabled =
-            scenePhase == .active && shouldKeepScreenOn
+            scenePhase == .active && (shouldKeepScreenOn || rideSession.emergencyCheckIn.isPresented)
     }
 }
 

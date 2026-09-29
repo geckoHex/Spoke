@@ -49,6 +49,10 @@ struct RideView: View {
                 }
             }
         }
+        .gesture(DeveloperCheckInGesture(
+            isEnabled: settings?.developerModeEnabled == true,
+            onTrigger: { rideSession.emergencyCheckIn.isPresented = true }
+        ))
         .task(id: rideSession.activeRide != nil) {
             guard rideSession.activeRide != nil else {
                 isShowingSkeleton = true
@@ -141,13 +145,15 @@ private struct RideDashboardView: View {
                 await speedAnnouncer.stop()
             }
         }
-        .onChange(of: displayedSpeedInMilesPerHour, initial: true) { _, speed in
-            Task {
+        .task(id: overspeedAlertSpeed) {
+            if let speed = overspeedAlertSpeed {
                 await overspeedAlertController.update(speedInMilesPerHour: speed)
+            } else {
+                await overspeedAlertController.stop()
             }
         }
-        .task(id: settings?.speakSpeedEnabled == true) {
-            guard settings?.speakSpeedEnabled == true else {
+        .task(id: shouldSpeakSpeed) {
+            guard shouldSpeakSpeed else {
                 await speedAnnouncer.stop()
                 return
             }
@@ -210,6 +216,14 @@ private struct RideDashboardView: View {
     private var spotifyCredentials: SpotifyCredentials? {
         guard let settings else { return nil }
         return SpotifyCredentials(settings: settings)
+    }
+
+    private var overspeedAlertSpeed: Int? {
+        rideSession.emergencyCheckIn.isPresented ? nil : displayedSpeedInMilesPerHour
+    }
+
+    private var shouldSpeakSpeed: Bool {
+        settings?.speakSpeedEnabled == true && !rideSession.emergencyCheckIn.isPresented
     }
 
     private var isDeveloperModeEnabled: Bool {

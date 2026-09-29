@@ -14,6 +14,7 @@ final class RideSessionController {
     private(set) var activeRide: TrackedRide?
     private(set) var speedInMilesPerHour = 0
     private(set) var currentMapState: RideMapState?
+    var emergencyCheckIn = RideEmergencyCheckInState()
 
     var currentLocation: RideLocationSample? {
         currentMapState?.location
@@ -269,6 +270,7 @@ final class RideSessionController {
     }
 
     private func endLocationUpdates() {
+        emergencyCheckIn = RideEmergencyCheckInState()
         locationSessionGeneration += 1
         locationTask?.cancel()
         locationTask = nil
@@ -296,6 +298,7 @@ final class RideSessionController {
 
         if let speedInMilesPerHour = update.speedInMilesPerHour {
             self.speedInMilesPerHour = speedInMilesPerHour
+            emergencyCheckIn.observe(speedInMilesPerHour: speedInMilesPerHour, at: .now)
         }
     }
 

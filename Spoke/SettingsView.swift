@@ -73,6 +73,16 @@ private struct SettingsForm: View {
                 Toggle("Speak Speed", isOn: $settings.speakSpeedEnabled)
             }
 
+            Section("Emergency Check-In") {
+                Picker("Stopped for", selection: $settings.emergencyCheckInMinutes) {
+                    ForEach(1...10, id: \.self) { minutes in
+                        Text("\(minutes) \(minutes == 1 ? "minute" : "minutes")")
+                            .tag(minutes)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+
             Section("Developer") {
                 Toggle("Enable Developer Mode", isOn: $settings.developerModeEnabled)
             }
