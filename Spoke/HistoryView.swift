@@ -59,8 +59,6 @@ struct HistoryView: View {
                     .background(Color.black)
                 }
             }
-            .navigationTitle("History")
-            .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)

@@ -26,8 +26,6 @@ struct SettingsView: View {
                         .ignoresSafeArea()
                 }
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
