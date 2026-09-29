@@ -59,6 +59,7 @@ struct ContentView: View {
         }
         .background(.black)
         .preferredColorScheme(.dark)
+        .tint(.blue)
         .fullScreenCover(isPresented: Binding(
             get: { rideSession.emergencyCheckIn.isPresented },
             set: { if !$0 { rideSession.emergencyCheckIn.dismiss(at: .now) } }
@@ -115,7 +116,7 @@ struct ContentView: View {
                         Text(tab.title)
                             .font(.caption2.weight(.medium))
                     }
-                    .foregroundStyle(selectedTab == tab ? .white : .white.opacity(0.5))
+                    .foregroundStyle(selectedTab == tab ? Color.white : SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 54)
                     .contentShape(.rect)

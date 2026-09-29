@@ -29,8 +29,6 @@ struct HomeView: View {
                     Color.black
                         .ignoresSafeArea()
 
-                    HomeSkyGradient(period: HomeSkyPeriod(date: currentDate))
-
                     GeometryReader { proxy in
                         let usesCompactSpacing = proxy.size.height < 760
 
@@ -74,7 +72,7 @@ struct HomeView: View {
                             maxHeight: .infinity,
                             alignment: .topLeading
                         )
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, SpokeStyle.pageInset)
                         .padding(.top, usesCompactSpacing ? 16 : 24)
                         .padding(.bottom, 4)
                     }
@@ -142,13 +140,8 @@ struct HomeView: View {
                     }
                 } label: {
                     Label("Start Ride", systemImage: "figure.outdoor.cycle")
-                        .font(.headline)
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 64)
                 }
-                .buttonStyle(.plain)
-                .background(.white, in: Capsule())
+                .buttonStyle(SpokePrimaryButtonStyle(minHeight: 56))
                 .matchedGeometryEffect(id: "rideTimer", in: rideControlNamespace)
             }
         }
@@ -196,19 +189,19 @@ private struct HomeRideActivity: View {
             weeklySummary
 
             Divider()
-                .overlay(.white.opacity(0.12))
+                .overlay(SpokeStyle.separator)
 
             if let latestRide = rides.first {
                 latestRideRow(latestRide)
             } else {
                 Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
                     .font(.body.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("No completed rides yet")
             }
         }
-        .homeCard()
+        .spokeCard()
         .accessibilityElement(children: .contain)
     }
 
@@ -223,7 +216,7 @@ private struct HomeRideActivity: View {
 
                 Text(rideCountDescription)
                     .font(.headline)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(SpokeStyle.secondaryText)
             }
 
             HStack(alignment: .top, spacing: 24) {
@@ -257,11 +250,11 @@ private struct HomeRideActivity: View {
 
             HStack(spacing: 6) {
                 Image(systemName: systemImage)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.white)
                     .accessibilityHidden(true)
 
                 Text(label)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(SpokeStyle.secondaryText)
             }
             .font(.subheadline.weight(.medium))
         }
@@ -274,7 +267,7 @@ private struct HomeRideActivity: View {
         HStack(spacing: 16) {
             Image(systemName: "figure.outdoor.cycle")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.white)
                 .frame(width: 32)
                 .accessibilityHidden(true)
 
@@ -291,7 +284,7 @@ private struct HomeRideActivity: View {
                         .day()
                 )
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(SpokeStyle.secondaryText)
             }
 
             Spacer(minLength: 16)
@@ -308,7 +301,7 @@ private struct HomeRideActivity: View {
 
                 Text(compactDuration(ride.elapsedDuration()))
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(SpokeStyle.secondaryText)
                     .monospacedDigit()
             }
         }
@@ -378,8 +371,8 @@ private struct HomeWeatherView: View {
             alignment: .leading
         )
         .background(
-            Color(uiColor: .secondarySystemBackground),
-            in: .rect(cornerRadius: 28)
+            SpokeStyle.surface,
+            in: .rect(cornerRadius: SpokeStyle.cardRadius)
         )
     }
 
@@ -395,7 +388,7 @@ private struct HomeWeatherView: View {
 
                 Text(snapshot.condition)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.76))
+                    .foregroundStyle(SpokeStyle.secondaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
             }
@@ -403,7 +396,7 @@ private struct HomeWeatherView: View {
         } else {
             Text(isUnavailable ? "Weather unavailable" : "Loading weather")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.76))
+                .foregroundStyle(SpokeStyle.secondaryText)
                 .frame(minHeight: weatherIconSize + 8, alignment: .center)
         }
     }
@@ -420,10 +413,10 @@ private struct HomeWeatherView: View {
                     .accessibilityHidden(true)
             }
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.82))
+            .foregroundStyle(SpokeStyle.secondaryText)
             .padding(.horizontal, 13)
             .frame(height: 36)
-            .background(.white.opacity(0.09), in: Capsule())
+            .background(SpokeStyle.elevatedSurface, in: Capsule())
             .accessibilityLabel("Wind, \(windSpeed), \(windDirection)")
         }
     }
@@ -436,7 +429,6 @@ private struct HomeWeatherView: View {
                 .symbolRenderingMode(.monochrome)
                 .foregroundStyle(.white)
                 .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
-                .shadow(color: .black.opacity(0.4), radius: 12, y: 8)
                 .accessibilityHidden(true)
         } else if isLoading || !isUnavailable {
             ProgressView()
@@ -448,7 +440,7 @@ private struct HomeWeatherView: View {
             Image(systemName: "cloud")
                 .font(.system(size: weatherIconSize - 8, weight: .regular))
                 .symbolRenderingMode(.monochrome)
-                .foregroundStyle(.white.opacity(0.48))
+                .foregroundStyle(SpokeStyle.secondaryText)
                 .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
                 .accessibilityHidden(true)
         }
@@ -476,7 +468,7 @@ private struct HomeWeatherAttribution: View {
             } placeholder: {
                 Text("Apple Weather")
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(SpokeStyle.secondaryText)
             }
             .frame(width: 72, height: 10, alignment: .trailing)
         }
@@ -495,7 +487,7 @@ private struct HomeGreeting: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("\(timeOfDay.salutation),")
                 .font(.title.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(SpokeStyle.secondaryText)
 
             Text(name)
                 .font(.system(size: nameSize, weight: .bold))
@@ -506,18 +498,6 @@ private struct HomeGreeting: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(timeOfDay.salutation), \(name)")
-    }
-}
-
-private extension View {
-    func homeCard(padding: CGFloat = 20) -> some View {
-        self
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                Color(white: 0.075),
-                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-            )
     }
 }
 
@@ -544,114 +524,6 @@ private enum TimeOfDay {
         case .morning: "Good morning"
         case .afternoon: "Good afternoon"
         case .evening: "Good evening"
-        }
-    }
-}
-
-private struct HomeSkyGradient: View {
-    let period: HomeSkyPeriod
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isDrifting = false
-
-    var body: some View {
-        GeometryReader { proxy in
-            LinearGradient(
-                colors: period.colors,
-                startPoint: .topLeading,
-                endPoint: .topTrailing
-            )
-            .mask {
-                LinearGradient(
-                    stops: [
-                        .init(color: .white, location: 0),
-                        .init(color: .white.opacity(0.82), location: 0.36),
-                        .init(color: .clear, location: 0.96),
-                    ],
-                    startPoint: UnitPoint(x: 0.08, y: 0),
-                    endPoint: UnitPoint(x: 0.92, y: 1)
-                )
-            }
-            .frame(
-                width: proxy.size.width,
-                height: min(max(proxy.size.height * 0.61, 390), 530),
-                alignment: .top
-            )
-            .scaleEffect(
-                x: 1.08,
-                y: reduceMotion ? 1 : (isDrifting ? 1.025 : 1),
-                anchor: .top
-            )
-            .offset(
-                x: reduceMotion ? 0 : (isDrifting ? 10 : -10),
-                y: reduceMotion ? 0 : (isDrifting ? 5 : -3)
-            )
-            .blur(radius: 22)
-            .opacity(0.31)
-            .animation(
-                reduceMotion
-                    ? nil
-                    : .easeInOut(duration: 24).repeatForever(
-                        autoreverses: true
-                    ),
-                value: isDrifting
-            )
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear {
-            isDrifting = !reduceMotion
-        }
-        .onChange(of: reduceMotion) { _, shouldReduceMotion in
-            isDrifting = !shouldReduceMotion
-        }
-    }
-}
-
-private enum HomeSkyPeriod {
-    case sunrise
-    case day
-    case sunset
-    case night
-
-    init(date: Date) {
-        let hour = Calendar.current.component(.hour, from: date)
-
-        switch hour {
-        case 5..<8:
-            self = .sunrise
-        case 8..<17:
-            self = .day
-        case 17..<20:
-            self = .sunset
-        default:
-            self = .night
-        }
-    }
-
-    var colors: [Color] {
-        switch self {
-        case .sunrise:
-            [
-                Color(red: 1, green: 0.25, blue: 0.5),
-                Color(red: 1, green: 0.48, blue: 0.16),
-            ]
-        case .day:
-            [
-                Color(red: 1, green: 0.78, blue: 0.18),
-                Color(red: 0.18, green: 0.55, blue: 1),
-            ]
-        case .sunset:
-            [
-                Color(red: 0.55, green: 0.18, blue: 0.85),
-                Color(red: 1, green: 0.34, blue: 0.12),
-            ]
-        case .night:
-            [
-                Color(red: 0.28, green: 0.12, blue: 0.58),
-                Color(red: 0.03, green: 0.12, blue: 0.35),
-            ]
         }
     }
 }
@@ -702,12 +574,8 @@ private struct ActiveRideControl: View {
                 onPauseToggle()
             } label: {
                 Image(systemName: ride.isPaused ? "play.fill" : "pause.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.black)
-                    .frame(width: 56, height: 56)
             }
-            .buttonStyle(.plain)
-            .background(.white, in: Circle())
+            .buttonStyle(SpokeToolbarButtonStyle(size: 56))
             .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
             .transition(
                 .offset(x: -68)
@@ -747,8 +615,8 @@ private struct ActiveRideControl: View {
         .foregroundStyle(.black)
         .frame(maxWidth: .infinity)
         .frame(height: 56)
-        .clipShape(Capsule())
-        .background(.white, in: Capsule())
+        .clipShape(RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
+        .background(.white, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
         .matchedGeometryEffect(id: "rideTimer", in: namespace)
         .animation(.smooth(duration: 0.25), value: isStopHoldActive)
         .accessibilityElement(children: .ignore)
@@ -812,21 +680,6 @@ private struct ActiveRideControl: View {
         isStopHoldActive = true
         stopHoldProgress = 1
         onEnd()
-    }
-}
-
-struct SpokePrimaryButtonStyle: ButtonStyle {
-    var minHeight: CGFloat = 50
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline)
-            .foregroundStyle(.black)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: minHeight)
-            .padding(.horizontal, 16)
-            .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
 

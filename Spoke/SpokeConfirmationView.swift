@@ -11,10 +11,10 @@ struct SpokeConfirmationView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text(title)
-                .font(.title2.weight(.bold))
+                .font(.title2.weight(.semibold))
             Text(message)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SpokeStyle.secondaryText)
 
             Button(actionTitle, role: .destructive) {
                 dismiss()
@@ -30,7 +30,7 @@ struct SpokeConfirmationView: View {
         .foregroundStyle(.white)
         .padding(24)
         .presentationDetents([.medium, .large])
-        .presentationBackground(Color(uiColor: .secondarySystemBackground))
+        .presentationBackground(SpokeStyle.surface)
         .presentationDragIndicator(.visible)
         .preferredColorScheme(.dark)
     }

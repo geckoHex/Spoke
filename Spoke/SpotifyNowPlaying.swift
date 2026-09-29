@@ -134,7 +134,7 @@ struct SpotifyNowPlayingView: View {
 
                         Text(track.artist)
                             .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.55))
+                            .foregroundStyle(SpokeStyle.secondaryText)
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -159,7 +159,7 @@ struct SpotifyNowPlayingView: View {
                     .scaledToFill()
             default:
                 ZStack {
-                    Color.white.opacity(0.12)
+                    SpokeStyle.elevatedSurface
 
                     Image(systemName: "music.note")
                         .font(.title2.weight(.medium))
@@ -168,7 +168,7 @@ struct SpotifyNowPlayingView: View {
             }
         }
         .frame(width: 64, height: 64)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityHidden(true)
     }
 
@@ -180,8 +180,8 @@ struct SpotifyNowPlayingView: View {
 struct SpotifyPausedView: View {
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.white.opacity(0.12))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(SpokeStyle.elevatedSurface)
                 .frame(width: 64, height: 64)
                 .accessibilityHidden(true)
 
@@ -192,7 +192,7 @@ struct SpotifyPausedView: View {
 
                 Text("Nothing playing right now")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(SpokeStyle.secondaryText)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

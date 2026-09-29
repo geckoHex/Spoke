@@ -126,7 +126,7 @@ private struct CheckInButtonStyle: ButtonStyle {
         configuration.label
             .foregroundStyle(.black)
             .frame(maxWidth: .infinity, minHeight: 60)
-            .background(.white, in: RoundedRectangle(cornerRadius: 14))
+            .background(.white, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

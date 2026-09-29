@@ -155,6 +155,7 @@ private struct SettingsForm: View {
                 .inputFramePreference(for: .spotifyRefreshToken)
             }
         }
+        .textCase(nil)
         .scrollContentBackground(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .background(Color.black)

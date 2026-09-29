@@ -51,7 +51,7 @@ struct HistoryView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, SpokeStyle.pageInset)
                         .padding(.top, 12)
                         .padding(.bottom, 24)
                     }
@@ -103,7 +103,7 @@ private struct RideHistoryRow: View {
                         )
                     )
                         .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(SpokeStyle.secondaryText)
                 }
 
                 HStack(spacing: 16) {
@@ -128,17 +128,17 @@ private struct RideHistoryRow: View {
 
             Image(systemName: "chevron.right")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(SpokeStyle.secondaryText)
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 15)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            Color.white.opacity(isHighlighted ? 0.14 : 0.075),
-            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            isHighlighted ? SpokeStyle.elevatedSurface : SpokeStyle.surface,
+            in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
@@ -150,13 +150,13 @@ private struct RideHistoryRow: View {
         HStack(spacing: 8) {
             Image(systemName: systemImage)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.42))
+                .foregroundStyle(SpokeStyle.secondaryText)
                 .frame(width: 16)
                 .accessibilityHidden(true)
 
             Text(value)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(SpokeStyle.secondaryText)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -240,7 +240,7 @@ private struct RideHistoryDetailView: View {
                         Text("No route recorded")
                             .font(.headline)
                     }
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     Map(initialPosition: cameraPosition) {
@@ -274,6 +274,14 @@ private struct RideHistoryDetailView: View {
                             }
                         }
                     }
+                    .mapStyle(
+                        .standard(
+                            elevation: .flat,
+                            emphasis: .muted,
+                            pointsOfInterest: .excludingAll,
+                            showsTraffic: false
+                        )
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(alignment: .bottomTrailing) {
                         Button {
@@ -284,7 +292,7 @@ private struct RideHistoryDetailView: View {
                                 .foregroundStyle(.black)
                                 .padding(.horizontal, 14)
                                 .frame(minHeight: 44)
-                                .background(.white, in: Capsule())
+                                .background(.white, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
                                 .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                         }
                         .buttonStyle(.plain)
@@ -339,7 +347,7 @@ private struct RideHistoryDetailView: View {
                 }
                 .buttonStyle(SpokePrimaryButtonStyle())
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, SpokeStyle.pageInset)
             .padding(.bottom, 16)
         }
         .navigationTitle(ride.detailTitle)
@@ -372,7 +380,7 @@ private struct RideHistoryDetailView: View {
 
                     Text(rideDateAndTime)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SpokeStyle.secondaryText)
                         .monospacedDigit()
                         .lineLimit(1)
                 }
@@ -439,7 +447,7 @@ private struct RideHistoryDetailView: View {
         .buttonStyle(SpokePrimaryButtonStyle())
         .padding(24)
         .presentationDetents([.medium, .large])
-        .presentationBackground(Color(uiColor: .secondarySystemBackground))
+        .presentationBackground(SpokeStyle.surface)
         .presentationDragIndicator(.visible)
         .preferredColorScheme(.dark)
     }
@@ -469,13 +477,13 @@ private struct RideHistoryDetailView: View {
 
             Label(title, systemImage: systemImage)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(SpokeStyle.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 82)
         .background(
-            Color.white.opacity(0.075),
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            SpokeStyle.surface,
+            in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
         )
     }
 }
@@ -583,25 +591,25 @@ private struct RideSoundtrackView: View {
                         systemImage: "music.note.list",
                         description: Text("Songs played during this ride will appear here.")
                     )
-                    .background(Color.black)
+                    .background(SpokeStyle.surface)
                 } else {
                     List(entries) { entry in
                         RideSoundtrackRow(entry: entry)
-                            .listRowBackground(Color.black)
+                            .listRowBackground(SpokeStyle.surface)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                    .background(Color.black)
+                    .background(SpokeStyle.surface)
                 }
             }
             .navigationTitle("Ride soundtrack")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackground(SpokeStyle.surface, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .preferredColorScheme(.dark)
-        .presentationBackground(.black)
+        .presentationBackground(SpokeStyle.surface)
         .presentationDragIndicator(.visible)
     }
 }
@@ -621,14 +629,14 @@ private struct RideSoundtrackRow: View {
 
                 Text(entry.artist)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(SpokeStyle.secondaryText)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(formattedStartTime)
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(SpokeStyle.secondaryText)
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
@@ -662,7 +670,7 @@ private struct RideSoundtrackRow: View {
 
     private var albumArtPlaceholder: some View {
         ZStack {
-            Color.white.opacity(0.12)
+            SpokeStyle.elevatedSurface
 
             Image(systemName: "music.note")
                 .font(.title3.weight(.medium))

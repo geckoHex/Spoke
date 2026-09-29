@@ -15,109 +15,96 @@ struct RideSummaryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black
+                SpokeStyle.surface
                     .ignoresSafeArea()
 
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "flag.pattern.checkered.2.crossed")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 48, height: 48)
-                            .background(
-                                .white.opacity(0.1),
-                                in: Circle()
-                            )
-                            .accessibilityHidden(true)
-
-                        Text("Ride Complete")
-                            .font(.title.weight(.bold))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
+                ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("Duration")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
+                        HStack(spacing: 14) {
+                            Image(systemName: "flag.pattern.checkered.2.crossed")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 48, height: 48)
+                                .background(
+                                    .white.opacity(0.1),
+                                    in: Circle()
+                                )
+                                .accessibilityHidden(true)
 
-                            Text(RideMetrics.duration(ride.elapsedDuration()))
-                                .font(.system(size: 48, weight: .bold))
-                                .monospacedDigit()
-                                .minimumScaleFactor(0.75)
-                                .lineLimit(1)
+                            Text("Ride Complete")
+                                .font(.title2.weight(.semibold))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(20)
 
-                        Divider()
-                            .overlay(.white.opacity(0.12))
+                        VStack(alignment: .leading, spacing: 0) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Duration")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(SpokeStyle.secondaryText)
 
-                        HStack(spacing: 0) {
-                            summaryItem(
-                                title: "Distance",
-                                value: RideMetrics.distance(
-                                    RideMetrics.distanceInMeters(for: ride)
-                                )
-                            )
+                                Text(RideMetrics.duration(ride.elapsedDuration()))
+                                    .font(.system(size: 48, weight: .bold))
+                                    .monospacedDigit()
+                                    .minimumScaleFactor(0.75)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(20)
 
                             Divider()
-                                .overlay(.white.opacity(0.12))
+                                .overlay(SpokeStyle.separator)
 
-                            summaryItem(
-                                title: "Started",
-                                value: ride.startedAt.formatted(
-                                    date: .omitted,
-                                    time: .shortened
-                                )
-                            )
-                        }
-                        .frame(height: 88)
-                    }
-                    .background(
-                        .white.opacity(0.075),
-                        in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    )
-                    .padding(.top, 24)
-
-                    Spacer(minLength: 0)
-
-                    VStack(spacing: 18) {
-                        Button(action: onDone) {
-                            Text("Done")
-                                .font(.headline)
-                                .foregroundStyle(.black)
-                                .frame(maxWidth: .infinity)
-                                .frame(minHeight: 50)
-                                .background(
-                                    .white,
-                                    in: RoundedRectangle(
-                                        cornerRadius: 14,
-                                        style: .continuous
+                            HStack(spacing: 0) {
+                                summaryItem(
+                                    title: "Distance",
+                                    value: RideMetrics.distance(
+                                        RideMetrics.distanceInMeters(for: ride)
                                     )
                                 )
-                        }
-                        .buttonStyle(.plain)
 
-                        Button {
-                            isConfirmingDiscard = true
-                        } label: {
-                            Label("Discard", systemImage: "trash")
+                                Divider()
+                                    .overlay(SpokeStyle.separator)
+
+                                summaryItem(
+                                    title: "Started",
+                                    value: ride.startedAt.formatted(
+                                        date: .omitted,
+                                        time: .shortened
+                                    )
+                                )
+                            }
+                            .frame(height: 88)
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.red)
-                        .buttonStyle(.plain)
+                        .background(
+                            SpokeStyle.elevatedSurface,
+                            in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
+                        )
+                        .padding(.top, 24)
+
+                        VStack(spacing: 12) {
+                            Button("Done", action: onDone)
+                                .buttonStyle(SpokePrimaryButtonStyle())
+
+                            Button {
+                                isConfirmingDiscard = true
+                            } label: {
+                                Label("Discard", systemImage: "trash")
+                            }
+                            .buttonStyle(SpokePrimaryButtonStyle())
+                        }
+                        .padding(.top, 24)
                     }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.top, 28)
+                    .padding(.bottom, 16)
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 24)
-                .padding(.top, 28)
-                .padding(.bottom, 16)
+                .scrollBounceBehavior(.basedOnSize)
             }
         }
         .preferredColorScheme(.dark)
-        .presentationBackground(.black)
+        .presentationBackground(SpokeStyle.surface)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $isConfirmingDiscard) {
@@ -138,7 +125,7 @@ struct RideSummaryView: View {
 
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SpokeStyle.secondaryText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding(.horizontal, 22)

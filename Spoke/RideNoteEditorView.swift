@@ -23,21 +23,41 @@ struct RideNoteEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(uiColor: .secondarySystemBackground)
+                SpokeStyle.surface
                     .ignoresSafeArea()
                     .onTapGesture {
                         isNoteFocused = false
                     }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    TextEditor(text: $noteText)
-                        .focused($isNoteFocused)
-                        .font(.body)
-                        .foregroundStyle(.white)
-                        .scrollContentBackground(.hidden)
-                        .accessibilityLabel("Note")
+                    Text("Note")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(SpokeStyle.secondaryText)
+
+                    HStack(alignment: .top, spacing: 8) {
+                        TextEditor(text: $noteText)
+                            .focused($isNoteFocused)
+                            .font(.body)
+                            .foregroundStyle(.white)
+                            .scrollContentBackground(.hidden)
+                            .accessibilityLabel("Note")
+
+                        if isNoteFocused && !noteText.isEmpty {
+                            Button {
+                                noteText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(SpokeStyle.secondaryText)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Clear note")
+                            .padding(.top, 8)
+                        }
+                    }
+                    .padding(12)
+                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 8))
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, SpokeStyle.pageInset)
                 .padding(.top, 18)
                 .padding(.bottom, 20)
             }
@@ -55,13 +75,13 @@ struct RideNoteEditorView: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
-            .toolbarBackground(Color(uiColor: .secondarySystemBackground), for: .navigationBar)
+            .toolbarBackground(SpokeStyle.surface, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .preferredColorScheme(.dark)
-        .presentationBackground(Color(uiColor: .secondarySystemBackground))
+        .presentationBackground(SpokeStyle.surface)
         .presentationDragIndicator(.visible)
         .onChange(of: noteText) {
             ride.updateNote(to: noteText)

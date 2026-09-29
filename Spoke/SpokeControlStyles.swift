@@ -1,11 +1,54 @@
 import SwiftUI
 
+enum SpokeStyle {
+    static let surface = Color(uiColor: .secondarySystemBackground)
+    static let elevatedSurface = Color(uiColor: .tertiarySystemBackground)
+    static let secondaryText = Color.white.opacity(0.7)
+    static let separator = Color.white.opacity(0.12)
+    static let cardRadius: CGFloat = 22
+    static let controlRadius: CGFloat = 14
+    static let pageInset: CGFloat = 20
+}
+
+extension View {
+    func spokeCard(padding: CGFloat = 20) -> some View {
+        self
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                SpokeStyle.surface,
+                in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
+            )
+    }
+}
+
+struct SpokePrimaryButtonStyle: ButtonStyle {
+    var minHeight: CGFloat = 50
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(.black)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: minHeight)
+            .padding(.horizontal, 16)
+            .background(
+                .white,
+                in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
+            )
+            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
+    }
+}
+
 struct SpokeToolbarButtonStyle: ButtonStyle {
+    var size: CGFloat = 44
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
             .foregroundStyle(.black)
-            .frame(width: 44, height: 44)
+            .frame(width: size, height: size)
             .background(.white, in: Circle())
             .opacity(configuration.isPressed ? 0.75 : 1)
     }

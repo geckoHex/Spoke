@@ -189,7 +189,7 @@ private struct RideDashboardView: View {
             spotifySection
                 .frame(height: metrics.spotifyHeight, alignment: .top)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SpokeStyle.pageInset)
         .padding(.top, metrics.topInset)
         .padding(.bottom, metrics.bottomInset)
     }
@@ -208,7 +208,7 @@ private struct RideDashboardView: View {
             currentLocationMap
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SpokeStyle.pageInset)
         .padding(.top, metrics.topInset)
         .padding(.bottom, metrics.bottomInset)
     }
@@ -304,7 +304,7 @@ private struct RideDashboardView: View {
                 Text(RideMetrics.duration(elapsedDuration))
                     .monospacedDigit()
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(SpokeStyle.secondaryText)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 13)
@@ -356,8 +356,7 @@ private struct RideDashboardView: View {
                         .font(
                             .system(
                                 size: min(92, arcWidth * 0.29),
-                                weight: .semibold,
-                                design: .rounded
+                                weight: .semibold
                             )
                         )
                         .monospacedDigit()
@@ -366,7 +365,7 @@ private struct RideDashboardView: View {
 
                     Text("mph")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(SpokeStyle.secondaryText)
                 }
                 .padding(.bottom, 4)
             }
@@ -474,7 +473,7 @@ private struct RideSkeletonView: View {
             spotifySkeleton
                 .frame(height: metrics.spotifyHeight, alignment: .top)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SpokeStyle.pageInset)
         .padding(.top, metrics.topInset)
         .padding(.bottom, metrics.bottomInset)
     }
@@ -493,7 +492,7 @@ private struct RideSkeletonView: View {
             mapSkeleton
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SpokeStyle.pageInset)
         .padding(.top, metrics.topInset)
         .padding(.bottom, metrics.bottomInset)
     }
@@ -533,7 +532,7 @@ private struct RideSkeletonView: View {
 
     private var spotifySkeleton: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.white.opacity(0.16))
                 .frame(width: 64, height: 64)
 

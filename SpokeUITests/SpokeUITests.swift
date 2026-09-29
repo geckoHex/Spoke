@@ -73,7 +73,7 @@ final class SpokeUITests: XCTestCase {
         settingsScreenshot.lifetime = .keepAlways
         add(settingsScreenshot)
 
-        XCTAssertTrue(app.navigationBars["Settings"].exists)
+        XCTAssertTrue(app.textFields["Name"].exists)
 
         app.buttons["Home"].tap()
         let startRide = app.buttons["Start Ride"]
@@ -94,7 +94,13 @@ final class SpokeUITests: XCTestCase {
         XCTAssertTrue(actions.waitForExistence(timeout: 5))
         actions.tap()
         app.buttons["Rename Ride"].tap()
-        XCTAssertTrue(app.textFields["Ride name"].waitForExistence(timeout: 5))
+        let nameField = app.textFields["Ride name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        app.buttons["Clear ride name"].tap()
+        XCTAssertFalse(app.buttons["Save"].isEnabled)
+        nameField.typeText("UI check")
+        XCTAssertTrue(app.buttons["Save"].isEnabled)
         app.buttons["Cancel"].tap()
 
         actions.tap()
