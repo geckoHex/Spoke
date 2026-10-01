@@ -100,9 +100,6 @@ struct LiveRidePolicy {
     static let logger = Logger(subsystem: "Spoke", category: "LiveRide")
     private(set) var pending: Pending?
     private var latestSpeed: Pending?
-    private var lastSpeed: Int?
-    private var lastSpeedAt: Date?
-    private var lastNarrationAt: Date?
     private var lastSpoken: [LiveRideEvent.Category: LiveRideEvent] = [:]
     var categories = Set(LiveRideEvent.Category.allCases)
 
@@ -116,12 +113,6 @@ struct LiveRidePolicy {
         if case .speedChanged(let speed) = event {
             guard (0...120).contains(speed) else { return }
             latestSpeed = Pending(event: event, observedAt: date)
-            // Even a suppressed new reading invalidates an older pending speed.
-            if pending?.event.category == .speed { pending = nil }
-            guard speedIsEligible(speed, at: date) else {
-                log(event, "SUPPRESSED: DELTA TOO SMALL OR COOLDOWN")
-                return
-            }
         } else if lastSpoken[event.category] == event {
             log(event, "SUPPRESSED: ALREADY SPOKEN")
             return
@@ -133,9 +124,8 @@ struct LiveRidePolicy {
     mutating func refresh(at date: Date) {
         discardExpired(at: date)
         if let latestSpeed, latestSpeed.isFresh(at: date),
-           categories.contains(.speed),
-           case .speedChanged(let speed) = latestSpeed.event,
-           speedIsEligible(speed, at: date), pending == nil {
+           categories.contains(.speed), pending == nil {
+            // Fill every gap with current speed, even when its value hasn't changed.
             offer(latestSpeed)
         }
     }
@@ -147,18 +137,9 @@ struct LiveRidePolicy {
         return next.event
     }
 
-    mutating func didStart(_ event: LiveRideEvent, at date: Date) {
+    mutating func didStart(_ event: LiveRideEvent) {
         lastSpoken[event.category] = event
-        lastNarrationAt = date
-        if case .speedChanged(let speed) = event {
-            lastSpeed = speed
-            lastSpeedAt = date
-        }
         log(event, "SPOKEN")
-    }
-
-    mutating func didFinish(at date: Date) {
-        lastNarrationAt = date
     }
 
     mutating func invalidate(_ category: LiveRideEvent.Category) {
@@ -167,15 +148,6 @@ struct LiveRidePolicy {
             self.pending = nil
         }
         if category == .speed { latestSpeed = nil }
-    }
-
-    private func speedIsEligible(_ speed: Int, at date: Date) -> Bool {
-        guard let lastSpeed, let lastSpeedAt else { return true }
-        let delta = abs(speed - lastSpeed)
-        let elapsed = date.timeIntervalSince(lastSpeedAt)
-        if delta >= 3 && elapsed >= 2 { return true }
-        if delta >= 2 && elapsed >= 4 { return true }
-        return date.timeIntervalSince(lastNarrationAt ?? lastSpeedAt) >= 18
     }
 
     private mutating func offer(_ candidate: Pending) {

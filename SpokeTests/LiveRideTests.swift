@@ -9,51 +9,48 @@ struct LiveRideTests {
 
     @Test func newestSpeedReplacesPendingReadings() {
         var policy = LiveRidePolicy()
-        policy.didStart(.speedChanged(15), at: now)
+        policy.didStart(.speedChanged(15))
         policy.submit(.speedChanged(16), at: now.addingTimeInterval(1))
-        #expect(policy.pending == nil)
         policy.submit(.speedChanged(18), at: now.addingTimeInterval(2))
         policy.submit(.speedChanged(20), at: now.addingTimeInterval(3))
         #expect(policy.takeNext(at: now.addingTimeInterval(3)) == .speedChanged(20))
-        policy.didStart(.speedChanged(20), at: now.addingTimeInterval(3))
-        #expect(policy.takeNext(at: now.addingTimeInterval(4)) == nil)
+        policy.didStart(.speedChanged(20))
+        #expect(policy.takeNext(at: now.addingTimeInterval(4)) == .speedChanged(20))
     }
 
-    @Test func returningToOriginalSpeedClearsPendingChange() {
+    @Test func returningToOriginalSpeedReplacesPendingChange() {
         var policy = LiveRidePolicy()
-        policy.didStart(.speedChanged(15), at: now)
+        policy.didStart(.speedChanged(15))
         policy.submit(.speedChanged(18), at: now.addingTimeInterval(2))
         policy.submit(.speedChanged(15), at: now.addingTimeInterval(3))
-        #expect(policy.takeNext(at: now.addingTimeInterval(3)) == nil)
+        #expect(policy.takeNext(at: now.addingTimeInterval(3)) == .speedChanged(15))
     }
 
-    @Test func twoMphChangesWaitBrieflyAndNoiseDoesNotSpeak() {
+    @Test func unchangedSpeedIsReadyAfterEveryUtteranceWithoutWaitingForAnotherGPSUpdate() {
         var policy = LiveRidePolicy()
-        policy.didStart(.speedChanged(15), at: now)
-        policy.submit(.speedChanged(17), at: now.addingTimeInterval(2))
-        #expect(policy.pending == nil)
-        policy.refresh(at: now.addingTimeInterval(4))
-        #expect(policy.takeNext(at: now.addingTimeInterval(4)) == .speedChanged(17))
-        policy.didStart(.speedChanged(17), at: now.addingTimeInterval(4))
-        for offset in 5...15 {
-            policy.submit(.speedChanged(offset.isMultiple(of: 2) ? 17 : 18), at: now.addingTimeInterval(Double(offset)))
-            #expect(policy.pending == nil)
+        policy.submit(.speedChanged(15), at: now)
+        for offset in [0.0, 1.25, 2.5] {
+            let event = policy.takeNext(at: now.addingTimeInterval(offset))
+            #expect(event == .speedChanged(15))
+            policy.didStart(.speedChanged(15))
         }
+        // Repeating telemetry must not extend the underlying observation's freshness.
+        #expect(policy.takeNext(at: now.addingTimeInterval(4)) == nil)
+        policy.submit(.speedChanged(15), at: now.addingTimeInterval(4))
+        #expect(policy.takeNext(at: now.addingTimeInterval(4.25)) == .speedChanged(15))
     }
 
-    @Test func steadySpeedNeedsFreshDataAndEighteenQuietSeconds() {
+    @Test func contextWinsAndSpeedImmediatelyFillsTheFollowingGap() {
         var policy = LiveRidePolicy()
-        policy.didStart(.speedChanged(15), at: now)
-        policy.didFinish(at: now.addingTimeInterval(1))
-        policy.submit(.speedChanged(15), at: now.addingTimeInterval(17))
-        #expect(policy.pending == nil)
-        #expect(policy.takeNext(at: now.addingTimeInterval(19)) == .speedChanged(15))
-        policy.didStart(.speedChanged(15), at: now.addingTimeInterval(19))
-        #expect(policy.takeNext(at: now.addingTimeInterval(40)) == nil)
-        policy.didStart(.enteredCity("Los Altos"), at: now.addingTimeInterval(40))
-        policy.didFinish(at: now.addingTimeInterval(42))
-        policy.submit(.speedChanged(15), at: now.addingTimeInterval(50))
-        #expect(policy.pending == nil)
+        policy.submit(.speedChanged(15), at: now)
+        policy.didStart(.speedChanged(15))
+        policy.submit(.enteredCity("Los Altos"), at: now.addingTimeInterval(1))
+        policy.submit(.speedChanged(16), at: now.addingTimeInterval(1.1))
+        #expect(policy.takeNext(at: now.addingTimeInterval(1.25)) == .enteredCity("Los Altos"))
+        policy.didStart(.enteredCity("Los Altos"))
+        #expect(policy.takeNext(at: now.addingTimeInterval(2.5)) == .speedChanged(16))
+        policy.categories.remove(.speed)
+        #expect(policy.takeNext(at: now.addingTimeInterval(2.75)) == nil)
     }
 
     @Test func priorityReplacesPendingButNeverResurrectsStaleContext() {
@@ -85,7 +82,7 @@ struct LiveRideTests {
         policy.submit(.streetChanged("Camellia Way"), at: now)
         policy.invalidate(.streets)
         #expect(policy.takeNext(at: now) == nil)
-        policy.didStart(.enteredCity("Los Altos"), at: now)
+        policy.didStart(.enteredCity("Los Altos"))
         policy.submit(.enteredCity("Los Altos"), at: now.addingTimeInterval(1))
         #expect(policy.pending == nil)
         policy = LiveRidePolicy()

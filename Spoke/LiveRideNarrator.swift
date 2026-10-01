@@ -11,7 +11,7 @@ final class LiveRideNarrator: NSObject {
     private var isActive = false
     private var isInterrupted = false
     private var generation = UUID()
-    private var current: (utterance: AVSpeechUtterance, playbackID: UUID, generation: UUID)?
+    private var current: (utterance: AVSpeechUtterance, playbackID: UUID)?
     private var schedulingTask: Task<Void, Never>?
 
     static var availableVoices: [AVSpeechSynthesisVoice] {
@@ -70,7 +70,7 @@ final class LiveRideNarrator: NSObject {
               schedulingTask == nil, policy.pending != nil else { return }
         let generation = generation
         schedulingTask = Task { [weak self] in
-            // Brief arbitration window lets simultaneous context beat routine telemetry.
+            // A 250 ms gap lets fresh context win while keeping narration continuous.
             do { try await Task.sleep(for: .milliseconds(250)) }
             catch { return }
             guard let self, self.generation == generation else { return }
@@ -99,8 +99,8 @@ final class LiveRideNarrator: NSObject {
             utterance.voice = AVSpeechSynthesisVoice(identifier: self.configuration.voiceIdentifier)
                 ?? AVSpeechSynthesisVoice(language: "en-US")
             utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-            self.current = (utterance, playbackID, generation)
-            self.policy.didStart(event, at: .now)
+            self.current = (utterance, playbackID)
+            self.policy.didStart(event)
             // This is the ONLY speak call. AVSpeechSynthesizer never receives a second utterance.
             self.synthesizer.speak(utterance)
         }
@@ -113,7 +113,6 @@ final class LiveRideNarrator: NSObject {
             await audioSession.deactivate(for: current.playbackID)
             guard self.current?.utterance === utterance else { return }
             self.current = nil
-            if current.generation == generation { policy.didFinish(at: .now) }
             tick()
         }
     }
