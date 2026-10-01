@@ -123,7 +123,7 @@ struct RideReplayView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        SpokeSheet(title: "Replay") {
             Map(initialPosition: cameraPosition, interactionModes: []) {
                 ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                     _, segment in
@@ -150,28 +150,7 @@ struct RideReplayView: View {
                     showsTraffic: false
                 )
             )
-            .navigationTitle("Replay")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(SpokeStyle.background, for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Label("Close", systemImage: "xmark")
-                            .labelStyle(.iconOnly)
-                    }
-                    .buttonStyle(SpokeToolbarButtonStyle())
-                }
-                .sharedBackgroundVisibility(.hidden)
-            }
         }
-        .preferredColorScheme(.dark)
-        .presentationBackground(SpokeStyle.background)
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
         .task {
             await playRoute()
         }
@@ -261,11 +240,11 @@ private extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster:
-            SpokeStyle.accent
+            SpokeStyle.text
         case .slower:
             SpokeStyle.caution
         case .stopped:
-            SpokeStyle.clay
+            SpokeStyle.danger
         }
     }
 }

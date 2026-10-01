@@ -129,7 +129,7 @@ struct ContentView: View {
                         Text(tab.title)
                             .font(.caption.weight(.semibold))
                     }
-                    .foregroundStyle(selectedTab == tab ? SpokeStyle.accent : SpokeStyle.secondaryText)
+                    .foregroundStyle(selectedTab == tab ? SpokeStyle.text : SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 60)
                     .contentShape(.rect)

@@ -208,7 +208,7 @@ private struct RideRouteThumbnail: View {
                         if index == 0 { path.move(to: position) }
                         else { path.addLine(to: position) }
                     }
-                    context.stroke(path, with: .color(SpokeStyle.accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    context.stroke(path, with: .color(SpokeStyle.text), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                 }
             } else {
                 Image(systemName: "bicycle")
@@ -346,7 +346,7 @@ private struct RideHistoryDetailView: View {
                                 .foregroundStyle(SpokeStyle.background)
                                 .padding(.horizontal, 14)
                                 .frame(minHeight: 44)
-                                .background(SpokeStyle.accent, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
+                                .background(SpokeStyle.text, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
                                 .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                         }
                         .buttonStyle(.plain)
@@ -366,16 +366,14 @@ private struct RideHistoryDetailView: View {
                         value: RideMetrics.duration(
                             ride.elapsedDuration(),
                             omittingZeroHours: true
-                        ),
-                        systemImage: "timer"
+                        )
                     )
 
                     metric(
                         title: "Miles",
                         value: RideMetrics.miles(
                             RideMetrics.distanceInMeters(for: ride)
-                        ),
-                        systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                        )
                     )
 
                     metric(
@@ -383,18 +381,18 @@ private struct RideHistoryDetailView: View {
                         value: RideMetrics.duration(
                             movingMetrics.duration,
                             omittingZeroHours: true
-                        ),
-                        systemImage: "timer"
+                        )
                     )
 
                     metric(
                         title: "Moving Avg.",
                         value: RideMetrics.speedInMilesPerHour(
                             movingMetrics.averageSpeedInMilesPerHour
-                        ),
-                        systemImage: "speedometer"
+                        )
                     )
                 }
+                .padding(.vertical, 12)
+                .background(SpokeStyle.surface, in: .rect(cornerRadius: SpokeStyle.cardRadius))
 
                 Button("Ride soundtrack") {
                     isShowingSoundtrack = true
@@ -479,32 +477,36 @@ private struct RideHistoryDetailView: View {
     }
 
     private var rideActions: some View {
-        VStack(spacing: 12) {
-            Button {
-                actionSheet = .note
-            } label: {
-                Label("Add Note", systemImage: "square.and.pencil")
-            }
+        SpokeSheet(title: "Ride Actions", detents: [.medium, .large]) {
+            List {
+                Button {
+                    actionSheet = .note
+                } label: {
+                    Label("Add Note", systemImage: "square.and.pencil")
+                }
+                .listRowBackground(SpokeStyle.surface)
 
-            Button {
-                rideName = ride.customName ?? ride.detailTitle
-                actionSheet = .rename
-            } label: {
-                Label("Rename Ride", systemImage: "pencil")
-            }
+                Button {
+                    rideName = ride.customName ?? ride.detailTitle
+                    actionSheet = .rename
+                } label: {
+                    Label("Rename Ride", systemImage: "pencil")
+                }
+                .listRowBackground(SpokeStyle.surface)
 
-            Button(role: .destructive) {
-                actionSheet = .delete
-            } label: {
-                Label("Delete Ride", systemImage: "trash")
+                Button(role: .destructive) {
+                    actionSheet = .delete
+                } label: {
+                    Label("Delete Ride", systemImage: "trash")
+                }
+                .listRowBackground(SpokeStyle.surface)
             }
+            .foregroundStyle(SpokeStyle.text)
+            .listStyle(.plain)
+            .environment(\.defaultMinListRowHeight, 56)
+            .scrollContentBackground(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .buttonStyle(SpokePrimaryButtonStyle())
-        .padding(24)
-        .presentationDetents([.medium, .large])
-        .presentationBackground(SpokeStyle.surface)
-        .presentationDragIndicator(.visible)
-        .preferredColorScheme(.dark)
     }
 
     private func renameRide() {
@@ -520,8 +522,7 @@ private struct RideHistoryDetailView: View {
 
     private func metric(
         title: String,
-        value: String,
-        systemImage: String
+        value: String
     ) -> some View {
         VStack(spacing: 7) {
             Text(value)
@@ -530,16 +531,13 @@ private struct RideHistoryDetailView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
-            Label(title, systemImage: systemImage)
+            Text(title)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(SpokeStyle.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 82)
-        .background(
-            SpokeStyle.surface,
-            in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
-        )
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -562,7 +560,7 @@ private struct RideStopBubble: View {
                 .foregroundStyle(SpokeStyle.text)
         } icon: {
             Image(systemName: "octagon.fill")
-                .foregroundStyle(SpokeStyle.clay)
+                .foregroundStyle(SpokeStyle.danger)
         }
         .font(.caption2.weight(.semibold))
         .padding(.horizontal, 9)
@@ -605,11 +603,11 @@ private extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster:
-            SpokeStyle.accent
+            SpokeStyle.text
         case .slower:
             SpokeStyle.caution
         case .stopped:
-            SpokeStyle.clay
+            SpokeStyle.danger
         }
     }
 }
@@ -638,7 +636,7 @@ private struct RideSoundtrackView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        SpokeSheet(title: "Ride Soundtrack") {
             Group {
                 if entries.isEmpty {
                     ContentUnavailableView(
@@ -657,15 +655,7 @@ private struct RideSoundtrackView: View {
                     .background(SpokeStyle.surface)
                 }
             }
-            .navigationTitle("Ride soundtrack")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(SpokeStyle.surface, for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
         }
-        .preferredColorScheme(.dark)
-        .presentationBackground(SpokeStyle.surface)
-        .presentationDragIndicator(.visible)
     }
 }
 

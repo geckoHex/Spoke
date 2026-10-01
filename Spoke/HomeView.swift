@@ -304,7 +304,7 @@ private struct HomeWeatherView: View {
 
             if let snapshot {
                 HStack(alignment: .center, spacing: 12) {
-                    windBadge(snapshot: snapshot)
+                    windLabel(snapshot: snapshot)
 
                     Spacer(minLength: 8)
 
@@ -319,13 +319,7 @@ private struct HomeWeatherView: View {
             minHeight: 192,
             alignment: .leading
         )
-        .background {
-            Image("ForestLandscape")
-                .resizable()
-                .scaledToFill()
-                .overlay(SpokeStyle.background.opacity(0.38))
-                .accessibilityHidden(true)
-        }
+        .background(SpokeStyle.surface)
         .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
     }
 
@@ -355,7 +349,7 @@ private struct HomeWeatherView: View {
     }
 
     @ViewBuilder
-    private func windBadge(snapshot: HomeWeatherSnapshot) -> some View {
+    private func windLabel(snapshot: HomeWeatherSnapshot) -> some View {
         if let windSpeed = snapshot.windSpeed,
            let windDirection = snapshot.windDirection
         {
@@ -367,9 +361,6 @@ private struct HomeWeatherView: View {
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(SpokeStyle.secondaryText)
-            .padding(.horizontal, 13)
-            .frame(height: 36)
-            .background(SpokeStyle.elevatedSurface, in: Capsule())
             .accessibilityLabel("Wind, \(windSpeed), \(windDirection)")
         }
     }

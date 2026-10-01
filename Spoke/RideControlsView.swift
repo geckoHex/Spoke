@@ -28,12 +28,12 @@ struct RideControlsView: View {
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-                .foregroundStyle(SpokeStyle.clay)
+                .foregroundStyle(SpokeStyle.danger)
                 .frame(maxWidth: .infinity, minHeight: 64)
                 .padding(.horizontal, 12)
                 .background {
                     GeometryReader { proxy in
-                        SpokeStyle.clay.opacity(0.2)
+                        SpokeStyle.danger.opacity(0.2)
                             .frame(width: proxy.size.width * holdProgress)
                     }
                 }
@@ -41,7 +41,7 @@ struct RideControlsView: View {
                 .clipShape(.rect(cornerRadius: SpokeStyle.controlRadius))
                 .overlay {
                     RoundedRectangle(cornerRadius: SpokeStyle.controlRadius)
-                        .strokeBorder(SpokeStyle.clay, lineWidth: 1.5)
+                        .strokeBorder(SpokeStyle.danger, lineWidth: 1.5)
                 }
                 .contentShape(.rect)
                 .onLongPressGesture(minimumDuration: 1, maximumDistance: 32) {

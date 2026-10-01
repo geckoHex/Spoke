@@ -101,7 +101,7 @@ final class SpokeUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Save"].isEnabled)
         nameField.typeText("UI check")
         XCTAssertTrue(app.buttons["Save"].isEnabled)
-        app.buttons["Cancel"].tap()
+        app.buttons["Close"].tap()
 
         actions.tap()
         app.buttons["Delete Ride"].tap()
@@ -121,12 +121,14 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
-    func testEarthyRideControls() throws {
+    func testRefinedRideAndSheets() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
 
         func capture(_ name: String) {
+            // Let sheet and toolbar transitions finish before capturing their appearance.
+            Thread.sleep(forTimeInterval: 1)
             let attachment = XCTAttachment(screenshot: app.screenshot())
             attachment.name = name
             attachment.lifetime = .keepAlways
@@ -136,14 +138,14 @@ final class SpokeUITests: XCTestCase {
         let start = app.buttons["Start Ride"]
         XCTAssertTrue(start.waitForExistence(timeout: 10))
         XCTAssertGreaterThanOrEqual(start.frame.height, 60)
-        capture("Earthy Home")
+        capture("Refined Home")
         start.tap()
 
         let pause = app.buttons["Pause Ride"]
         XCTAssertTrue(pause.waitForExistence(timeout: 10))
         XCTAssertGreaterThanOrEqual(pause.frame.height, 60)
         XCTAssertTrue(app.staticTexts["Riding"].waitForExistence(timeout: 10))
-        capture("Earthy Ride")
+        capture("Refined Ride")
         pause.tap()
         let resume = app.buttons["Resume Ride"]
         XCTAssertTrue(resume.waitForExistence(timeout: 5))
@@ -156,12 +158,16 @@ final class SpokeUITests: XCTestCase {
         XCTAssertTrue(pause.exists, "A short press must not end the ride")
         end.press(forDuration: 1.3)
         XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
-        capture("Earthy Ride Complete")
+        capture("Refined Ride Complete")
+        app.buttons["Discard Ride"].tap()
+        XCTAssertTrue(app.navigationBars["Discard Ride?"].waitForExistence(timeout: 5))
+        capture("Refined Discard Confirmation")
+        app.buttons["Cancel"].tap()
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["History"].isSelected)
         XCTAssertTrue(app.staticTexts["historyTitle"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["historyTitle"].isHittable)
-        capture("Earthy History")
+        capture("Refined History")
 
         app.scrollViews.buttons.firstMatch.tap()
         XCTAssertTrue(app.buttons["Ride actions"].waitForExistence(timeout: 5))
@@ -169,7 +175,61 @@ final class SpokeUITests: XCTestCase {
         let banner = XCUIApplication(bundleIdentifier: "com.apple.springboard")
             .descendants(matching: .any)["NotificationShortLookView"]
         XCTAssertTrue(banner.waitForNonExistence(timeout: 10))
-        capture("Earthy Ride Detail")
+        capture("Refined Ride Detail")
+
+        let actions = app.buttons["Ride actions"]
+        actions.tap()
+        XCTAssertTrue(app.navigationBars["Ride Actions"].waitForExistence(timeout: 5))
+        capture("Refined Ride Actions")
+        app.buttons["Rename Ride"].tap()
+        let name = app.textFields["Ride name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        capture("Refined Rename")
+        name.tap()
+        app.buttons["Clear ride name"].tap()
+        XCTAssertFalse(app.buttons["Save"].isEnabled)
+        name.typeText("Morning Ride")
+        XCTAssertTrue(app.buttons["Save"].isEnabled)
+        XCTAssertTrue(app.keyboards.buttons["Done"].waitForExistence(timeout: 5))
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.staticTexts["Morning Ride"].waitForExistence(timeout: 5))
+
+        actions.tap()
+        app.buttons["Add Note"].tap()
+        XCTAssertTrue(app.navigationBars["Ride Notes"].waitForExistence(timeout: 5))
+        let note = app.textViews["Note"]
+        note.tap()
+        note.typeText("A quiet morning ride.")
+        XCTAssertTrue(app.keyboards.buttons["Done"].waitForExistence(timeout: 5))
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        capture("Refined Ride Notes")
+        app.buttons["Close"].tap()
+        actions.tap()
+        app.buttons["Add Note"].tap()
+        XCTAssertEqual(app.textViews["Note"].value as? String, "A quiet morning ride.")
+        app.buttons["Close"].tap()
+
+        app.buttons["Ride soundtrack"].tap()
+        XCTAssertTrue(app.navigationBars["Ride Soundtrack"].waitForExistence(timeout: 5))
+        capture("Refined Soundtrack")
+        app.buttons["Close"].tap()
+
+        if app.buttons["Replay"].exists {
+            app.buttons["Replay"].tap()
+            XCTAssertTrue(app.navigationBars["Replay"].waitForExistence(timeout: 5))
+            capture("Refined Replay")
+            app.buttons["Close"].tap()
+        }
+
+        actions.tap()
+        app.buttons["Delete Ride"].tap()
+        XCTAssertTrue(app.navigationBars["Delete Ride?"].waitForExistence(timeout: 5))
+        capture("Refined Delete Confirmation")
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.staticTexts["Morning Ride"].exists)
         app.buttons["Back"].tap()
         XCTAssertTrue(app.staticTexts["historyTitle"].waitForExistence(timeout: 5))
 
@@ -177,6 +237,6 @@ final class SpokeUITests: XCTestCase {
         XCTAssertTrue(app.textFields["Name"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["settingsTitle"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["settingsTitle"].isHittable)
-        capture("Earthy Settings")
+        capture("Refined Settings")
     }
 }

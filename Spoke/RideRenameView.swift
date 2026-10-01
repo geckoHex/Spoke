@@ -12,58 +12,57 @@ struct RideRenameView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Rename Ride")
-                .font(.title2.weight(.semibold))
+        SpokeSheet(title: "Rename Ride", detents: [.medium, .large]) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Ride name")
+                            .font(.subheadline)
+                            .foregroundStyle(SpokeStyle.secondaryText)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Ride name")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(SpokeStyle.secondaryText)
-                HStack {
-                    TextField("", text: $name)
-                        .focused($isNameFocused)
-                        .textInputAutocapitalization(.words)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            isNameFocused = false
-                            save()
-                        }
-                        .accessibilityLabel("Ride name")
+                        HStack {
+                            TextField("", text: $name)
+                                .focused($isNameFocused)
+                                .textInputAutocapitalization(.words)
+                                .submitLabel(.done)
+                                .onSubmit { isNameFocused = false }
+                                .accessibilityLabel("Ride name")
 
-                    if isNameFocused && !name.isEmpty {
-                        Button {
-                            name = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(SpokeStyle.secondaryText)
+                            if isNameFocused && !name.isEmpty {
+                                Button {
+                                    name = ""
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(SpokeStyle.secondaryText)
+                                        .frame(minWidth: 44, minHeight: 44)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Clear ride name")
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Clear ride name")
+                        .padding(.leading, 16)
+                        .padding(.trailing, 4)
+                        .frame(minHeight: 52)
+                        .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
                     }
+
+                    Button("Save", action: save)
+                        .buttonStyle(SpokePrimaryButtonStyle())
+                        .disabled(!canSave)
                 }
-                .padding(12)
-                .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 8))
+                .padding(SpokeStyle.pageInset)
+                .background {
+                    SpokeStyle.surface
+                        .onTapGesture { isNameFocused = false }
+                }
             }
-
-            Button("Save", action: save)
-                .buttonStyle(SpokePrimaryButtonStyle())
-                .disabled(!canSave)
-
-            Button("Cancel") { dismiss() }
-                .buttonStyle(SpokeSecondaryButtonStyle())
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+            .background {
+                SpokeStyle.surface
+                    .onTapGesture { isNameFocused = false }
+            }
         }
-        .foregroundStyle(SpokeStyle.text)
-        .padding(24)
-        .background {
-            SpokeStyle.surface
-                .ignoresSafeArea()
-                .onTapGesture { isNameFocused = false }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationBackground(SpokeStyle.surface)
-        .presentationDragIndicator(.visible)
-        .preferredColorScheme(.dark)
     }
 
     private func save() {

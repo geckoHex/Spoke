@@ -9,29 +9,30 @@ struct SpokeConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text(title)
-                .font(.title2.weight(.semibold))
-            Text(message)
-                .font(.body)
-                .foregroundStyle(SpokeStyle.secondaryText)
+        SpokeSheet(title: title, detents: [.medium, .large]) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text(message)
+                        .font(.body)
+                        .foregroundStyle(SpokeStyle.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
 
-            Button(actionTitle, role: .destructive) {
-                dismiss()
-                onConfirm()
-            }
-            .buttonStyle(SpokePrimaryButtonStyle())
+                    VStack(spacing: 8) {
+                        Button(actionTitle, role: .destructive) {
+                            dismiss()
+                            onConfirm()
+                        }
+                        .buttonStyle(SpokePrimaryButtonStyle())
 
-            Button("Cancel") {
-                dismiss()
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .buttonStyle(SpokeSecondaryButtonStyle())
+                    }
+                }
+                .padding(SpokeStyle.pageInset)
             }
-            .buttonStyle(SpokeSecondaryButtonStyle())
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .foregroundStyle(SpokeStyle.text)
-        .padding(24)
-        .presentationDetents([.medium, .large])
-        .presentationBackground(SpokeStyle.surface)
-        .presentationDragIndicator(.visible)
-        .preferredColorScheme(.dark)
     }
 }

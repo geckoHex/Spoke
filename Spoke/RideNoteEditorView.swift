@@ -10,10 +10,10 @@ import UIKit
 struct RideNoteEditorView: View {
     let ride: TrackedRide
 
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @FocusState private var isNoteFocused: Bool
+    @State private var isNoteFocused = false
     @State private var noteText: String
+    @ScaledMetric(relativeTo: .body) private var editorHeight = 220.0
 
     init(ride: TrackedRide) {
         self.ride = ride
@@ -21,26 +21,19 @@ struct RideNoteEditorView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                SpokeStyle.surface
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        isNoteFocused = false
-                    }
-
-                VStack(alignment: .leading, spacing: 10) {
+        SpokeSheet(title: "Ride Notes") {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Note")
-                        .font(.subheadline.weight(.medium))
+                        .font(.subheadline)
                         .foregroundStyle(SpokeStyle.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(.rect)
+                        .onTapGesture { isNoteFocused = false }
 
-                    HStack(alignment: .top, spacing: 8) {
-                        TextEditor(text: $noteText)
-                            .focused($isNoteFocused)
-                            .font(.body)
-                            .foregroundStyle(SpokeStyle.text)
-                            .scrollContentBackground(.hidden)
-                            .accessibilityLabel("Note")
+                    HStack(alignment: .top, spacing: 4) {
+                        NoteTextView(text: $noteText, isFocused: $isNoteFocused)
+                            .frame(height: editorHeight)
 
                         if isNoteFocused && !noteText.isEmpty {
                             Button {
@@ -48,44 +41,78 @@ struct RideNoteEditorView: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(SpokeStyle.secondaryText)
+                                    .frame(width: 44, height: 44)
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Clear note")
-                            .padding(.top, 8)
                         }
                     }
-                    .padding(12)
-                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 8))
+                    .padding(8)
+                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
                 }
-                .padding(.horizontal, SpokeStyle.pageInset)
-                .padding(.top, 18)
-                .padding(.bottom, 20)
-            }
-            .navigationTitle("Ride Notes")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "checkmark")
-                    }
-                    .buttonStyle(SpokeToolbarButtonStyle())
-                    .accessibilityLabel("Done")
+                .padding(SpokeStyle.pageInset)
+                .background {
+                    SpokeStyle.surface
+                        .onTapGesture { isNoteFocused = false }
                 }
-                .sharedBackgroundVisibility(.hidden)
             }
-            .toolbarBackground(SpokeStyle.surface, for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+            .background {
+                SpokeStyle.surface
+                    .onTapGesture { isNoteFocused = false }
+            }
         }
-        .ignoresSafeArea(.keyboard, edges: .bottom)
-        .preferredColorScheme(.dark)
-        .presentationBackground(SpokeStyle.surface)
-        .presentationDragIndicator(.visible)
         .onChange(of: noteText) {
             ride.updateNote(to: noteText)
             try? modelContext.save()
+        }
+    }
+}
+
+private struct NoteTextView: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var isFocused: Bool
+
+    func makeUIView(context: Context) -> UITextView {
+        let view = UITextView()
+        view.delegate = context.coordinator
+        view.font = .preferredFont(forTextStyle: .body)
+        view.adjustsFontForContentSizeCategory = true
+        view.backgroundColor = .clear
+        view.textColor = .white
+        view.tintColor = .systemBlue
+        view.returnKeyType = .done
+        view.keyboardDismissMode = .interactive
+        view.accessibilityLabel = "Note"
+        return view
+    }
+
+    func updateUIView(_ view: UITextView, context: Context) {
+        context.coordinator.parent = self
+        if view.text != text { view.text = text }
+        if !isFocused && view.isFirstResponder { view.resignFirstResponder() }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: NoteTextView
+
+        init(parent: NoteTextView) { self.parent = parent }
+
+        func textViewDidBeginEditing(_ textView: UITextView) { parent.isFocused = true }
+        func textViewDidEndEditing(_ textView: UITextView) { parent.isFocused = false }
+        func textViewDidChange(_ textView: UITextView) { parent.text = textView.text }
+
+        func textView(
+            _ textView: UITextView,
+            shouldChangeTextIn range: NSRange,
+            replacementText text: String
+        ) -> Bool {
+            guard text == "\n" else { return true }
+            textView.resignFirstResponder()
+            return false
         }
     }
 }

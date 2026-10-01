@@ -1,18 +1,17 @@
 import SwiftUI
 
 enum SpokeStyle {
-    // Forest, ivory, and moss keep the ride instrument clear without a bright canvas.
-    static let background = Color(red: 23 / 255, green: 28 / 255, blue: 24 / 255)
-    static let surface = Color(red: 37 / 255, green: 45 / 255, blue: 38 / 255)
-    static let elevatedSurface = Color(red: 49 / 255, green: 59 / 255, blue: 49 / 255)
-    static let text = Color(red: 243 / 255, green: 238 / 255, blue: 221 / 255)
-    static let secondaryText = Color(red: 184 / 255, green: 193 / 255, blue: 173 / 255)
-    static let accent = Color(red: 196 / 255, green: 214 / 255, blue: 160 / 255)
-    static let caution = Color(red: 230 / 255, green: 199 / 255, blue: 121 / 255)
-    static let clay = Color(red: 218 / 255, green: 155 / 255, blue: 121 / 255)
+    static let background = Color.black
+    static let surface = Color(white: 0.11)
+    static let elevatedSurface = Color(white: 0.18)
+    static let text = Color.white
+    static let secondaryText = Color(white: 0.68)
+    static let accent = Color.blue
+    static let caution = Color.orange
+    static let danger = Color.red
     static let separator = text.opacity(0.14)
-    static let cardRadius: CGFloat = 22
-    static let controlRadius: CGFloat = 18
+    static let cardRadius: CGFloat = 20
+    static let controlRadius: CGFloat = 14
     static let pageInset: CGFloat = 20
 }
 
@@ -29,18 +28,18 @@ extension View {
 }
 
 struct SpokePrimaryButtonStyle: ButtonStyle {
-    var minHeight: CGFloat = 60
+    var minHeight: CGFloat = 56
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(SpokeStyle.background)
+            .foregroundStyle(.black)
             .frame(maxWidth: .infinity)
             .frame(minHeight: minHeight)
             .padding(.horizontal, 16)
             .background(
-                configuration.role == .destructive ? SpokeStyle.clay : SpokeStyle.accent,
+                .white,
                 in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
@@ -53,9 +52,9 @@ struct SpokeToolbarButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .foregroundStyle(configuration.role == .destructive ? SpokeStyle.clay : SpokeStyle.text)
+            .foregroundStyle(.black)
             .frame(width: size, height: size)
-            .background(SpokeStyle.elevatedSurface, in: Circle())
+            .background(.white, in: Circle())
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
@@ -64,10 +63,10 @@ struct SpokeSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(configuration.role == .destructive ? SpokeStyle.clay : SpokeStyle.text)
-            .frame(maxWidth: .infinity, minHeight: 56)
+            .foregroundStyle(SpokeStyle.text)
+            .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.horizontal, 16)
-            .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: SpokeStyle.controlRadius))
+            .contentShape(.rect)
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
