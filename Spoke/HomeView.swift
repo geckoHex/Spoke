@@ -319,7 +319,13 @@ private struct HomeWeatherView: View {
             minHeight: 192,
             alignment: .leading
         )
-        .background(SpokeStyle.surface)
+        .background {
+            Image("ForestLandscape")
+                .resizable()
+                .scaledToFill()
+                .overlay(SpokeStyle.background.opacity(0.38))
+                .accessibilityHidden(true)
+        }
         .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
     }
 

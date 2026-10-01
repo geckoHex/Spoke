@@ -80,8 +80,8 @@ private struct NoteTextView: UIViewRepresentable {
         view.font = .preferredFont(forTextStyle: .body)
         view.adjustsFontForContentSizeCategory = true
         view.backgroundColor = .clear
-        view.textColor = .white
-        view.tintColor = .systemBlue
+        view.textColor = UIColor(SpokeStyle.text)
+        view.tintColor = UIColor(SpokeStyle.accent)
         view.returnKeyType = .done
         view.keyboardDismissMode = .interactive
         view.accessibilityLabel = "Note"

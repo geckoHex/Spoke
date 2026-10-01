@@ -263,7 +263,7 @@ private struct RideDashboardView: View {
             systemImage: rideSession.activeRide?.isPaused == true ? "pause.circle.fill" : "record.circle"
         )
         .font(.subheadline.weight(.semibold))
-        .foregroundStyle(rideSession.activeRide?.isPaused == true ? SpokeStyle.caution : SpokeStyle.text)
+        .foregroundStyle(rideSession.activeRide?.isPaused == true ? SpokeStyle.caution : SpokeStyle.accent)
         .frame(minHeight: 24)
     }
 
@@ -474,7 +474,7 @@ private struct RideDashboardView: View {
     private func arcColor(for speed: Int) -> Color {
         switch speed {
         case ..<20:
-            SpokeStyle.text
+            SpokeStyle.accent
         case 20..<25:
             SpokeStyle.caution
         default:

@@ -208,7 +208,7 @@ private struct RideRouteThumbnail: View {
                         if index == 0 { path.move(to: position) }
                         else { path.addLine(to: position) }
                     }
-                    context.stroke(path, with: .color(SpokeStyle.text), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    context.stroke(path, with: .color(SpokeStyle.accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                 }
             } else {
                 Image(systemName: "bicycle")
@@ -346,7 +346,7 @@ private struct RideHistoryDetailView: View {
                                 .foregroundStyle(SpokeStyle.background)
                                 .padding(.horizontal, 14)
                                 .frame(minHeight: 44)
-                                .background(SpokeStyle.text, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
+                                .background(SpokeStyle.accent, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
                                 .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                         }
                         .buttonStyle(.plain)
@@ -498,6 +498,7 @@ private struct RideHistoryDetailView: View {
                     actionSheet = .delete
                 } label: {
                     Label("Delete Ride", systemImage: "trash")
+                        .foregroundStyle(SpokeStyle.danger)
                 }
                 .listRowBackground(SpokeStyle.surface)
             }
@@ -603,7 +604,7 @@ private extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster:
-            SpokeStyle.text
+            SpokeStyle.accent
         case .slower:
             SpokeStyle.caution
         case .stopped:

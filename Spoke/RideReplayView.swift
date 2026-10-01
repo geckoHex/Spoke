@@ -240,7 +240,7 @@ private extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster:
-            SpokeStyle.text
+            SpokeStyle.accent
         case .slower:
             SpokeStyle.caution
         case .stopped:

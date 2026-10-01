@@ -4,9 +4,9 @@ Spoke is a premium cycling app. It should feel Apple-designed: polished, minimal
 
 ## Design Instructions
 
-Use a pure black background with white text and icons. For buttons, use white buttons with black content.
-Use a lighter gray background when needed for elements like sheets.
-Use system blue only for native accent states, toggles, system components. 
+Preserve the nature theme: deep forest backgrounds, ivory text and icons, and restrained sage accents.
+Use lighter forest surfaces for sheets and fields, sage primary buttons with dark content, and muted clay for destructive actions.
+Keep the landscape image confined to the Home weather card. Keep sheets consistent and uncluttered; do not remove the nature theme during UI cleanup.
 Always design in dark mode.
 Keep contrast in mind, adjusting colors when needed.
 
