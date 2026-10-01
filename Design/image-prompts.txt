@@ -1,0 +1,16 @@
+Generated using the built-in image_gen tool.
+
+CONCEPT
+Create a polished, credible iOS app UI design concept sheet for Spoke, a premium cycling app, showing three flat front-facing iPhone screens side by side: Home, active Ride HUD, and History. Not a website. Screens should occupy almost all of the wide image; no perspective, props, scenery outside phones, or explanatory callouts. This is a design reference for a real SwiftUI implementation.
+
+Art direction: earthy, quiet, outdoors, refined Apple-native. Very dark forest/charcoal background #171C18, matte forest surfaces #252D26, warm ivory text #F3EEDD, secondary warm sage #B8C1AD, pale moss #C4D6A0 primary controls, clay #DA9B79 for stop/warnings only. SF Pro typography and SF Symbols. Crisp flat colors, no grain, glow, gradients or ornamental contour lines. Clean 22pt corners on content, very generous spacing. Ivory oversized numerals read instantly on bicycle handlebars. All tap targets 56-64pt minimum. Native bottom navigation with four real tabs Home, Ride, History, Settings.
+
+Home: small Spoke wordmark, friendly 'Good morning, Beck' heading, one restrained compact illustration of layered forest hills inside a weather section with '64°', 'Clear', wind '6 mph NW'; 'This week' shows 42.8 mi and 3h 12m with 4 rides; one last ride row; prominent full-width pale moss 'Start Ride' button with cycling symbol at bottom.
+
+Active Ride HUD: top line 'Riding' with real active status dot, huge dominant '18' and 'mph' with a minimal semicircular moss speed arc, immediately below two legible readouts 'Distance 12.4 mi' and 'Time 00:48:32'; a dark native map panel in the lower middle with readable roads and position marker, compact song strip 'Now playing'; bottom large moss 'Pause' button and separate clay outlined 'Hold to end' control. No fine print, no clutter, no decorative pills. This is the most important screen.
+
+History: big 'Your rides' title, subdued 'History' context, vertically stacked understated ride rows showing tiny muted route map previews, ride date/name, distance and duration. Example names 'Morning ride' and 'Evening ride'; only 3 rows needed, generous space. Consistent native bottom navigation. Sample data is for this concept only. Think purpose-built trail instrument meets elegant iOS cycling journal. Render legible exact English UI text.
+
+BUNDLED FOREST ARTWORK
+A premium quiet landscape illustration used as the background of an iOS cycling app weather card. Wide horizontal 3:2 image, edge-to-edge art only, no frame, no text, no letters, no symbols, no UI. Layered Pacific Northwest forest ridgelines, restrained graphic shapes with finely silhouetted evergreen trees in the lower-right and lower half, misty desaturated sage distant hills, very dark pine foreground. Palette dark forest #171C18 and #252D26, muted eucalyptus #556654, soft sage #89957D. The left third and upper-left must be dark, calm negative space suitable for ivory weather text overlay; interesting landscape contours on the right. Overcast diffuse light, no sun disk, no moon, no weather cues, no sky gradient, no glow, no texture noise, no people, no bicycles, no buildings. Sophisticated flat editorial landscape art, clean silhouettes, three to four layered ridges, subdued contrast, matte and earthy.
+

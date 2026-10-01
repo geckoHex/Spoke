@@ -23,7 +23,7 @@ struct RideSummaryView: View {
                         HStack(spacing: 14) {
                             Image(systemName: "flag.pattern.checkered.2.crossed")
                                 .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(SpokeStyle.text)
                                 .frame(width: 48, height: 48)
                                 .background(
                                     .white.opacity(0.1),
@@ -85,16 +85,16 @@ struct RideSummaryView: View {
                             Button("Done", action: onDone)
                                 .buttonStyle(SpokePrimaryButtonStyle())
 
-                            Button {
+                            Button(role: .destructive) {
                                 isConfirmingDiscard = true
                             } label: {
                                 Label("Discard", systemImage: "trash")
                             }
-                            .buttonStyle(SpokePrimaryButtonStyle())
+                            .buttonStyle(SpokeSecondaryButtonStyle())
                         }
                         .padding(.top, 24)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(SpokeStyle.text)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, SpokeStyle.pageInset)
                     .padding(.top, 28)
@@ -105,7 +105,7 @@ struct RideSummaryView: View {
         }
         .preferredColorScheme(.dark)
         .presentationBackground(SpokeStyle.surface)
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $isConfirmingDiscard) {
             SpokeConfirmationView(

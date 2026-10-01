@@ -15,6 +15,7 @@ struct ContentView: View {
     @Query private var storedSettings: [AppSettings]
     @State private var selectedTab: AppTab = .home
     @State private var highlightedRideID: PersistentIdentifier?
+    @State private var completedRide: TrackedRide?
     @State private var rideSession = RideSessionController()
 
     var body: some View {
@@ -27,16 +28,13 @@ struct ContentView: View {
                         onRideStarted: {
                             selectedTab = .ride
                         },
-                        onRideSummaryDone: { ride in
-                            highlightedRideID = ride.persistentModelID
-                            selectedTab = .history
-                        }
+                        onEndRide: endRide
                     )
                     .toolbar(.hidden, for: .tabBar)
                 }
 
                 Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
-                    RideView(settings: settings, rideSession: rideSession)
+                    RideView(settings: settings, rideSession: rideSession, onEndRide: endRide)
                         .toolbar(.hidden, for: .tabBar)
                 }
 
@@ -57,9 +55,24 @@ struct ContentView: View {
 
             tabBar
         }
-        .background(.black)
+        .foregroundStyle(SpokeStyle.text)
+        .background(SpokeStyle.background)
         .preferredColorScheme(.dark)
-        .tint(.blue)
+        .tint(SpokeStyle.accent)
+        .sheet(item: $completedRide) { ride in
+            RideSummaryView(
+                ride: ride,
+                onDone: {
+                    completedRide = nil
+                    highlightedRideID = ride.persistentModelID
+                    selectedTab = .history
+                },
+                onDiscard: {
+                    guard rideSession.discardRide(ride) else { return }
+                    completedRide = nil
+                }
+            )
+        }
         .fullScreenCover(isPresented: Binding(
             get: { rideSession.emergencyCheckIn.isPresented },
             set: { if !$0 { rideSession.emergencyCheckIn.dismiss(at: .now) } }
@@ -114,11 +127,11 @@ struct ContentView: View {
                         Image(systemName: tab.symbol)
                             .font(.system(size: 20, weight: .semibold))
                         Text(tab.title)
-                            .font(.caption2.weight(.medium))
+                            .font(.caption.weight(.semibold))
                     }
-                    .foregroundStyle(selectedTab == tab ? Color.white : SpokeStyle.secondaryText)
+                    .foregroundStyle(selectedTab == tab ? SpokeStyle.accent : SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 54)
+                    .frame(minHeight: 60)
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -127,8 +140,15 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.top, 6)
-        .background(.black)
+        .padding(.top, 8)
+        .background(SpokeStyle.background)
+        .overlay(alignment: .top) {
+            Rectangle().fill(SpokeStyle.separator).frame(height: 0.5)
+        }
+    }
+
+    private func endRide() {
+        completedRide = rideSession.endRide()
     }
 
     private var settings: AppSettings? {
@@ -167,7 +187,7 @@ private enum AppTab: Hashable, CaseIterable {
     var title: String {
         switch self {
         case .home: "Home"
-        case .ride: "HUD"
+        case .ride: "Ride"
         case .history: "History"
         case .settings: "Settings"
         }
@@ -176,7 +196,7 @@ private enum AppTab: Hashable, CaseIterable {
     var symbol: String {
         switch self {
         case .home: "house.fill"
-        case .ride: "gauge.open.with.lines.needle.33percent"
+        case .ride: "bicycle"
         case .history: "clock.arrow.trianglehead.counterclockwise.rotate.90"
         case .settings: "gear"
         }

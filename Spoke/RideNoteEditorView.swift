@@ -38,7 +38,7 @@ struct RideNoteEditorView: View {
                         TextEditor(text: $noteText)
                             .focused($isNoteFocused)
                             .font(.body)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(SpokeStyle.text)
                             .scrollContentBackground(.hidden)
                             .accessibilityLabel("Note")
 

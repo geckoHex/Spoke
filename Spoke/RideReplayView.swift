@@ -152,7 +152,7 @@ struct RideReplayView: View {
             )
             .navigationTitle("Replay")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackground(SpokeStyle.background, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
@@ -169,7 +169,7 @@ struct RideReplayView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .presentationBackground(.black)
+        .presentationBackground(SpokeStyle.background)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .task {
@@ -226,17 +226,17 @@ private struct ReplayBikeMarker: View {
     var body: some View {
         ZStack(alignment: .top) {
             ReplayBikePointerShape()
-                .fill(.white)
+                .fill(SpokeStyle.text)
                 .frame(width: 16, height: 12)
                 .offset(y: 40)
 
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(.white)
+                .fill(SpokeStyle.text)
                 .frame(width: 44, height: 44)
 
             Image(systemName: "bicycle")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.black)
+                .foregroundStyle(SpokeStyle.background)
                 .frame(width: 44, height: 44)
                 .scaleEffect(x: isFacingLeft ? -1 : 1, y: 1)
         }
@@ -261,11 +261,11 @@ private extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster:
-            .green
+            SpokeStyle.accent
         case .slower:
-            .yellow
+            SpokeStyle.caution
         case .stopped:
-            .red
+            SpokeStyle.clay
         }
     }
 }

@@ -25,9 +25,9 @@ struct SpokeConfirmationView: View {
             Button("Cancel") {
                 dismiss()
             }
-            .buttonStyle(SpokePrimaryButtonStyle())
+            .buttonStyle(SpokeSecondaryButtonStyle())
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(SpokeStyle.text)
         .padding(24)
         .presentationDetents([.medium, .large])
         .presentationBackground(SpokeStyle.surface)

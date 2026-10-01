@@ -36,7 +36,7 @@ struct RideRenameView: View {
                             name = ""
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(SpokeStyle.secondaryText)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear ride name")
@@ -51,9 +51,9 @@ struct RideRenameView: View {
                 .disabled(!canSave)
 
             Button("Cancel") { dismiss() }
-                .buttonStyle(SpokePrimaryButtonStyle())
+                .buttonStyle(SpokeSecondaryButtonStyle())
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(SpokeStyle.text)
         .padding(24)
         .background {
             SpokeStyle.surface

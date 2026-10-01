@@ -18,7 +18,10 @@ struct SpokeApp: App {
             RideRoutePoint.self,
             RideSoundtrackEntry.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: ProcessInfo.processInfo.arguments.contains("--ui-testing")
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])

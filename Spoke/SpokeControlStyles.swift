@@ -1,12 +1,18 @@
 import SwiftUI
 
 enum SpokeStyle {
-    static let surface = Color(uiColor: .secondarySystemBackground)
-    static let elevatedSurface = Color(uiColor: .tertiarySystemBackground)
-    static let secondaryText = Color.white.opacity(0.7)
-    static let separator = Color.white.opacity(0.12)
+    // Forest, ivory, and moss keep the ride instrument clear without a bright canvas.
+    static let background = Color(red: 23 / 255, green: 28 / 255, blue: 24 / 255)
+    static let surface = Color(red: 37 / 255, green: 45 / 255, blue: 38 / 255)
+    static let elevatedSurface = Color(red: 49 / 255, green: 59 / 255, blue: 49 / 255)
+    static let text = Color(red: 243 / 255, green: 238 / 255, blue: 221 / 255)
+    static let secondaryText = Color(red: 184 / 255, green: 193 / 255, blue: 173 / 255)
+    static let accent = Color(red: 196 / 255, green: 214 / 255, blue: 160 / 255)
+    static let caution = Color(red: 230 / 255, green: 199 / 255, blue: 121 / 255)
+    static let clay = Color(red: 218 / 255, green: 155 / 255, blue: 121 / 255)
+    static let separator = text.opacity(0.14)
     static let cardRadius: CGFloat = 22
-    static let controlRadius: CGFloat = 14
+    static let controlRadius: CGFloat = 18
     static let pageInset: CGFloat = 20
 }
 
@@ -23,18 +29,18 @@ extension View {
 }
 
 struct SpokePrimaryButtonStyle: ButtonStyle {
-    var minHeight: CGFloat = 50
+    var minHeight: CGFloat = 60
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(.black)
+            .foregroundStyle(SpokeStyle.background)
             .frame(maxWidth: .infinity)
             .frame(minHeight: minHeight)
             .padding(.horizontal, 16)
             .background(
-                .white,
+                configuration.role == .destructive ? SpokeStyle.clay : SpokeStyle.accent,
                 in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
@@ -47,45 +53,21 @@ struct SpokeToolbarButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .foregroundStyle(.black)
+            .foregroundStyle(configuration.role == .destructive ? SpokeStyle.clay : SpokeStyle.text)
             .frame(width: size, height: size)
-            .background(.white, in: Circle())
+            .background(SpokeStyle.elevatedSurface, in: Circle())
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
 
-struct SpokeToggleStyle: ToggleStyle {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
+struct SpokeSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        Button {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                configuration.isOn.toggle()
-            }
-        } label: {
-            HStack {
-                configuration.label
-                    .foregroundStyle(.white)
-                Spacer()
-                Capsule()
-                    .fill(configuration.isOn ? Color.blue : Color(white: 0.25))
-                    .frame(width: 51, height: 31)
-                    .overlay(alignment: configuration.isOn ? .trailing : .leading) {
-                        Circle()
-                            .fill(.white)
-                            .frame(width: 27, height: 27)
-                            .padding(2)
-                    }
-            }
-            .frame(minHeight: 44)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityRepresentation {
-            Toggle(isOn: configuration.$isOn) {
-                configuration.label
-            }
-            .toggleStyle(.switch)
-        }
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(configuration.role == .destructive ? SpokeStyle.clay : SpokeStyle.text)
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .padding(.horizontal, 16)
+            .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: SpokeStyle.controlRadius))
+            .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

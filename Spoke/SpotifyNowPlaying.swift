@@ -129,8 +129,8 @@ struct SpotifyNowPlayingView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(track.title)
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
+                            .foregroundStyle(SpokeStyle.text)
+                            .lineLimit(1)
 
                         Text(track.artist)
                             .font(.subheadline)
@@ -142,7 +142,7 @@ struct SpotifyNowPlayingView: View {
 
                 ProgressView(value: progress, total: max(track.duration, 1))
                     .progressViewStyle(.linear)
-                    .tint(.white)
+                    .tint(SpokeStyle.accent)
                     .accessibilityLabel("Song progress")
                     .accessibilityValue(progressDescription(progress: progress))
             }
@@ -163,11 +163,11 @@ struct SpotifyNowPlayingView: View {
 
                     Image(systemName: "music.note")
                         .font(.title2.weight(.medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(SpokeStyle.text)
                 }
             }
         }
-        .frame(width: 64, height: 64)
+        .frame(width: 48, height: 48)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityHidden(true)
     }
@@ -182,13 +182,13 @@ struct SpotifyPausedView: View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(SpokeStyle.elevatedSurface)
-                .frame(width: 64, height: 64)
+                .frame(width: 48, height: 48)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Spotify Paused")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(SpokeStyle.text)
 
                 Text("Nothing playing right now")
                     .font(.subheadline)
@@ -215,9 +215,8 @@ struct SpotifyStatusView: View {
 
             Spacer(minLength: 0)
         }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(.top, 8)
+        .foregroundStyle(SpokeStyle.text)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
     }
 }

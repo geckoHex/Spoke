@@ -46,7 +46,7 @@ final class SpokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        for title in ["Home", "HUD", "History", "Settings"] {
+        for title in ["Home", "Ride", "History", "Settings"] {
             let tab = app.buttons[title]
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
             tab.tap()
@@ -118,5 +118,65 @@ final class SpokeUITests: XCTestCase {
         edge.press(forDuration: 0.1, thenDragTo: destination)
         XCTAssertTrue(ride.waitForExistence(timeout: 5))
         XCTAssertFalse(actions.exists)
+    }
+
+    @MainActor
+    func testEarthyRideControls() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        func capture(_ name: String) {
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = name
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+
+        let start = app.buttons["Start Ride"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        XCTAssertGreaterThanOrEqual(start.frame.height, 60)
+        capture("Earthy Home")
+        start.tap()
+
+        let pause = app.buttons["Pause Ride"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 10))
+        XCTAssertGreaterThanOrEqual(pause.frame.height, 60)
+        XCTAssertTrue(app.staticTexts["Riding"].waitForExistence(timeout: 10))
+        capture("Earthy Ride")
+        pause.tap()
+        let resume = app.buttons["Resume Ride"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Paused"].exists)
+        resume.tap()
+        XCTAssertTrue(pause.waitForExistence(timeout: 5))
+
+        let end = app.buttons["End Ride"]
+        end.press(forDuration: 0.2)
+        XCTAssertTrue(pause.exists, "A short press must not end the ride")
+        end.press(forDuration: 1.3)
+        XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
+        capture("Earthy Ride Complete")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["History"].isSelected)
+        XCTAssertTrue(app.staticTexts["historyTitle"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["historyTitle"].isHittable)
+        capture("Earthy History")
+
+        app.scrollViews.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Ride actions"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Ride actions"].isHittable)
+        let banner = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            .descendants(matching: .any)["NotificationShortLookView"]
+        XCTAssertTrue(banner.waitForNonExistence(timeout: 10))
+        capture("Earthy Ride Detail")
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.staticTexts["historyTitle"].waitForExistence(timeout: 5))
+
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.textFields["Name"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["settingsTitle"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["settingsTitle"].isHittable)
+        capture("Earthy Settings")
     }
 }

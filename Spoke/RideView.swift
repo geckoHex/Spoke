@@ -9,6 +9,7 @@ import CoreLocation
 struct RideView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
+    let onEndRide: () -> Void
 
     @State private var resources: RideSessionResources?
     @State private var isShowingSkeleton = true
@@ -17,12 +18,20 @@ struct RideView: View {
         NavigationStack {
             Group {
                 if rideSession.activeRide == nil {
-                    ContentUnavailableView(
-                        "No Active Ride",
-                        systemImage: "figure.outdoor.cycle",
-                        description: Text("Start a ride from Home to see live metrics.")
-                    )
-                    .background(Color.black)
+                    ContentUnavailableView {
+                        Label("Ready to ride", systemImage: "figure.outdoor.cycle")
+                    } description: {
+                        Text("Your speed, route, and ride controls in one place.")
+                    } actions: {
+                        Button {
+                            rideSession.startRide()
+                        } label: {
+                            Label("Start Ride", systemImage: "play.fill")
+                        }
+                        .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
+                        .padding(.horizontal, SpokeStyle.pageInset)
+                    }
+                    .background(SpokeStyle.background)
                 } else {
                     ZStack {
                         if let resources {
@@ -45,7 +54,20 @@ struct RideView: View {
                                 .allowsHitTesting(false)
                         }
                     }
-                    .background(Color.black.ignoresSafeArea())
+                    .background(SpokeStyle.background.ignoresSafeArea())
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let ride = rideSession.activeRide {
+                    RideControlsView(
+                        ride: ride,
+                        onPauseToggle: { rideSession.togglePause() },
+                        onEnd: onEndRide
+                    )
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.vertical, 12)
+                    .background(SpokeStyle.background)
                 }
             }
         }
@@ -102,6 +124,7 @@ private struct RideDashboardView: View {
     private let speedAnnouncer: RideSpeedAnnouncer
     @State private var developerSpeedInMilesPerHour = 0
     @State private var isDeveloperSpeedometerPressed = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private let mapCameraDistance: CLLocationDistance = 700
     private let maximumDeveloperSpeedInMilesPerHour = 45
@@ -126,10 +149,15 @@ private struct RideDashboardView: View {
             let isLandscape = proxy.size.width > proxy.size.height
 
             ZStack(alignment: .top) {
-                Color.black
+                SpokeStyle.background
                     .ignoresSafeArea()
 
-                if isLandscape {
+                if dynamicTypeSize.isAccessibilitySize || (!isLandscape && proxy.size.height < 500) {
+                    ScrollView {
+                        portraitLayout(metrics: metrics)
+                            .frame(minHeight: 620)
+                    }
+                } else if isLandscape {
                     landscapeLayout(metrics: metrics)
                 } else {
                     portraitLayout(metrics: metrics)
@@ -180,14 +208,18 @@ private struct RideDashboardView: View {
 
     private func portraitLayout(metrics: RideLayoutMetrics) -> some View {
         VStack(spacing: metrics.verticalSpacing) {
+            rideStatus
+
             speedometer
                 .frame(height: metrics.speedometerHeight)
+
+            rideProgress
 
             currentLocationMap
                 .frame(maxHeight: .infinity)
 
             spotifySection
-                .frame(height: metrics.spotifyHeight, alignment: .top)
+                .frame(minHeight: metrics.spotifyHeight, alignment: .top)
         }
         .padding(.horizontal, SpokeStyle.pageInset)
         .padding(.top, metrics.topInset)
@@ -197,16 +229,23 @@ private struct RideDashboardView: View {
     private func landscapeLayout(metrics: RideLayoutMetrics) -> some View {
         HStack(spacing: metrics.verticalSpacing) {
             VStack(spacing: metrics.verticalSpacing) {
+                rideStatus
+
                 speedometer
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                spotifySection
-                    .frame(height: metrics.spotifyHeight, alignment: .top)
+                rideProgress
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            currentLocationMap
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: metrics.verticalSpacing) {
+                currentLocationMap
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                spotifySection
+                    .frame(minHeight: metrics.spotifyHeight, alignment: .top)
+            }
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, SpokeStyle.pageInset)
         .padding(.top, metrics.topInset)
@@ -218,12 +257,24 @@ private struct RideDashboardView: View {
         return SpotifyCredentials(settings: settings)
     }
 
+    private var rideStatus: some View {
+        Label(
+            rideSession.activeRide?.isPaused == true ? "Paused" : "Riding",
+            systemImage: rideSession.activeRide?.isPaused == true ? "pause.circle.fill" : "record.circle"
+        )
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(rideSession.activeRide?.isPaused == true ? SpokeStyle.caution : SpokeStyle.accent)
+        .frame(minHeight: 24)
+    }
+
     private var overspeedAlertSpeed: Int? {
-        rideSession.emergencyCheckIn.isPresented ? nil : displayedSpeedInMilesPerHour
+        rideSession.emergencyCheckIn.isPresented || rideSession.activeRide?.isPaused == true
+            ? nil : displayedSpeedInMilesPerHour
     }
 
     private var shouldSpeakSpeed: Bool {
         settings?.speakSpeedEnabled == true && !rideSession.emergencyCheckIn.isPresented
+            && rideSession.activeRide?.isPaused == false
     }
 
     private var isDeveloperModeEnabled: Bool {
@@ -256,8 +307,8 @@ private struct RideDashboardView: View {
     private var spotifySection: some View {
         if spotifyCredentials == nil {
             SpotifyStatusView(
-                symbol: "exclamationmark.triangle.fill",
-                message: "Spotify credentials are missing. Add them in Settings."
+                symbol: "music.note",
+                message: "Connect Spotify in Settings to see your music."
             )
         } else {
             switch spotifyStore.state {
@@ -274,50 +325,46 @@ private struct RideDashboardView: View {
     }
 
     private var currentLocationMap: some View {
-        ZStack {
-            RideHUDMapView(
-                initialMapState: rideSession.currentMapState,
-                cameraDistance: mapCameraDistance
-            )
-
-            distanceBadge
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(12)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        RideHUDMapView(
+            initialMapState: rideSession.currentMapState,
+            cameraDistance: mapCameraDistance
+        )
+        .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
         .accessibilityLabel("Current location map")
     }
 
-    private var distanceBadge: some View {
-        let distanceInMeters = activeRideDistanceInMeters
-
-        return TimelineView(.periodic(from: .now, by: 1)) { context in
-            let elapsedDuration = activeRideElapsedDuration(
-                at: max(context.date, Date.now)
-            )
-
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(RideMetrics.distance(distanceInMeters))
-                    .font(.title2.weight(.bold))
-                    .monospacedDigit()
-
-                Text(RideMetrics.duration(elapsedDuration))
-                    .monospacedDigit()
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(SpokeStyle.secondaryText)
+    private var rideProgress: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 16) {
+                progressMetric(
+                    "Distance",
+                    value: RideMetrics.distance(activeRideDistanceInMeters)
+                )
+                Rectangle()
+                    .fill(SpokeStyle.separator)
+                    .frame(width: 1, height: 40)
+                progressMetric(
+                    "Time",
+                    value: RideMetrics.duration(activeRideElapsedDuration(at: max(context.date, .now)))
+                )
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 13)
-            .padding(.vertical, 10)
-            .background(.black.opacity(0.82))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Ride progress")
-            .accessibilityValue(
-                "\(RideMetrics.miles(distanceInMeters)) miles, ride time "
-                    + RideMetrics.duration(elapsedDuration)
-            )
         }
+    }
+
+    private func progressMetric(_ title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(SpokeStyle.secondaryText)
+            Text(value)
+                .font(.title2.weight(.bold))
+                .monospacedDigit()
+                .foregroundStyle(SpokeStyle.text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 
     private var activeRideDistanceInMeters: CLLocationDistance {
@@ -338,8 +385,8 @@ private struct RideDashboardView: View {
             ZStack(alignment: .bottom) {
                 SpeedometerArc()
                     .stroke(
-                        .white.opacity(0.14),
-                        style: StrokeStyle(lineWidth: 11, lineCap: .butt)
+                        SpokeStyle.elevatedSurface,
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -347,7 +394,7 @@ private struct RideDashboardView: View {
                     .trim(from: 0, to: min(CGFloat(speed) / 30, 1))
                     .stroke(
                         arcColor(for: speed),
-                        style: StrokeStyle(lineWidth: 11, lineCap: .butt)
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -355,8 +402,8 @@ private struct RideDashboardView: View {
                     Text(String(speed))
                         .font(
                             .system(
-                                size: min(92, arcWidth * 0.29),
-                                weight: .semibold
+                                size: min(112, arcWidth * 0.34),
+                                weight: .bold
                             )
                         )
                         .monospacedDigit()
@@ -364,14 +411,14 @@ private struct RideDashboardView: View {
                         .minimumScaleFactor(0.5)
 
                     Text("mph")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.headline)
                         .foregroundStyle(SpokeStyle.secondaryText)
                 }
                 .padding(.bottom, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(SpokeStyle.text)
         .contentShape(Rectangle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
@@ -427,11 +474,11 @@ private struct RideDashboardView: View {
     private func arcColor(for speed: Int) -> Color {
         switch speed {
         case ..<20:
-            .green
+            SpokeStyle.accent
         case 20..<25:
-            .yellow
+            SpokeStyle.caution
         default:
-            .red
+            SpokeStyle.clay
         }
     }
 }
@@ -456,7 +503,7 @@ private struct RideSkeletonView: View {
             }
             .opacity(0.55)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black)
+            .background(SpokeStyle.background)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Loading Ride")
@@ -511,7 +558,7 @@ private struct RideSkeletonView: View {
                 SpeedometerArc()
                     .stroke(
                         .white.opacity(0.18),
-                        style: StrokeStyle(lineWidth: 11, lineCap: .butt)
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .frame(width: arcWidth, height: arcHeight)
 
@@ -521,7 +568,7 @@ private struct RideSkeletonView: View {
                         .frame(width: min(116, arcWidth * 0.36), height: 54)
 
                     Capsule()
-                        .fill(.white.opacity(0.14))
+                        .fill(SpokeStyle.elevatedSurface)
                         .frame(width: 36, height: 10)
                 }
                 .padding(.bottom, 5)
@@ -555,10 +602,10 @@ private struct RideSkeletonView: View {
 }
 
 private struct RideLayoutMetrics {
-    let topInset: CGFloat = 16
+    let topInset: CGFloat = 10
     let bottomInset: CGFloat = 10
-    let verticalSpacing: CGFloat = 14
-    let spotifyHeight: CGFloat = 96
+    let verticalSpacing: CGFloat = 12
+    let spotifyHeight: CGFloat = 76
     let speedometerHeight: CGFloat
 
     init(size: CGSize) {
@@ -566,11 +613,12 @@ private struct RideLayoutMetrics {
             size.height
                 - topInset
                 - bottomInset
-                - (verticalSpacing * 2)
+                - (verticalSpacing * 4)
+                - 86
                 - spotifyHeight,
             0
         )
-        speedometerHeight = min(176, max(116, availableFeatureHeight * 0.305))
+        speedometerHeight = min(180, max(126, availableFeatureHeight * 0.5))
     }
 }
 
@@ -618,7 +666,8 @@ private struct SpeedometerArc: Shape {
 #Preview {
     RideView(
         settings: AppSettings(),
-        rideSession: RideSessionController()
+        rideSession: RideSessionController(),
+        onEndRide: {}
     )
         .preferredColorScheme(.dark)
 }

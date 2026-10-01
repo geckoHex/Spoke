@@ -26,42 +26,52 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if completedRides.isEmpty {
-                    ContentUnavailableView(
-                        "No Rides Yet",
-                        systemImage: "figure.outdoor.cycle",
-                        description: Text("Completed rides will appear here.")
-                    )
-                    .background(Color.black)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(completedRides) { ride in
-                                NavigationLink {
-                                    RideHistoryDetailView(ride: ride)
-                                } label: {
-                                    RideHistoryRow(
-                                        ride: ride,
-                                        currentDate: relativeTimeSnapshot,
-                                        isHighlighted:
-                                            ride.persistentModelID == highlightedRideID
-                                    )
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Your rides")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(SpokeStyle.text)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("historyTitle")
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.top, 20)
+                    .padding(.bottom, 12)
+
+                Group {
+                    if completedRides.isEmpty {
+                        ContentUnavailableView(
+                            "No Rides Yet",
+                            systemImage: "figure.outdoor.cycle",
+                            description: Text("Completed rides will appear here.")
+                        )
+                        .background(SpokeStyle.background)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(completedRides) { ride in
+                                    NavigationLink {
+                                        RideHistoryDetailView(ride: ride)
+                                    } label: {
+                                        RideHistoryRow(
+                                            ride: ride,
+                                            currentDate: relativeTimeSnapshot,
+                                            isHighlighted:
+                                                ride.persistentModelID == highlightedRideID
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .padding(.horizontal, SpokeStyle.pageInset)
+                            .padding(.top, 12)
+                            .padding(.bottom, 24)
                         }
-                        .padding(.horizontal, SpokeStyle.pageInset)
-                        .padding(.top, 12)
-                        .padding(.bottom, 24)
+                        .scrollIndicators(.hidden)
+                        .background(SpokeStyle.background)
                     }
-                    .scrollIndicators(.hidden)
-                    .background(Color.black)
                 }
             }
-            .toolbarBackground(.black, for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .background(SpokeStyle.background)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .onAppear {
             relativeTimeSnapshot = .now
@@ -86,14 +96,20 @@ private struct RideHistoryRow: View {
     let ride: TrackedRide
     let currentDate: Date
     let isHighlighted: Bool
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
+            if !dynamicTypeSize.isAccessibilitySize {
+                RideRouteThumbnail(points: ride.routePoints)
+                    .frame(width: 76, height: 90)
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ride.historyTitle)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .font(.headline)
+                        .foregroundStyle(SpokeStyle.text)
                         .layoutPriority(1)
 
                     Text(
@@ -132,7 +148,7 @@ private struct RideHistoryRow: View {
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 15)
+        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             isHighlighted ? SpokeStyle.elevatedSurface : SpokeStyle.surface,
@@ -163,6 +179,44 @@ private struct RideHistoryRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityLabel("\(title), \(value)")
+    }
+}
+
+private struct RideRouteThumbnail: View {
+    let points: [RideRoutePoint]
+
+    var body: some View {
+        let coordinates = points.sorted { $0.recordedAt < $1.recordedAt }.map {
+            MKMapPoint(CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude))
+        }
+
+        ZStack {
+            SpokeStyle.background
+            if coordinates.count > 1 {
+                Canvas { context, size in
+                    let minX = coordinates.map(\.x).min() ?? 0
+                    let minY = coordinates.map(\.y).min() ?? 0
+                    let width = (coordinates.map(\.x).max() ?? minX) - minX
+                    let height = (coordinates.map(\.y).max() ?? minY) - minY
+                    let scale = min((size.width - 20) / max(width, 1), (size.height - 20) / max(height, 1))
+                    var path = Path()
+                    for (index, point) in coordinates.enumerated() {
+                        let position = CGPoint(
+                            x: (point.x - minX - width / 2) * scale + size.width / 2,
+                            y: (point.y - minY - height / 2) * scale + size.height / 2
+                        )
+                        if index == 0 { path.move(to: position) }
+                        else { path.addLine(to: position) }
+                    }
+                    context.stroke(path, with: .color(SpokeStyle.accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                }
+            } else {
+                Image(systemName: "bicycle")
+                    .font(.title2)
+                    .foregroundStyle(SpokeStyle.secondaryText)
+            }
+        }
+        .clipShape(.rect(cornerRadius: 12))
     }
 }
 
@@ -228,7 +282,7 @@ private struct RideHistoryDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black
+            SpokeStyle.background
                 .ignoresSafeArea()
 
             VStack(spacing: 18) {
@@ -265,11 +319,11 @@ private struct RideHistoryDetailView: View {
                         } else if let coordinate = coordinates.first {
                             Annotation("Ride location", coordinate: coordinate) {
                                 Circle()
-                                    .fill(.white)
+                                    .fill(SpokeStyle.text)
                                     .frame(width: 12, height: 12)
                                     .overlay {
                                         Circle()
-                                            .stroke(.black, lineWidth: 2)
+                                            .stroke(SpokeStyle.background, lineWidth: 2)
                                     }
                             }
                         }
@@ -289,10 +343,10 @@ private struct RideHistoryDetailView: View {
                         } label: {
                             Label("Replay", systemImage: "play.fill")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(SpokeStyle.background)
                                 .padding(.horizontal, 14)
                                 .frame(minHeight: 44)
-                                .background(.white, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
+                                .background(SpokeStyle.accent, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
                                 .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                         }
                         .buttonStyle(.plain)
@@ -351,9 +405,10 @@ private struct RideHistoryDetailView: View {
             .padding(.bottom, 16)
         }
         .navigationTitle(ride.detailTitle)
+        .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
-        .toolbarBackground(.black, for: .navigationBar)
+        .toolbarBackground(SpokeStyle.background, for: .navigationBar)
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .background {
@@ -504,10 +559,10 @@ private struct RideStopBubble: View {
     var body: some View {
         Label {
             Text(label)
-                .foregroundStyle(.white)
+                .foregroundStyle(SpokeStyle.text)
         } icon: {
             Image(systemName: "octagon.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(SpokeStyle.clay)
         }
         .font(.caption2.weight(.semibold))
         .padding(.horizontal, 9)
@@ -515,7 +570,7 @@ private struct RideStopBubble: View {
         .padding(.bottom, 12)
         .background {
             RideStopBubbleShape()
-                .fill(.black.opacity(0.88))
+                .fill(SpokeStyle.background.opacity(0.88))
         }
         .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
         .fixedSize()
@@ -550,11 +605,11 @@ private extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster:
-            .green
+            SpokeStyle.accent
         case .slower:
-            .yellow
+            SpokeStyle.caution
         case .stopped:
-            .red
+            SpokeStyle.clay
         }
     }
 }
@@ -624,7 +679,7 @@ private struct RideSoundtrackRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.title)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(SpokeStyle.text)
                     .lineLimit(2)
 
                 Text(entry.artist)
@@ -674,7 +729,7 @@ private struct RideSoundtrackRow: View {
 
             Image(systemName: "music.note")
                 .font(.title3.weight(.medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(SpokeStyle.text)
         }
     }
 

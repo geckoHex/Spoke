@@ -18,17 +18,27 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let settings {
-                    SettingsForm(settings: settings)
-                } else {
-                    Color.black
-                        .ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Settings")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(SpokeStyle.text)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("settingsTitle")
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.top, 20)
+                    .padding(.bottom, 12)
+
+                Group {
+                    if let settings {
+                        SettingsForm(settings: settings)
+                    } else {
+                        SpokeStyle.background
+                            .ignoresSafeArea()
+                    }
                 }
             }
-            .toolbarBackground(.black, for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .background(SpokeStyle.background)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
@@ -59,7 +69,7 @@ private struct SettingsForm: View {
                             focusedField = .name
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(SpokeStyle.secondaryText)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear name")
@@ -67,11 +77,13 @@ private struct SettingsForm: View {
                 }
                 .inputFramePreference(for: .name)
             }
+            .listRowBackground(SpokeStyle.surface)
 
-            Section {
+            Section("On the bike") {
                 Toggle("Keep screen on", isOn: $settings.keepScreenOn)
                 Toggle("Speak Speed", isOn: $settings.speakSpeedEnabled)
             }
+            .listRowBackground(SpokeStyle.surface)
 
             Section("Emergency Check-In") {
                 Picker("Stopped for", selection: $settings.emergencyCheckInMinutes) {
@@ -82,10 +94,12 @@ private struct SettingsForm: View {
                 }
                 .pickerStyle(.menu)
             }
+            .listRowBackground(SpokeStyle.surface)
 
             Section("Developer") {
                 Toggle("Enable Developer Mode", isOn: $settings.developerModeEnabled)
             }
+            .listRowBackground(SpokeStyle.surface)
 
             Section("Spotify Client ID") {
                 HStack(spacing: 8) {
@@ -108,6 +122,7 @@ private struct SettingsForm: View {
                 }
                 .inputFramePreference(for: .spotifyClientID)
             }
+            .listRowBackground(SpokeStyle.surface)
 
             Section("Spotify Client Secret") {
                 HStack(spacing: 8) {
@@ -131,6 +146,7 @@ private struct SettingsForm: View {
                 }
                 .inputFramePreference(for: .spotifyClientSecret)
             }
+            .listRowBackground(SpokeStyle.surface)
 
             Section("Spotify Refresh Token") {
                 HStack(spacing: 8) {
@@ -154,13 +170,16 @@ private struct SettingsForm: View {
                 }
                 .inputFramePreference(for: .spotifyRefreshToken)
             }
+            .listRowBackground(SpokeStyle.surface)
         }
         .textCase(nil)
+        .foregroundStyle(SpokeStyle.text)
+        .environment(\.defaultMinListRowHeight, 56)
         .scrollContentBackground(.hidden)
         .scrollDismissesKeyboard(.interactively)
-        .background(Color.black)
-        .tint(.blue)
-        .toggleStyle(SpokeToggleStyle())
+        .background(SpokeStyle.background)
+        .tint(SpokeStyle.accent)
+        .toggleStyle(.switch)
         .coordinateSpace(name: "settingsForm")
         .onPreferenceChange(SettingsInputFramePreferenceKey.self) {
             inputFrames = $0
@@ -187,7 +206,7 @@ private struct SettingsForm: View {
                 focusedField = field
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SpokeStyle.secondaryText)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(label)
