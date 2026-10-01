@@ -12,6 +12,14 @@ enum RideAddressResolver {
     private static let minimumPointOfInterestRadius: CLLocationDistance = 100
     private static let maximumPointOfInterestRadius: CLLocationDistance = 150
 
+    static func liveRidePlace(from item: MKMapItem) -> (street: String?, city: String?) {
+        let city = item.addressRepresentations?.cityName
+        let address = item.address?.shortAddress ?? item.addressRepresentations?.fullAddress(
+            includingRegion: false, singleLine: false
+        )
+        return (RideAddressFormatter.narrationStreet(from: address, city: city), city)
+    }
+
     static func endpointName(for location: RideLocationSample) async -> String? {
         let endpointLocation = CLLocation(
             latitude: location.latitude,
@@ -129,6 +137,19 @@ enum RideAddressFormatter {
 
         guard name.count > maximumPlaceNameLength else { return name }
         return "\(name.prefix(maximumPlaceNameLength))..."
+    }
+
+    nonisolated static func narrationStreet(from address: String?, city: String?) -> String? {
+        guard let line = street(from: address) else { return nil }
+        // MapKit's current address API exposes a formatted street, including its house number.
+        let name = line.replacingOccurrences(
+            of: #"^\d+[A-Za-z]?(?:[-–]\d+[A-Za-z]?)?\s+"#,
+            with: "", options: .regularExpression
+        )
+        guard !name.isEmpty, name.count <= 80,
+              name.rangeOfCharacter(from: .letters) != nil,
+              name.localizedCaseInsensitiveCompare(city ?? "") != .orderedSame else { return nil }
+        return name
     }
 
     nonisolated static func street(from address: String?) -> String? {

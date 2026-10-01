@@ -29,9 +29,22 @@
 		31A5EF70304149450042A92D /* SpokeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpokeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		51AB0001304149440042A92D /* Exceptions for "Spoke" folder in "Spoke" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 31A5EF56304149440042A92D /* Spoke */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		31A5EF59304149440042A92D /* Spoke */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				51AB0001304149440042A92D /* Exceptions for "Spoke" folder in "Spoke" target */,
+			);
 			path = Spoke;
 			sourceTree = "<group>";
 		};
@@ -406,6 +419,7 @@
 				DEVELOPMENT_TEAM = D6W7UHVLBK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Spoke/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Spoke uses your location to show local weather and your speed and position during a ride.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -440,6 +454,7 @@
 				DEVELOPMENT_TEAM = D6W7UHVLBK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Spoke/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Spoke uses your location to show local weather and your speed and position during a ride.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

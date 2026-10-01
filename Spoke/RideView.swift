@@ -121,7 +121,6 @@ private struct RideDashboardView: View {
 
     @StateObject private var spotifyStore: SpotifyNowPlayingStore
     private let overspeedAlertController: RideOverspeedAlertController
-    private let speedAnnouncer: RideSpeedAnnouncer
     @State private var developerSpeedInMilesPerHour = 0
     @State private var isDeveloperSpeedometerPressed = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -140,7 +139,6 @@ private struct RideDashboardView: View {
             wrappedValue: SpotifyNowPlayingStore(client: resources.spotifyClient)
         )
         overspeedAlertController = resources.overspeedAlertController
-        speedAnnouncer = resources.speedAnnouncer
     }
 
     var body: some View {
@@ -170,7 +168,6 @@ private struct RideDashboardView: View {
 
             Task {
                 await overspeedAlertController.stop()
-                await speedAnnouncer.stop()
             }
         }
         .task(id: overspeedAlertSpeed) {
@@ -179,14 +176,6 @@ private struct RideDashboardView: View {
             } else {
                 await overspeedAlertController.stop()
             }
-        }
-        .task(id: shouldSpeakSpeed) {
-            guard shouldSpeakSpeed else {
-                await speedAnnouncer.stop()
-                return
-            }
-
-            await runSpeedAnnouncements()
         }
         .task(id: spotifyCredentials) {
             guard let spotifyCredentials else {
@@ -272,11 +261,6 @@ private struct RideDashboardView: View {
             ? nil : displayedSpeedInMilesPerHour
     }
 
-    private var shouldSpeakSpeed: Bool {
-        settings?.speakSpeedEnabled == true && !rideSession.emergencyCheckIn.isPresented
-            && rideSession.activeRide?.isPaused == false
-    }
-
     private var isDeveloperModeEnabled: Bool {
         settings?.developerModeEnabled == true
     }
@@ -285,22 +269,6 @@ private struct RideDashboardView: View {
         isDeveloperModeEnabled
             ? developerSpeedInMilesPerHour
             : rideSession.speedInMilesPerHour
-    }
-
-    private func runSpeedAnnouncements() async {
-        while !Task.isCancelled {
-            do {
-                try await Task.sleep(for: .seconds(3))
-            } catch {
-                break
-            }
-
-            await speedAnnouncer.play(
-                speedInMilesPerHour: displayedSpeedInMilesPerHour
-            )
-        }
-
-        await speedAnnouncer.stop()
     }
 
     @ViewBuilder
@@ -625,7 +593,6 @@ private struct RideLayoutMetrics {
 private struct RideSessionResources: Sendable {
     let spotifyClient: SpotifyAPIClient
     let overspeedAlertController: RideOverspeedAlertController
-    let speedAnnouncer: RideSpeedAnnouncer
 
     nonisolated init() {
         spotifyClient = SpotifyAPIClient()
@@ -636,7 +603,6 @@ private struct RideSessionResources: Sendable {
             )
         )
         overspeedAlertController = RideOverspeedAlertController(player: alertPlayer)
-        speedAnnouncer = RideSpeedAnnouncer()
     }
 }
 
