@@ -123,7 +123,7 @@ struct RideReplayView: View {
     }
 
     var body: some View {
-        SpokeSheet(title: "Replay") {
+        SpokeSheet(title: "Replay", fillsHeight: true) {
             Map(initialPosition: cameraPosition, interactionModes: []) {
                 ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                     _, segment in

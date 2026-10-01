@@ -12,56 +12,53 @@ struct RideRenameView: View {
     }
 
     var body: some View {
-        SpokeSheet(title: "Rename Ride", detents: [.medium, .large]) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Ride name")
-                            .font(.subheadline)
-                            .foregroundStyle(SpokeStyle.secondaryText)
+        SpokeSheet(title: "Rename Ride") {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Ride name")
+                        .font(.subheadline)
+                        .foregroundStyle(SpokeStyle.secondaryText)
 
-                        HStack {
-                            TextField("", text: $name)
-                                .focused($isNameFocused)
-                                .textInputAutocapitalization(.words)
-                                .submitLabel(.done)
-                                .onSubmit { isNameFocused = false }
-                                .accessibilityLabel("Ride name")
+                    HStack {
+                        TextField("", text: $name)
+                            .focused($isNameFocused)
+                            .textInputAutocapitalization(.words)
+                            .submitLabel(.done)
+                            .onSubmit { isNameFocused = false }
+                            .accessibilityLabel("Ride name")
 
-                            if isNameFocused && !name.isEmpty {
-                                Button {
-                                    name = ""
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(SpokeStyle.secondaryText)
-                                        .frame(minWidth: 44, minHeight: 44)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Clear ride name")
+                        if isNameFocused && !name.isEmpty {
+                            Button {
+                                name = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(SpokeStyle.secondaryText)
+                                    .frame(minWidth: 44, minHeight: 44)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Clear ride name")
                         }
-                        .padding(.leading, 16)
-                        .padding(.trailing, 4)
-                        .frame(minHeight: 52)
-                        .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
                     }
+                    .padding(.leading, 16)
+                    .padding(.trailing, 4)
+                    .frame(minHeight: 52)
+                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
+                }
 
-                    Button("Save", action: save)
-                        .buttonStyle(SpokePrimaryButtonStyle())
-                        .disabled(!canSave)
-                }
-                .padding(SpokeStyle.pageInset)
-                .background {
-                    SpokeStyle.surface
-                        .onTapGesture { isNameFocused = false }
-                }
+                Button("Save", action: save)
+                    .buttonStyle(SpokePrimaryButtonStyle())
+                    .disabled(!canSave)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.vertical, 12)
             .background {
                 SpokeStyle.surface
                     .onTapGesture { isNameFocused = false }
             }
+        }
+        .background {
+            SpokeStyle.surface
+                .onTapGesture { isNameFocused = false }
         }
     }
 

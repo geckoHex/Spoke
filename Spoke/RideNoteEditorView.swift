@@ -13,7 +13,6 @@ struct RideNoteEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isNoteFocused = false
     @State private var noteText: String
-    @ScaledMetric(relativeTo: .body) private var editorHeight = 220.0
 
     init(ride: TrackedRide) {
         self.ride = ride
@@ -22,46 +21,44 @@ struct RideNoteEditorView: View {
 
     var body: some View {
         SpokeSheet(title: "Ride Notes") {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Note")
-                        .font(.subheadline)
-                        .foregroundStyle(SpokeStyle.secondaryText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(.rect)
-                        .onTapGesture { isNoteFocused = false }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Note")
+                    .font(.subheadline)
+                    .foregroundStyle(SpokeStyle.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+                    .onTapGesture { isNoteFocused = false }
 
-                    HStack(alignment: .top, spacing: 4) {
-                        NoteTextView(text: $noteText, isFocused: $isNoteFocused)
-                            .frame(height: editorHeight)
+                HStack(alignment: .top, spacing: 4) {
+                    NoteTextView(text: $noteText, isFocused: $isNoteFocused)
+                        .frame(maxWidth: .infinity)
 
-                        if isNoteFocused && !noteText.isEmpty {
-                            Button {
-                                noteText = ""
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(SpokeStyle.secondaryText)
-                                    .frame(width: 44, height: 44)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Clear note")
+                    if isNoteFocused && !noteText.isEmpty {
+                        Button {
+                            noteText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(SpokeStyle.secondaryText)
+                                .frame(width: 44, height: 44)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Clear note")
                     }
-                    .padding(8)
-                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
                 }
-                .padding(SpokeStyle.pageInset)
-                .background {
-                    SpokeStyle.surface
-                        .onTapGesture { isNoteFocused = false }
-                }
+                .padding(8)
+                .frame(minHeight: 52)
+                .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.vertical, 12)
             .background {
                 SpokeStyle.surface
                     .onTapGesture { isNoteFocused = false }
             }
+        }
+        .background {
+            SpokeStyle.surface
+                .onTapGesture { isNoteFocused = false }
         }
         .onChange(of: noteText) {
             ride.updateNote(to: noteText)
@@ -84,6 +81,7 @@ private struct NoteTextView: UIViewRepresentable {
         view.tintColor = UIColor(SpokeStyle.accent)
         view.returnKeyType = .done
         view.keyboardDismissMode = .interactive
+        view.isScrollEnabled = false
         view.accessibilityLabel = "Note"
         return view
     }
@@ -95,6 +93,12 @@ private struct NoteTextView: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        guard let width = proposal.width else { return nil }
+        let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: size.height)
+    }
 
     final class Coordinator: NSObject, UITextViewDelegate {
         var parent: NoteTextView

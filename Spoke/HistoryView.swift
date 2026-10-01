@@ -477,36 +477,42 @@ private struct RideHistoryDetailView: View {
     }
 
     private var rideActions: some View {
-        SpokeSheet(title: "Ride Actions", detents: [.medium, .large]) {
-            List {
+        SpokeSheet(title: "Ride Actions") {
+            VStack(spacing: 0) {
                 Button {
                     actionSheet = .note
                 } label: {
                     Label("Add Note", systemImage: "square.and.pencil")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(.rect)
                 }
-                .listRowBackground(SpokeStyle.surface)
+
+                Divider().overlay(SpokeStyle.separator)
 
                 Button {
                     rideName = ride.customName ?? ride.detailTitle
                     actionSheet = .rename
                 } label: {
                     Label("Rename Ride", systemImage: "pencil")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(.rect)
                 }
-                .listRowBackground(SpokeStyle.surface)
+
+                Divider().overlay(SpokeStyle.separator)
 
                 Button(role: .destructive) {
                     actionSheet = .delete
                 } label: {
                     Label("Delete Ride", systemImage: "trash")
                         .foregroundStyle(SpokeStyle.danger)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(.rect)
                 }
-                .listRowBackground(SpokeStyle.surface)
             }
             .foregroundStyle(SpokeStyle.text)
-            .listStyle(.plain)
-            .environment(\.defaultMinListRowHeight, 56)
-            .scrollContentBackground(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
+            .buttonStyle(.plain)
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.vertical, 8)
         }
     }
 
@@ -640,20 +646,25 @@ private struct RideSoundtrackView: View {
         SpokeSheet(title: "Ride Soundtrack") {
             Group {
                 if entries.isEmpty {
-                    ContentUnavailableView(
-                        "No Songs Recorded",
-                        systemImage: "music.note.list",
-                        description: Text("Songs played during this ride will appear here.")
-                    )
-                    .background(SpokeStyle.surface)
-                } else {
-                    List(entries) { entry in
-                        RideSoundtrackRow(entry: entry)
-                            .listRowBackground(SpokeStyle.surface)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("No Songs Recorded", systemImage: "music.note.list")
+                            .font(.headline)
+
+                        Text("Songs played during this ride will appear here.")
+                            .foregroundStyle(SpokeStyle.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .background(SpokeStyle.surface)
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.vertical, 12)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(entries) { entry in
+                            RideSoundtrackRow(entry: entry)
+                            Divider().overlay(SpokeStyle.separator)
+                        }
+                    }
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.vertical, 8)
                 }
             }
         }

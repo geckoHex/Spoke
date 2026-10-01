@@ -135,6 +135,16 @@ final class SpokeUITests: XCTestCase {
             add(attachment)
         }
 
+        func assertCompactSheet(endingWith element: XCUIElement, bottomPadding: CGFloat = 12) {
+            let content = app.scrollViews["sheetContent"]
+            XCTAssertTrue(content.exists)
+            XCTAssertTrue(element.isHittable)
+            let bottomSpace = content.frame.maxY - element.frame.maxY
+            XCTAssertGreaterThanOrEqual(bottomSpace, 0, "Sheet content must not be clipped")
+            // The scroll view's accessibility frame includes native bottom safe-area clearance.
+            XCTAssertLessThanOrEqual(bottomSpace, 36 + bottomPadding, "Sheet must fit its content without dead space")
+        }
+
         let start = app.buttons["Start Ride"]
         XCTAssertTrue(start.waitForExistence(timeout: 10))
         XCTAssertGreaterThanOrEqual(start.frame.height, 60)
@@ -159,9 +169,11 @@ final class SpokeUITests: XCTestCase {
         end.press(forDuration: 1.3)
         XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
         capture("Refined Ride Complete")
+        assertCompactSheet(endingWith: app.buttons["Discard Ride"])
         app.buttons["Discard Ride"].tap()
         XCTAssertTrue(app.navigationBars["Discard Ride?"].waitForExistence(timeout: 5))
         capture("Refined Discard Confirmation")
+        assertCompactSheet(endingWith: app.buttons["Cancel"])
         app.buttons["Cancel"].tap()
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["History"].isSelected)
@@ -181,10 +193,12 @@ final class SpokeUITests: XCTestCase {
         actions.tap()
         XCTAssertTrue(app.navigationBars["Ride Actions"].waitForExistence(timeout: 5))
         capture("Refined Ride Actions")
+        assertCompactSheet(endingWith: app.buttons["Delete Ride"])
         app.buttons["Rename Ride"].tap()
         let name = app.textFields["Ride name"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         capture("Refined Rename")
+        assertCompactSheet(endingWith: app.buttons["Save"])
         name.tap()
         app.buttons["Clear ride name"].tap()
         XCTAssertFalse(app.buttons["Save"].isEnabled)
@@ -206,6 +220,8 @@ final class SpokeUITests: XCTestCase {
         app.keyboards.buttons["Done"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         capture("Refined Ride Notes")
+        XCTAssertLessThanOrEqual(note.frame.height, 80, "A short note must not leave a tall empty editor")
+        assertCompactSheet(endingWith: note, bottomPadding: 20)
         app.buttons["Close"].tap()
         actions.tap()
         app.buttons["Add Note"].tap()
@@ -215,6 +231,7 @@ final class SpokeUITests: XCTestCase {
         app.buttons["Ride soundtrack"].tap()
         XCTAssertTrue(app.navigationBars["Ride Soundtrack"].waitForExistence(timeout: 5))
         capture("Refined Soundtrack")
+        assertCompactSheet(endingWith: app.staticTexts["Songs played during this ride will appear here."])
         app.buttons["Close"].tap()
 
         if app.buttons["Replay"].exists {
@@ -228,6 +245,7 @@ final class SpokeUITests: XCTestCase {
         app.buttons["Delete Ride"].tap()
         XCTAssertTrue(app.navigationBars["Delete Ride?"].waitForExistence(timeout: 5))
         capture("Refined Delete Confirmation")
+        assertCompactSheet(endingWith: app.buttons["Cancel"])
         app.buttons["Cancel"].tap()
         XCTAssertTrue(app.staticTexts["Morning Ride"].exists)
         app.buttons["Back"].tap()

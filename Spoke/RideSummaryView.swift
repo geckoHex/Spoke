@@ -13,45 +13,43 @@ struct RideSummaryView: View {
     @State private var isConfirmingDiscard = false
 
     var body: some View {
-        SpokeSheet(title: "Ride Complete", detents: [.medium, .large]) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Duration")
-                            .font(.subheadline)
-                            .foregroundStyle(SpokeStyle.secondaryText)
+        SpokeSheet(title: "Ride Complete") {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Duration")
+                        .font(.subheadline)
+                        .foregroundStyle(SpokeStyle.secondaryText)
 
-                        Text(RideMetrics.duration(ride.elapsedDuration()))
-                            .font(.largeTitle.weight(.semibold))
-                            .monospacedDigit()
-                            .minimumScaleFactor(0.75)
-                            .lineLimit(1)
-                    }
-
-                    HStack(alignment: .top, spacing: 24) {
-                        summaryItem(
-                            title: "Distance",
-                            value: RideMetrics.distance(RideMetrics.distanceInMeters(for: ride))
-                        )
-                        summaryItem(
-                            title: "Started",
-                            value: ride.startedAt.formatted(date: .omitted, time: .shortened)
-                        )
-                    }
-
-                    VStack(spacing: 8) {
-                        Button("Done", action: onDone)
-                            .buttonStyle(SpokePrimaryButtonStyle())
-
-                        Button("Discard Ride", role: .destructive) {
-                            isConfirmingDiscard = true
-                        }
-                        .buttonStyle(SpokeSecondaryButtonStyle())
-                    }
+                    Text(RideMetrics.duration(ride.elapsedDuration()))
+                        .font(.largeTitle.weight(.semibold))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.75)
+                        .lineLimit(1)
                 }
-                .padding(SpokeStyle.pageInset)
+
+                HStack(alignment: .top, spacing: 24) {
+                    summaryItem(
+                        title: "Distance",
+                        value: RideMetrics.distance(RideMetrics.distanceInMeters(for: ride))
+                    )
+                    summaryItem(
+                        title: "Started",
+                        value: ride.startedAt.formatted(date: .omitted, time: .shortened)
+                    )
+                }
+
+                VStack(spacing: 8) {
+                    Button("Done", action: onDone)
+                        .buttonStyle(SpokePrimaryButtonStyle())
+
+                    Button("Discard Ride", role: .destructive) {
+                        isConfirmingDiscard = true
+                    }
+                    .buttonStyle(SpokeSecondaryButtonStyle())
+                }
             }
-            .scrollBounceBehavior(.basedOnSize)
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.vertical, 12)
         }
         .sheet(isPresented: $isConfirmingDiscard) {
             SpokeConfirmationView(
