@@ -158,6 +158,7 @@ struct RideReplayView: View {
 
     private func playRoute() async {
         if route.points.count > 1 {
+            var direction = RideReplayDirection()
             let clock = ContinuousClock()
             let startedAt = clock.now
 
@@ -167,12 +168,8 @@ struct RideReplayView: View {
                 let nextCoordinate = route.coordinate(at: progress)
 
                 if let currentCoordinate, let nextCoordinate {
-                    let currentX = MKMapPoint(currentCoordinate).x
-                    let nextX = MKMapPoint(nextCoordinate).x
-
-                    if nextX != currentX {
-                        isBikeFacingLeft = nextX < currentX
-                    }
+                    direction.update(from: currentCoordinate, to: nextCoordinate)
+                    isBikeFacingLeft = direction.isFacingLeft
                 }
 
                 currentCoordinate = nextCoordinate

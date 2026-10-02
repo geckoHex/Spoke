@@ -608,6 +608,48 @@ struct SpokeTests {
         #expect(abs(fiveEighthsCoordinate.longitude - 0.0015) < 0.000_001)
     }
 
+    @Test func rideReplayDirectionRequiresConsecutiveHorizontalTravel() {
+        let origin = MKMapPoint(CLLocationCoordinate2D(latitude: 40, longitude: -120))
+        let pointsPerMeter = 1 / MKMetersPerMapPointAtLatitude(40)
+        func coordinate(x: Double, y: Double = 0) -> CLLocationCoordinate2D {
+            MKMapPoint(
+                x: origin.x + x * pointsPerMeter,
+                y: origin.y + y * pointsPerMeter
+            ).coordinate
+        }
+
+        var direction = RideReplayDirection()
+        direction.update(from: coordinate(x: 0), to: coordinate(x: -0.7))
+        direction.update(from: coordinate(x: -0.7), to: coordinate(x: -1.4))
+        #expect(!direction.isFacingLeft)
+        direction.update(from: coordinate(x: -1.4), to: coordinate(x: -1.6))
+        #expect(direction.isFacingLeft)
+
+        direction.update(from: coordinate(x: -1.6), to: coordinate(x: -0.2))
+        #expect(direction.isFacingLeft)
+        direction.update(from: coordinate(x: -0.2), to: coordinate(x: 0))
+        #expect(!direction.isFacingLeft)
+
+        // A reversal clears a partial turn instead of combining separate attempts.
+        direction.update(from: coordinate(x: 0), to: coordinate(x: -1))
+        direction.update(from: coordinate(x: -1), to: coordinate(x: 0))
+        direction.update(from: coordinate(x: 0), to: coordinate(x: -1))
+        #expect(!direction.isFacingLeft)
+
+        // Vertical travel clears the partial turn, and does not count toward 1.5 m.
+        direction.update(from: coordinate(x: -1), to: coordinate(x: -1, y: 10))
+        direction.update(from: coordinate(x: -1, y: 10), to: coordinate(x: -2, y: 20))
+        #expect(!direction.isFacingLeft)
+
+        // Repeated horizontal jitter while moving vertically never accumulates.
+        for step in 0..<20 {
+            let y = 20 + Double(step) * 20
+            direction.update(from: coordinate(x: -2, y: y), to: coordinate(x: -1.8, y: y + 10))
+            direction.update(from: coordinate(x: -1.8, y: y + 10), to: coordinate(x: -2, y: y + 20))
+            #expect(!direction.isFacingLeft)
+        }
+    }
+
     @MainActor
     @Test func spotifyHistoryLogsOnlyWhenTheTrackChanges() throws {
         let schema = Schema([
