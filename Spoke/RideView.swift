@@ -71,10 +71,6 @@ struct RideView: View {
                 }
             }
         }
-        .gesture(DeveloperCheckInGesture(
-            isEnabled: settings?.developerModeEnabled == true,
-            onTrigger: { rideSession.emergencyCheckIn.isPresented = true }
-        ))
         .task(id: rideSession.activeRide != nil) {
             guard rideSession.activeRide != nil else {
                 isShowingSkeleton = true
@@ -257,8 +253,7 @@ private struct RideDashboardView: View {
     }
 
     private var overspeedAlertSpeed: Int? {
-        rideSession.emergencyCheckIn.isPresented || rideSession.activeRide?.isPaused == true
-            ? nil : displayedSpeedInMilesPerHour
+        rideSession.activeRide?.isPaused == true ? nil : displayedSpeedInMilesPerHour
     }
 
     private var isDeveloperModeEnabled: Bool {

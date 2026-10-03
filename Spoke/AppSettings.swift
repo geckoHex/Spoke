@@ -12,7 +12,6 @@ final class AppSettings {
     var name: String = "User"
     var keepScreenOn: Bool = true
     var developerModeEnabled: Bool = false
-    var emergencyCheckInMinutes: Int = 3
     var spotifyClientID: String = ""
     var spotifyClientSecret: String = ""
     var spotifyRefreshToken: String = ""
@@ -21,7 +20,6 @@ final class AppSettings {
         name: String = "User",
         keepScreenOn: Bool = true,
         developerModeEnabled: Bool = false,
-        emergencyCheckInMinutes: Int = 3,
         spotifyClientID: String = "",
         spotifyClientSecret: String = "",
         spotifyRefreshToken: String = ""
@@ -29,7 +27,6 @@ final class AppSettings {
         self.name = name
         self.keepScreenOn = keepScreenOn
         self.developerModeEnabled = developerModeEnabled
-        self.emergencyCheckInMinutes = min(max(emergencyCheckInMinutes, 1), 10)
         self.spotifyClientID = spotifyClientID
         self.spotifyClientSecret = spotifyClientSecret
         self.spotifyRefreshToken = spotifyRefreshToken
