@@ -42,6 +42,37 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testSpotifyUsesNativeSignIn() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        app.buttons["Settings"].tap()
+
+        let signIn = app.buttons["spotifySignIn"]
+        XCTAssertTrue(signIn.waitForExistence(timeout: 5))
+        XCTAssertTrue(signIn.isHittable)
+        XCTAssertFalse(app.textFields["Spotify client ID"].exists)
+        XCTAssertFalse(app.secureTextFields["Spotify client secret"].exists)
+        XCTAssertFalse(app.secureTextFields["Spotify refresh token"].exists)
+        let settings = XCTAttachment(screenshot: app.screenshot())
+        settings.name = "Spotify Sign In Settings"
+        settings.lifetime = .keepAlways
+        add(settings)
+
+        signIn.tap()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let continueButton = springboard.alerts.buttons["Continue"]
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 10))
+        let authentication = XCTAttachment(screenshot: app.screenshot())
+        authentication.name = "Native Spotify Authentication"
+        authentication.lifetime = .keepAlways
+        add(authentication)
+        springboard.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(signIn.waitForExistence(timeout: 5))
+        XCTAssertTrue(signIn.isEnabled)
+    }
+
+    @MainActor
     func testSolidNavigationAndControls() throws {
         let app = XCUIApplication()
         app.launch()

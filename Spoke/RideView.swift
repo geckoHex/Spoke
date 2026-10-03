@@ -115,7 +115,8 @@ private struct RideDashboardView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
 
-    @StateObject private var spotifyStore: SpotifyNowPlayingStore
+    @EnvironmentObject private var spotifyAuthentication: SpotifyAuthenticationStore
+    @StateObject private var spotifyStore = SpotifyNowPlayingStore()
     private let overspeedAlertController: RideOverspeedAlertController
     @State private var developerSpeedInMilesPerHour = 0
     @State private var isDeveloperSpeedometerPressed = false
@@ -131,9 +132,6 @@ private struct RideDashboardView: View {
     ) {
         self.settings = settings
         self.rideSession = rideSession
-        _spotifyStore = StateObject(
-            wrappedValue: SpotifyNowPlayingStore(client: resources.spotifyClient)
-        )
         overspeedAlertController = resources.overspeedAlertController
     }
 
@@ -173,17 +171,14 @@ private struct RideDashboardView: View {
                 await overspeedAlertController.stop()
             }
         }
-        .task(id: spotifyCredentials) {
-            guard let spotifyCredentials else {
-                await spotifyStore.reset()
+        .task(id: spotifyAuthentication.sessionID) {
+            guard spotifyAuthentication.sessionID != nil else {
+                spotifyStore.reset()
                 return
             }
 
             await spotifyStore.monitor(
-                credentials: spotifyCredentials,
-                onRefreshToken: { refreshToken in
-                    settings?.spotifyRefreshToken = refreshToken
-                },
+                authentication: spotifyAuthentication,
                 onTrackChecked: { track in
                     rideSession.recordSpotifyCheck(track)
                 }
@@ -237,11 +232,6 @@ private struct RideDashboardView: View {
         .padding(.bottom, metrics.bottomInset)
     }
 
-    private var spotifyCredentials: SpotifyCredentials? {
-        guard let settings else { return nil }
-        return SpotifyCredentials(settings: settings)
-    }
-
     private var rideStatus: some View {
         Label(
             rideSession.activeRide?.isPaused == true ? "Paused" : "Riding",
@@ -268,7 +258,7 @@ private struct RideDashboardView: View {
 
     @ViewBuilder
     private var spotifySection: some View {
-        if spotifyCredentials == nil {
+        if spotifyAuthentication.sessionID == nil {
             SpotifyStatusView(
                 symbol: "music.note",
                 message: "Connect Spotify in Settings to see your music."
@@ -586,11 +576,9 @@ private struct RideLayoutMetrics {
 }
 
 private struct RideSessionResources: Sendable {
-    let spotifyClient: SpotifyAPIClient
     let overspeedAlertController: RideOverspeedAlertController
 
     nonisolated init() {
-        spotifyClient = SpotifyAPIClient()
         let alertPlayer = RideOverspeedAlertPlayer(
             resourceURL: Bundle.main.url(
                 forResource: "overspeed-alert",
@@ -630,5 +618,6 @@ private struct SpeedometerArc: Shape {
         rideSession: RideSessionController(),
         onEndRide: {}
     )
+        .environmentObject(SpotifyAuthenticationStore())
         .preferredColorScheme(.dark)
 }

@@ -8,9 +8,6 @@ import SwiftData
 
 private enum SettingsField: Hashable {
     case name
-    case spotifyClientID
-    case spotifyClientSecret
-    case spotifyRefreshToken
 }
 
 struct SettingsView: View {
@@ -45,6 +42,7 @@ struct SettingsView: View {
 
 private struct SettingsForm: View {
     @Bindable var settings: AppSettings
+    @EnvironmentObject private var spotifyAuthentication: SpotifyAuthenticationStore
     @FocusState private var focusedField: SettingsField?
     @State private var inputFrames: [SettingsField: CGRect] = [:]
 
@@ -89,74 +87,37 @@ private struct SettingsForm: View {
             }
             .listRowBackground(SpokeStyle.surface)
 
-            Section("Spotify Client ID") {
-                HStack(spacing: 8) {
-                    TextField("", text: $settings.spotifyClientID)
-                        .focused($focusedField, equals: .spotifyClientID)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.asciiCapable)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            focusedField = nil
+            Section {
+                if spotifyAuthentication.sessionID != nil {
+                    Label("Connected to Spotify", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(SpokeStyle.accent)
+
+                    Button("Disconnect Spotify", role: .destructive) {
+                        Task { await spotifyAuthentication.signOut() }
+                    }
+                    .buttonStyle(SpokeSecondaryButtonStyle())
+                } else {
+                    Button {
+                        focusedField = nil
+                        Task { await spotifyAuthentication.signIn() }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if spotifyAuthentication.isConnecting {
+                                ProgressView()
+                                    .tint(SpokeStyle.background)
+                            }
+                            Text(spotifyAuthentication.isConnecting ? "Signing in…" : "Sign in with Spotify")
                         }
-                        .accessibilityLabel("Spotify client ID")
-
-                    clearButton(
-                        for: .spotifyClientID,
-                        value: $settings.spotifyClientID,
-                        label: "Clear Spotify client ID"
-                    )
+                    }
+                    .buttonStyle(SpokePrimaryButtonStyle())
+                    .disabled(spotifyAuthentication.isConnecting)
+                    .accessibilityIdentifier("spotifySignIn")
                 }
-                .inputFramePreference(for: .spotifyClientID)
-            }
-            .listRowBackground(SpokeStyle.surface)
-
-            Section("Spotify Client Secret") {
-                HStack(spacing: 8) {
-                    SecureField("", text: $settings.spotifyClientSecret)
-                        .focused($focusedField, equals: .spotifyClientSecret)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.asciiCapable)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            focusedField = nil
-                        }
-                        .privacySensitive()
-                        .accessibilityLabel("Spotify client secret")
-
-                    clearButton(
-                        for: .spotifyClientSecret,
-                        value: $settings.spotifyClientSecret,
-                        label: "Clear Spotify client secret"
-                    )
-                }
-                .inputFramePreference(for: .spotifyClientSecret)
-            }
-            .listRowBackground(SpokeStyle.surface)
-
-            Section("Spotify Refresh Token") {
-                HStack(spacing: 8) {
-                    SecureField("", text: $settings.spotifyRefreshToken)
-                        .focused($focusedField, equals: .spotifyRefreshToken)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.asciiCapable)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            focusedField = nil
-                        }
-                        .privacySensitive()
-                        .accessibilityLabel("Spotify refresh token")
-
-                    clearButton(
-                        for: .spotifyRefreshToken,
-                        value: $settings.spotifyRefreshToken,
-                        label: "Clear Spotify refresh token"
-                    )
-                }
-                .inputFramePreference(for: .spotifyRefreshToken)
+            } header: {
+                Text("Spotify")
+            } footer: {
+                Text(spotifyAuthentication.errorMessage ?? "See what’s playing and save your ride’s soundtrack.")
+                    .foregroundStyle(spotifyAuthentication.errorMessage == nil ? SpokeStyle.secondaryText : SpokeStyle.danger)
             }
             .listRowBackground(SpokeStyle.surface)
         }
@@ -180,25 +141,6 @@ private struct SettingsForm: View {
                     focusedField = nil
                 }
         )
-    }
-
-    @ViewBuilder
-    private func clearButton(
-        for field: SettingsField,
-        value: Binding<String>,
-        label: String
-    ) -> some View {
-        if focusedField == field && !value.wrappedValue.isEmpty {
-            Button {
-                value.wrappedValue = ""
-                focusedField = field
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(SpokeStyle.secondaryText)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(label)
-        }
     }
 }
 
@@ -228,5 +170,6 @@ private extension View {
 
 #Preview {
     SettingsView(settings: AppSettings())
+        .environmentObject(SpotifyAuthenticationStore())
         .preferredColorScheme(.dark)
 }

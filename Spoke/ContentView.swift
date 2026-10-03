@@ -132,7 +132,16 @@ struct ContentView: View {
     }
 
     private func createSettingsIfNeeded() {
-        guard settings == nil else { return }
+        if let settings {
+            if !settings.spotifyClientID.isEmpty || !settings.spotifyClientSecret.isEmpty
+                || !settings.spotifyRefreshToken.isEmpty {
+                settings.spotifyClientID = ""
+                settings.spotifyClientSecret = ""
+                settings.spotifyRefreshToken = ""
+                try? modelContext.save()
+            }
+            return
+        }
 
         let settings = AppSettings()
         modelContext.insert(settings)
@@ -177,6 +186,7 @@ private enum AppTab: Hashable, CaseIterable {
 
 #Preview {
     ContentView()
+        .environmentObject(SpotifyAuthenticationStore())
         .modelContainer(
             for: [
                 Item.self,

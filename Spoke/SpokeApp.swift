@@ -10,6 +10,7 @@ import SwiftData
 
 @main
 struct SpokeApp: App {
+    @StateObject private var spotifyAuthentication = SpotifyAuthenticationStore()
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -33,6 +34,7 @@ struct SpokeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(spotifyAuthentication)
                 .disablesKeyboardSafeArea()
         }
         .modelContainer(sharedModelContainer)

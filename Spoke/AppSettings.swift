@@ -12,6 +12,7 @@ final class AppSettings {
     var name: String = "User"
     var keepScreenOn: Bool = true
     var developerModeEnabled: Bool = false
+    // Retained for SwiftData migration; obsolete pasted credentials are cleared at launch.
     var spotifyClientID: String = ""
     var spotifyClientSecret: String = ""
     var spotifyRefreshToken: String = ""
@@ -19,16 +20,10 @@ final class AppSettings {
     init(
         name: String = "User",
         keepScreenOn: Bool = true,
-        developerModeEnabled: Bool = false,
-        spotifyClientID: String = "",
-        spotifyClientSecret: String = "",
-        spotifyRefreshToken: String = ""
+        developerModeEnabled: Bool = false
     ) {
         self.name = name
         self.keepScreenOn = keepScreenOn
         self.developerModeEnabled = developerModeEnabled
-        self.spotifyClientID = spotifyClientID
-        self.spotifyClientSecret = spotifyClientSecret
-        self.spotifyRefreshToken = spotifyRefreshToken
     }
 }

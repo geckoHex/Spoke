@@ -2,6 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>SpotifyClientID</key>
+    <string>eef7863866424be0bfc4d9dd746387b1</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.beckorion.Spoke.spotify</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.beckorion.spoke.spotify</string>
+            </array>
+        </dict>
+    </array>
     <key>UIBackgroundModes</key>
     <array>
         <string>location</string>
