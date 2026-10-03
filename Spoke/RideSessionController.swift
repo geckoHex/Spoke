@@ -14,9 +14,7 @@ final class RideSessionController {
     private(set) var activeRide: TrackedRide?
     private(set) var speedInMilesPerHour = 0
     private(set) var currentMapState: RideMapState?
-    var emergencyCheckIn = RideEmergencyCheckInState() {
-        didSet { liveRide.setSuspended(emergencyCheckIn.isPresented) }
-    }
+    var emergencyCheckIn = RideEmergencyCheckInState()
 
     var currentLocation: RideLocationSample? {
         currentMapState?.location
@@ -29,15 +27,10 @@ final class RideSessionController {
     @ObservationIgnored private var lastSpotifyTrackIdentity: String?
     @ObservationIgnored private var startAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
-    @ObservationIgnored private let liveRide = LiveRideController()
     @ObservationIgnored private var backgroundActivity: CLBackgroundActivitySession?
     @ObservationIgnored private let speedProcessor = RideSpeedProcessor()
 
     private let positionRecordingInterval: TimeInterval = 5
-
-    func configureLiveRide(_ configuration: LiveRideConfiguration) {
-        liveRide.configure(configuration)
-    }
 
     func configure(modelContext: ModelContext) {
         guard self.modelContext == nil else { return }
@@ -65,7 +58,6 @@ final class RideSessionController {
             resolveStartAddressIfNeeded(RideLocationSample(point: firstPoint), for: ride)
         }
 
-        liveRide.start(ride)
         if !ride.isPaused {
             beginLocationUpdates()
         }
@@ -90,7 +82,6 @@ final class RideSessionController {
         speedInMilesPerHour = 0
         lastRecordedPositionAt = nil
         lastSpotifyTrackIdentity = nil
-        liveRide.start(ride)
         beginLocationUpdates()
         return ride
     }
@@ -120,7 +111,6 @@ final class RideSessionController {
         } else {
             beginLocationUpdates()
         }
-        liveRide.refreshActivity()
     }
 
     @discardableResult
@@ -149,7 +139,6 @@ final class RideSessionController {
             return nil
         }
 
-        liveRide.stop()
         activeRide = nil
         currentMapState = nil
         lastRecordedPositionAt = nil
@@ -315,7 +304,6 @@ final class RideSessionController {
             self.speedInMilesPerHour = speedInMilesPerHour
             emergencyCheckIn.observe(speedInMilesPerHour: speedInMilesPerHour, at: .now)
         }
-        liveRide.receive(update)
     }
 
     private func recordPositionIfNeeded(

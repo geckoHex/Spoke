@@ -101,9 +101,6 @@ struct ContentView: View {
             rideSession.configure(modelContext: modelContext)
             updateIdleTimer()
         }
-        .onChange(of: LiveRideConfiguration(settings: settings), initial: true) {
-            rideSession.configureLiveRide(LiveRideConfiguration(settings: settings))
-        }
         .onChange(of: scenePhase) {
             updateIdleTimer()
         }

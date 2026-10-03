@@ -3,7 +3,6 @@
 //  Spoke
 //
 
-import AVFoundation
 import SwiftUI
 import SwiftData
 
@@ -82,34 +81,6 @@ private struct SettingsForm: View {
 
             Section("On the bike") {
                 Toggle("Keep screen on", isOn: $settings.keepScreenOn)
-            }
-            .listRowBackground(SpokeStyle.surface)
-
-            Section("Live Ride") {
-                Toggle("Live Ride", isOn: $settings.liveRideEnabled)
-
-                Picker("Voice", selection: $settings.liveRideVoiceIdentifier) {
-                    Text("System Default").tag("")
-                    ForEach(LiveRideNarrator.availableVoices, id: \.identifier) { voice in
-                        Text("\(voice.name) (\(voice.language))").tag(voice.identifier)
-                    }
-                    if !settings.liveRideVoiceIdentifier.isEmpty,
-                       !LiveRideNarrator.availableVoices.contains(where: {
-                           $0.identifier == settings.liveRideVoiceIdentifier
-                       }) {
-                        Text("Unavailable — System Default")
-                            .tag(settings.liveRideVoiceIdentifier)
-                    }
-                }
-                .pickerStyle(.menu)
-                .accessibilityIdentifier("liveRideVoicePicker")
-
-                Toggle("Speed", isOn: $settings.liveRideSpeedEnabled)
-                Toggle("Streets", isOn: $settings.liveRideStreetsEnabled)
-                Toggle("Cities", isOn: $settings.liveRideCitiesEnabled)
-                Toggle("Distance", isOn: $settings.liveRideDistanceEnabled)
-                Toggle("Clock Time", isOn: $settings.liveRideClockTimeEnabled)
-                Toggle("Ride Duration", isOn: $settings.liveRideDurationEnabled)
             }
             .listRowBackground(SpokeStyle.surface)
 

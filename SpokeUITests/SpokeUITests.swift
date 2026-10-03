@@ -23,45 +23,6 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
-    func testLiveRideSettingsAndVoiceMenu() throws {
-        let app = XCUIApplication()
-        app.launchArguments = ["--ui-testing"]
-        app.launch()
-        app.buttons["Settings"].tap()
-        let master = app.switches["Live Ride"]
-        XCTAssertTrue(master.waitForExistence(timeout: 5))
-        XCTAssertEqual(master.value as? String, "0")
-        XCTAssertFalse(app.switches["Speak Speed"].exists)
-        master.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        XCTAssertEqual(master.value as? String, "1")
-
-        let voicePicker = app.buttons["liveRideVoicePicker"]
-        XCTAssertTrue(voicePicker.exists)
-        voicePicker.tap()
-        let voice = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "(en-")).firstMatch
-        XCTAssertTrue(voice.waitForExistence(timeout: 5))
-        let label = voice.label
-        voice.tap()
-        XCTAssertTrue(voicePicker.label.contains(label) || (voicePicker.value as? String)?.contains(label) == true)
-
-        for name in ["Speed", "Streets", "Cities", "Distance", "Clock Time", "Ride Duration"] {
-            let toggle = app.switches[name]
-            if !toggle.isHittable { app.swipeUp() }
-            XCTAssertTrue(toggle.isHittable)
-            XCTAssertEqual(toggle.value as? String, "1")
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-            XCTAssertEqual(toggle.value as? String, "0")
-        }
-        app.swipeDown()
-        master.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        XCTAssertEqual(master.value as? String, "0")
-        let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "Live Ride Settings"
-        attachment.lifetime = .keepAlways
-        add(attachment)
-    }
-
-    @MainActor
     func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
