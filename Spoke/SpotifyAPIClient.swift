@@ -24,7 +24,7 @@ actor SpotifyAPIClient {
             URLQueryItem(name: "code_verifier", value: request.verifier),
         ])
         guard let refreshToken = response.refreshToken, !refreshToken.isEmpty else {
-            throw SpotifyAPIError.invalidResponse
+            throw SpotifyAPIError.requestFailed("Spotify’s token response didn’t include a refresh token.")
         }
         try Task.checkCancellation()
         let session = SpotifySession(
@@ -91,10 +91,22 @@ actor SpotifyAPIClient {
         let (data, response) = try await urlSession.data(for: request)
         let status = try httpStatus(response)
         guard status == 200 else { throw apiError(statusCode: status, data: data) }
-        let token = try JSONDecoder().decode(SpotifyTokenResponse.self, from: data)
-        guard !token.accessToken.isEmpty, token.expiresIn > 0,
-              token.refreshToken == nil || token.refreshToken?.isEmpty == false else {
-            throw SpotifyAPIError.invalidResponse
+        let token: SpotifyTokenResponse
+        do {
+            token = try JSONDecoder().decode(SpotifyTokenResponse.self, from: data)
+        } catch DecodingError.keyNotFound(let key, _) {
+            throw SpotifyAPIError.requestFailed("Spotify’s token response is missing \(key.stringValue) (HTTP \(status)).")
+        } catch {
+            throw SpotifyAPIError.requestFailed("Spotify’s token response couldn’t be decoded (HTTP \(status)).")
+        }
+        guard !token.accessToken.isEmpty else {
+            throw SpotifyAPIError.requestFailed("Spotify’s token response contained an empty access token.")
+        }
+        guard token.expiresIn > 0 else {
+            throw SpotifyAPIError.requestFailed("Spotify’s token response contained an invalid expiration.")
+        }
+        guard token.refreshToken == nil || token.refreshToken?.isEmpty == false else {
+            throw SpotifyAPIError.requestFailed("Spotify’s token response contained an empty refresh token.")
         }
         return token
     }

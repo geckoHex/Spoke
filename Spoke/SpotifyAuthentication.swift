@@ -40,11 +40,21 @@ nonisolated struct SpotifyAuthorizationRequest {
     }
 
     func authorizationCode(from url: URL) throws -> String {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              components.scheme == SpotifyConfiguration.callbackScheme,
-              components.host == "callback", components.path.isEmpty,
-              components.user == nil, components.password == nil, components.port == nil,
-              components.fragment == nil else { throw SpotifyAPIError.invalidResponse }
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw SpotifyAPIError.requestFailed("Spotify callback couldn’t be parsed.")
+        }
+        guard components.scheme == SpotifyConfiguration.callbackScheme,
+              components.host == "callback",
+              components.user == nil, components.password == nil, components.port == nil else {
+            throw SpotifyAPIError.requestFailed("Spotify callback didn’t match Spoke’s registered redirect URI.")
+        }
+        guard components.path.isEmpty || components.path == "/" else {
+            throw SpotifyAPIError.requestFailed("Spotify callback returned an unexpected path.")
+        }
+        // A trailing '#' is an empty fragment marker, with no additional OAuth data.
+        guard components.fragment?.isEmpty != false else {
+            throw SpotifyAPIError.requestFailed("Spotify callback returned an unexpected nonempty URL fragment.")
+        }
 
         let items = components.queryItems ?? []
         let states = items.filter { $0.name == "state" }
@@ -56,7 +66,7 @@ nonisolated struct SpotifyAuthorizationRequest {
         }
         let codes = items.filter { $0.name == "code" }
         guard codes.count == 1, let code = codes.first?.value, !code.isEmpty else {
-            throw SpotifyAPIError.invalidResponse
+            throw SpotifyAPIError.requestFailed("Spotify callback didn’t include exactly one nonempty authorization code.")
         }
         return code
     }
@@ -154,17 +164,20 @@ final class SpotifyAuthenticationStore: ObservableObject {
         isConnecting = true
         errorMessage = nil
         defer { isConnecting = false }
+        var stage = "Spotify browser sign-in"
 
         do {
             let request = try SpotifyAuthorizationRequest(clientID: SpotifyConfiguration.clientID)
             let callback = try await authenticate(url: request.url)
+            stage = "Spotify callback validation"
             let code = try request.authorizationCode(from: callback)
+            stage = "Spotify token exchange"
             sessionID = try await client.authorize(request: request, code: code)
         } catch {
             let error = error as NSError
             if error.domain == ASWebAuthenticationSessionErrorDomain,
                error.code == ASWebAuthenticationSessionError.canceledLogin.rawValue { return }
-            errorMessage = error.localizedDescription
+            errorMessage = "\(stage): \(error.localizedDescription)"
         }
     }
 
@@ -204,7 +217,7 @@ final class SpotifyAuthenticationStore: ObservableObject {
                 if let url {
                     continuation.resume(returning: url)
                 } else {
-                    continuation.resume(throwing: error ?? SpotifyAPIError.invalidResponse)
+                    continuation.resume(throwing: error ?? SpotifyAPIError.requestFailed("The sign-in browser closed without a callback URL or system error."))
                 }
             }
             session.presentationContextProvider = context

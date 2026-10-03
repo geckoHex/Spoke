@@ -20,8 +20,15 @@ struct SpotifyAuthenticationTests {
         let prefix = SpotifyConfiguration.redirectURI
         let callback = URL(string: "\(prefix)?state=\(request.state)&code=accepted")!
         #expect(try request.authorizationCode(from: callback) == "accepted")
+        let callbackWithEmptyFragment = URL(string: "\(prefix)?state=\(request.state)&code=accepted#")!
+        #expect(try request.authorizationCode(from: callbackWithEmptyFragment) == "accepted")
+        let callbackWithRootSlash = URL(string: "\(prefix)/?state=\(request.state)&code=accepted")!
+        #expect(try request.authorizationCode(from: callbackWithRootSlash) == "accepted")
+        let callbackWithSlashAndEmptyFragment = URL(string: "\(prefix)/?state=\(request.state)&code=accepted#")!
+        #expect(try request.authorizationCode(from: callbackWithSlashAndEmptyFragment) == "accepted")
         for invalid in [
             "\(prefix)?state=wrong&code=accepted",
+            "\(prefix)/?state=wrong&code=accepted#",
             "\(prefix)?code=accepted",
             "\(prefix)?state=\(request.state)&state=\(request.state)&code=accepted",
             "\(prefix)?state=\(request.state)&code=one&code=two",
@@ -30,6 +37,8 @@ struct SpotifyAuthenticationTests {
             "com.beckorion.spoke.spotify://other?state=\(request.state)&code=accepted",
             "com.beckorion.spoke.spotify://callback/extra?state=\(request.state)&code=accepted",
             "https://callback?state=\(request.state)&code=accepted",
+            "\(prefix)?state=\(request.state)&code=accepted#unexpected",
+            "\(prefix)#access_token=private-token&state=\(request.state)",
         ] {
             #expect(throws: (any Error).self) {
                 try request.authorizationCode(from: URL(string: invalid)!)
@@ -100,6 +109,33 @@ struct SpotifyAuthenticationTests {
             Issue.record("Revoked authorization must require sign-in")
         } catch SpotifyAPIError.authorizationExpired {
             #expect(SpotifyHTTPStub.requests.count == 1)
+        }
+    }
+
+    @Test func malformedTokenResponsesHaveUsefulDiagnosticsWithoutExposingTokens() async throws {
+        let cases = [
+            (#"{"access_token":"private-access","expires_in":3600}"#, "refresh token"),
+            (#"{"refresh_token":"private-refresh","expires_in":3600}"#, "access_token (HTTP 200)"),
+            (#"{"access_token":"","refresh_token":"private-refresh","expires_in":3600}"#, "empty access token"),
+            (#"{"access_token":"private-access","refresh_token":"private-refresh","expires_in":0}"#, "invalid expiration"),
+            ("not-json-private-access", "couldn’t be decoded (HTTP 200)"),
+        ]
+        for (body, expected) in cases {
+            SpotifyHTTPStub.configure([(200, body)])
+            let client = SpotifyAPIClient(urlSession: makeURLSession(), saveSession: { _ in
+                Issue.record("An invalid token response must not be persisted")
+            })
+            let request = try SpotifyAuthorizationRequest(clientID: "public-client")
+            do {
+                _ = try await client.authorize(request: request, code: "private-code")
+                Issue.record("An invalid token response must fail")
+            } catch {
+                let message = error.localizedDescription
+                #expect(message.contains(expected))
+                #expect(!message.contains("private-access"))
+                #expect(!message.contains("private-refresh"))
+                #expect(!message.contains("private-code"))
+            }
         }
     }
 
