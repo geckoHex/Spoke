@@ -48,6 +48,7 @@ struct ContentView: View {
             }
         }
         .tabBarMinimizeBehavior(.never)
+        .toolbarColorScheme(.dark, for: .tabBar)
         .foregroundStyle(SpokeStyle.text)
         .background(SpokeStyle.background)
         .preferredColorScheme(.dark)

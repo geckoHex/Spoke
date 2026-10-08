@@ -67,7 +67,14 @@ struct RideView: View {
                     )
                     .padding(.horizontal, SpokeStyle.pageInset)
                     .padding(.vertical, 12)
-                    .background(SpokeStyle.background)
+                    .background {
+                        LinearGradient(
+                            colors: [SpokeStyle.background.opacity(0), SpokeStyle.background],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea(edges: .bottom)
+                    }
                 }
             }
         }

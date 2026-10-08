@@ -73,12 +73,15 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
-    func testSolidNavigationAndControls() throws {
+    func testNativeNavigationAndControls() throws {
         let app = XCUIApplication()
         app.launch()
 
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+
         for title in ["Home", "Ride", "History", "Settings"] {
-            let tab = app.buttons[title]
+            let tab = tabBar.buttons[title]
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
             tab.tap()
             XCTAssertTrue(tab.isSelected)
@@ -100,7 +103,7 @@ final class SpokeUITests: XCTestCase {
         }
 
         let settingsScreenshot = XCTAttachment(screenshot: app.screenshot())
-        settingsScreenshot.name = "Solid Settings"
+        settingsScreenshot.name = "Native Settings"
         settingsScreenshot.lifetime = .keepAlways
         add(settingsScreenshot)
 
@@ -112,7 +115,7 @@ final class SpokeUITests: XCTestCase {
             XCTAssertLessThanOrEqual(startRide.frame.maxY, app.buttons["Home"].frame.minY)
         }
         let homeScreenshot = XCTAttachment(screenshot: app.screenshot())
-        homeScreenshot.name = "Solid Home"
+        homeScreenshot.name = "Native Home"
         homeScreenshot.lifetime = .keepAlways
         add(homeScreenshot)
 

@@ -24,6 +24,10 @@ extension View {
                 SpokeStyle.surface,
                 in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
             )
+            .overlay {
+                RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
+                    .strokeBorder(SpokeStyle.text.opacity(0.05), lineWidth: 0.5)
+            }
     }
 }
 
