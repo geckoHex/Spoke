@@ -30,6 +30,7 @@ extension View {
 struct SpokePrimaryButtonStyle: ButtonStyle {
     var minHeight: CGFloat = 56
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -40,9 +41,11 @@ struct SpokePrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .background(
                 configuration.role == .destructive ? SpokeStyle.danger : SpokeStyle.accent,
-                in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
+                in: Capsule()
             )
-            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.5)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: configuration.isPressed)
     }
 }
 
@@ -54,7 +57,7 @@ struct SpokeToolbarButtonStyle: ButtonStyle {
             .font(.body.weight(.semibold))
             .foregroundStyle(SpokeStyle.text)
             .frame(width: size, height: size)
-            .background(SpokeStyle.elevatedSurface, in: Circle())
+            .glassEffect(.regular.interactive(), in: Circle())
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

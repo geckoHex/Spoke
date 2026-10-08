@@ -19,42 +19,35 @@ struct ContentView: View {
     @State private var rideSession = RideSessionController()
 
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selectedTab) {
-                Tab(AppTab.home.title, systemImage: AppTab.home.symbol, value: .home) {
-                    HomeView(
-                        settings: settings,
-                        rideSession: rideSession,
-                        onRideStarted: {
-                            selectedTab = .ride
-                        },
-                        onEndRide: endRide
-                    )
-                    .toolbar(.hidden, for: .tabBar)
-                }
-
-                Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
-                    RideView(settings: settings, rideSession: rideSession, onEndRide: endRide)
-                        .toolbar(.hidden, for: .tabBar)
-                }
-
-                Tab(
-                    AppTab.history.title,
-                    systemImage: AppTab.history.symbol,
-                    value: .history
-                ) {
-                    HistoryView(highlightedRideID: $highlightedRideID)
-                        .toolbar(.hidden, for: .tabBar)
-                }
-
-                Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
-                    SettingsView(settings: settings)
-                        .toolbar(.hidden, for: .tabBar)
-                }
+        TabView(selection: $selectedTab) {
+            Tab(AppTab.home.title, systemImage: AppTab.home.symbol, value: .home) {
+                HomeView(
+                    settings: settings,
+                    rideSession: rideSession,
+                    onRideStarted: {
+                        selectedTab = .ride
+                    },
+                    onEndRide: endRide
+                )
             }
 
-            tabBar
+            Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
+                RideView(settings: settings, rideSession: rideSession, onEndRide: endRide)
+            }
+
+            Tab(
+                AppTab.history.title,
+                systemImage: AppTab.history.symbol,
+                value: .history
+            ) {
+                HistoryView(highlightedRideID: $highlightedRideID)
+            }
+
+            Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
+                SettingsView(settings: settings)
+            }
         }
+        .tabBarMinimizeBehavior(.never)
         .foregroundStyle(SpokeStyle.text)
         .background(SpokeStyle.background)
         .preferredColorScheme(.dark)
@@ -86,36 +79,6 @@ struct ContentView: View {
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
-        }
-    }
-
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(AppTab.allCases, id: \.self) { tab in
-                Button {
-                    selectedTab = tab
-                } label: {
-                    VStack(spacing: 5) {
-                        Image(systemName: tab.symbol)
-                            .font(.system(size: 20, weight: .semibold))
-                        Text(tab.title)
-                            .font(.caption.weight(.semibold))
-                    }
-                    .foregroundStyle(selectedTab == tab ? SpokeStyle.accent : SpokeStyle.secondaryText)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 60)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tab.title)
-                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 8)
-        .background(SpokeStyle.background)
-        .overlay(alignment: .top) {
-            Rectangle().fill(SpokeStyle.separator).frame(height: 0.5)
         }
     }
 
