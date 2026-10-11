@@ -197,6 +197,8 @@ final class SpokeUITests: XCTestCase {
         if !lastRide.isHittable { app.scrollViews.firstMatch.swipeUp() }
         lastRide.tap()
         XCTAssertTrue(app.buttons["Ride actions"].waitForExistence(timeout: 5))
+        Thread.sleep(forTimeInterval: 2)
+        XCTAssertTrue(app.buttons["Ride actions"].exists, "Home clock updates must not pop the detail screen")
         XCTAssertTrue(app.staticTexts["Morning Loop"].exists)
         for title in ["Usual / faster", "Slower", "Stopped", "Start", "Finish"] {
             XCTAssertTrue(app.staticTexts[title].exists, "Route must explain \(title)")

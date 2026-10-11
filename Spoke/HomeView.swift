@@ -14,6 +14,7 @@ struct HomeView: View {
 
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
+    @State private var selectedRide: TrackedRide?
 
     @State private var weatherModel =
         ProcessInfo.processInfo.arguments.contains("--ui-testing")
@@ -41,7 +42,9 @@ struct HomeView: View {
                             }
                         )
 
-                        HomeRideActivity(rides: completedRides, date: currentDate)
+                        HomeRideActivity(rides: completedRides, date: currentDate) {
+                            selectedRide = $0
+                        }
                     }
                     .padding(.horizontal, SpokeStyle.pageInset)
                     .padding(.top, 20)
@@ -58,6 +61,9 @@ struct HomeView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(item: $selectedRide) { ride in
+                RideHistoryDetailView(ride: ride)
+            }
         }
         .task {
             await weatherModel.maintainWeather()
@@ -115,6 +121,7 @@ struct HomeView: View {
 private struct HomeRideActivity: View {
     let rides: [TrackedRide]
     let date: Date
+    let onOpenRide: (TrackedRide) -> Void
 
     private var recentRides: [TrackedRide] {
         rides.filter {
@@ -147,8 +154,8 @@ private struct HomeRideActivity: View {
                 .overlay(SpokeStyle.separator)
 
             if let latestRide = rides.first {
-                NavigationLink {
-                    RideHistoryDetailView(ride: latestRide)
+                Button {
+                    onOpenRide(latestRide)
                 } label: {
                     latestRideRow(latestRide)
                 }
@@ -271,6 +278,7 @@ private struct HomeRideActivity: View {
                 .foregroundStyle(SpokeStyle.secondaryText)
                 .accessibilityHidden(true)
         }
+        .contentShape(.rect)
         .accessibilityElement(children: .combine)
     }
 
