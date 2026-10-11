@@ -225,6 +225,7 @@ private struct RideHistoryDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var rideName = ""
     @State private var actionSheet: RideActionSheet?
     @State private var isShowingSoundtrack = false
@@ -281,126 +282,131 @@ private struct RideHistoryDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            SpokeStyle.background
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 18) {
+                    Group {
+                        if coordinates.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "map")
+                                    .font(.system(size: 34, weight: .medium))
 
-            VStack(spacing: 18) {
-                if coordinates.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "map")
-                            .font(.system(size: 34, weight: .medium))
-
-                        Text("No route recorded")
-                            .font(.headline)
-                    }
-                    .foregroundStyle(SpokeStyle.secondaryText)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Map(initialPosition: cameraPosition) {
-                        if coordinates.count > 1 {
-                            ForEach(Array(routeSegments.enumerated()), id: \.offset) {
-                                _, segment in
-                                MapPolyline(coordinates: segment.coordinates)
-                                    .stroke(segment.motion.color, lineWidth: 5)
+                                Text("No route recorded")
+                                    .font(.headline)
                             }
+                            .foregroundStyle(SpokeStyle.secondaryText)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            Map(initialPosition: cameraPosition) {
+                                if coordinates.count > 1 {
+                                    ForEach(Array(routeSegments.enumerated()), id: \.offset) {
+                                        _, segment in
+                                        MapPolyline(coordinates: segment.coordinates)
+                                            .stroke(segment.motion.color, lineWidth: 5)
+                                    }
 
-                            ForEach(routeStops) { stop in
-                                Annotation(
-                                    "Stopped (\(stop.durationDescription))",
-                                    coordinate: stop.coordinate,
-                                    anchor: .bottom
-                                ) {
-                                    RideStopBubble(
-                                        durationDescription: stop.durationDescription
-                                    )
+                                    ForEach(routeStops) { stop in
+                                        Annotation(
+                                            "Stopped (\(stop.durationDescription))",
+                                            coordinate: stop.coordinate,
+                                            anchor: .bottom
+                                        ) {
+                                            RideStopBubble(
+                                                durationDescription: stop.durationDescription
+                                            )
+                                        }
+                                    }
+                                } else if let coordinate = coordinates.first {
+                                    Annotation("Ride location", coordinate: coordinate) {
+                                        Circle()
+                                            .fill(SpokeStyle.text)
+                                            .frame(width: 12, height: 12)
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(SpokeStyle.background, lineWidth: 2)
+                                            }
+                                    }
                                 }
                             }
-                        } else if let coordinate = coordinates.first {
-                            Annotation("Ride location", coordinate: coordinate) {
-                                Circle()
-                                    .fill(SpokeStyle.text)
-                                    .frame(width: 12, height: 12)
-                                    .overlay {
-                                        Circle()
-                                            .stroke(SpokeStyle.background, lineWidth: 2)
-                                    }
+                            .mapStyle(
+                                .standard(
+                                    elevation: .flat,
+                                    emphasis: .muted,
+                                    pointsOfInterest: .excludingAll,
+                                    showsTraffic: false
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(alignment: .bottomTrailing) {
+                                Button {
+                                    isShowingReplay = true
+                                } label: {
+                                    Label("Replay", systemImage: "play.fill")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(SpokeStyle.background)
+                                        .padding(.horizontal, 14)
+                                        .frame(minHeight: 44)
+                                        .background(SpokeStyle.accent, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
+                                        .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(12)
                             }
                         }
                     }
-                    .mapStyle(
-                        .standard(
-                            elevation: .flat,
-                            emphasis: .muted,
-                            pointsOfInterest: .excludingAll,
-                            showsTraffic: false
+                    .frame(height: max(240, geometry.size.height - 310))
+
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.flexible(), spacing: 12),
+                            count: dynamicTypeSize.isAccessibilitySize ? 1 : 2
+                        ),
+                        spacing: 12
+                    ) {
+                        metric(
+                            title: "Duration",
+                            value: RideMetrics.duration(
+                                ride.elapsedDuration(),
+                                omittingZeroHours: true
+                            )
                         )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(alignment: .bottomTrailing) {
-                        Button {
-                            isShowingReplay = true
-                        } label: {
-                            Label("Replay", systemImage: "play.fill")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(SpokeStyle.background)
-                                .padding(.horizontal, 14)
-                                .frame(minHeight: 44)
-                                .background(SpokeStyle.accent, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
-                                .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(12)
+
+                        metric(
+                            title: "Miles",
+                            value: RideMetrics.miles(
+                                RideMetrics.distanceInMeters(for: ride)
+                            )
+                        )
+
+                        metric(
+                            title: "Time Moving",
+                            value: RideMetrics.duration(
+                                movingMetrics.duration,
+                                omittingZeroHours: true
+                            )
+                        )
+
+                        metric(
+                            title: "Moving Avg.",
+                            value: RideMetrics.speedInMilesPerHour(
+                                movingMetrics.averageSpeedInMilesPerHour
+                            )
+                        )
                     }
+                    .padding(.vertical, 12)
+                    .background(SpokeStyle.surface, in: .rect(cornerRadius: SpokeStyle.cardRadius))
+
+                    Button("Ride soundtrack") {
+                        isShowingSoundtrack = true
+                    }
+                    .buttonStyle(SpokePrimaryButtonStyle())
                 }
-
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 12),
-                        GridItem(.flexible(), spacing: 12),
-                    ],
-                    spacing: 12
-                ) {
-                    metric(
-                        title: "Duration",
-                        value: RideMetrics.duration(
-                            ride.elapsedDuration(),
-                            omittingZeroHours: true
-                        )
-                    )
-
-                    metric(
-                        title: "Miles",
-                        value: RideMetrics.miles(
-                            RideMetrics.distanceInMeters(for: ride)
-                        )
-                    )
-
-                    metric(
-                        title: "Time Moving",
-                        value: RideMetrics.duration(
-                            movingMetrics.duration,
-                            omittingZeroHours: true
-                        )
-                    )
-
-                    metric(
-                        title: "Moving Avg.",
-                        value: RideMetrics.speedInMilesPerHour(
-                            movingMetrics.averageSpeedInMilesPerHour
-                        )
-                    )
-                }
-                .padding(.vertical, 12)
-                .background(SpokeStyle.surface, in: .rect(cornerRadius: SpokeStyle.cardRadius))
-
-                Button("Ride soundtrack") {
-                    isShowingSoundtrack = true
-                }
-                .buttonStyle(SpokePrimaryButtonStyle())
+                .padding(.horizontal, SpokeStyle.pageInset)
+                .padding(.bottom, 16)
             }
-            .padding(.horizontal, SpokeStyle.pageInset)
-            .padding(.bottom, 16)
+            .scrollBounceBehavior(.basedOnSize)
+            .accessibilityIdentifier("rideDetailContent")
+            .background(SpokeStyle.background)
         }
         .navigationTitle(ride.detailTitle)
         .toolbar(.visible, for: .navigationBar)
@@ -556,7 +562,8 @@ private struct RideHistoryDetailView: View {
                 .foregroundStyle(SpokeStyle.secondaryText)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 82)
+        .frame(minHeight: 82)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
     }
 }

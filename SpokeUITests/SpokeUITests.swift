@@ -152,6 +152,37 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testRideDetailsAtAccessibilityTextSize() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        app.buttons["Ride"].tap()
+        app.buttons["Start Ride"].tap()
+        let end = app.buttons["End Ride"]
+        XCTAssertTrue(end.waitForExistence(timeout: 10))
+        end.press(forDuration: 1.3)
+        let done = app.buttons["Done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        if !done.isHittable { app.scrollViews["sheetContent"].swipeUp() }
+        done.tap()
+        app.scrollViews.buttons.firstMatch.tap()
+        let content = app.scrollViews["rideDetailContent"]
+        XCTAssertTrue(content.waitForExistence(timeout: 5))
+        for title in ["Duration", "Miles", "Time Moving", "Moving Avg."] {
+            let label = content.staticTexts[title]
+            for _ in 0..<5 where !label.isHittable { content.swipeUp() }
+            XCTAssertTrue(label.isHittable, "\(title) must be reachable at the largest text size")
+        }
+        let soundtrack = app.buttons["Ride soundtrack"]
+        for _ in 0..<5 where !soundtrack.isHittable { content.swipeUp() }
+        XCTAssertTrue(soundtrack.isHittable)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Accessible ride details"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     func testRefinedRideAndSheets() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
