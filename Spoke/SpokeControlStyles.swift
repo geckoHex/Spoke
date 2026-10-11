@@ -17,18 +17,6 @@ enum SpokeStyle {
     static let pageInset: CGFloat = 20
 }
 
-extension View {
-    func spokeCard(padding: CGFloat = 20) -> some View {
-        self
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                SpokeStyle.surface,
-                in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
-            )
-    }
-}
-
 struct SpokePrimaryButtonStyle: ButtonStyle {
     var minHeight: CGFloat = 56
     @Environment(\.isEnabled) private var isEnabled
@@ -56,7 +44,7 @@ struct SpokeToolbarButtonStyle: ButtonStyle {
             .font(.body.weight(.semibold))
             .foregroundStyle(SpokeStyle.text)
             .frame(width: size, height: size)
-            .background(SpokeStyle.surface, in: Circle())
+            .contentShape(.rect)
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
@@ -68,7 +56,7 @@ struct SpokeSecondaryButtonStyle: ButtonStyle {
             .foregroundStyle(configuration.role == .destructive ? SpokeStyle.danger : SpokeStyle.text)
             .frame(maxWidth: .infinity, minHeight: 48)
             .padding(.horizontal, 16)
-            .background(SpokeStyle.elevatedSurface, in: Capsule())
+            .contentShape(.rect)
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

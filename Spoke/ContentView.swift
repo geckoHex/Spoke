@@ -107,10 +107,10 @@ struct ContentView: View {
                     VStack(spacing: 5) {
                         Image(systemName: tab.symbol)
                             .symbolVariant(selectedTab == tab ? .fill : .none)
-                            .font(.system(size: 22, weight: .semibold))
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(selectedTab == tab ? SpokeStyle.primaryAction : SpokeStyle.secondaryText)
                         Text(tab.title)
-                            .font(.caption.weight(.semibold))
+                            .font(.caption2.weight(.medium))
                             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -128,9 +128,6 @@ struct ContentView: View {
         .padding(.horizontal, 12)
         .padding(.top, 4)
         .background(SpokeStyle.background.ignoresSafeArea(edges: .bottom))
-        .overlay(alignment: .top) {
-            Rectangle().fill(SpokeStyle.separator).frame(height: 0.5)
-        }
     }
 
     private func endRide() {

@@ -17,7 +17,7 @@ struct SettingsView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Settings")
-                    .font(.largeTitle.bold())
+                    .font(.title.bold())
                     .foregroundStyle(SpokeStyle.text)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("settingsTitle")
@@ -128,10 +128,11 @@ private struct SettingsForm: View {
                 Text(spotifyAuthentication.errorMessage ?? "See what’s playing and save your ride’s soundtrack.")
                     .foregroundStyle(spotifyAuthentication.errorMessage == nil ? SpokeStyle.secondaryText : SpokeStyle.danger)
             }
-            .listRowBackground(SpokeStyle.surface)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
         .textCase(nil)
-        .listSectionSpacing(24)
+        .listSectionSpacing(20)
         .listRowSeparatorTint(SpokeStyle.separator)
         .foregroundStyle(SpokeStyle.text)
         .environment(\.defaultMinListRowHeight, 56)

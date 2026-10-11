@@ -102,7 +102,7 @@ struct HomeView: View {
                 guard rideSession.startRide() != nil else { return }
                 onRideStarted()
             } label: {
-                Label("Start Ride", systemImage: "figure.outdoor.cycle")
+                Text("Start Ride")
             }
             .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
         }
@@ -150,6 +150,8 @@ private struct HomeRideActivity: View {
         VStack(alignment: .leading, spacing: 20) {
             weeklySummary
 
+            Divider().overlay(SpokeStyle.separator)
+
             if let latestRide = rides.first {
                 Button {
                     onOpenRide(latestRide)
@@ -157,15 +159,12 @@ private struct HomeRideActivity: View {
                     latestRideRow(latestRide)
                 }
                 .buttonStyle(.plain)
-                .spokeCard(padding: 16)
                 .accessibilityIdentifier("lastRide")
             } else {
-                Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
-                    .font(.body.weight(.medium))
+                Text("No completed rides yet")
+                    .font(.subheadline)
                     .foregroundStyle(SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .spokeCard(padding: 16)
-                    .accessibilityLabel("No completed rides yet")
             }
         }
         .accessibilityElement(children: .contain)
@@ -175,7 +174,7 @@ private struct HomeRideActivity: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Last 7 Days")
-                    .font(.title2.weight(.bold))
+                    .font(.headline)
                     .foregroundStyle(SpokeStyle.text)
 
                 Spacer()
@@ -188,42 +187,32 @@ private struct HomeRideActivity: View {
             HStack(alignment: .top, spacing: 24) {
                 activityMetric(
                     value: RideMetrics.distance(totalDistance),
-                    label: "Distance",
-                    systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                    label: "Distance"
                 )
 
                 activityMetric(
                     value: compactDuration(totalDuration),
-                    label: "Ride Time",
-                    systemImage: "timer"
+                    label: "Ride Time"
                 )
             }
-            .spokeCard(padding: 16)
         }
     }
 
     private func activityMetric(
         value: String,
-        label: String,
-        systemImage: String
+        label: String
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(value)
-                .font(.title.weight(.bold))
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(SpokeStyle.text)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
 
-            HStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .foregroundStyle(SpokeStyle.text)
-                    .accessibilityHidden(true)
-
-                Text(label)
-                    .foregroundStyle(SpokeStyle.secondaryText)
-            }
-            .font(.subheadline.weight(.medium))
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(SpokeStyle.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
@@ -232,16 +221,9 @@ private struct HomeRideActivity: View {
 
     private func latestRideRow(_ ride: TrackedRide) -> some View {
         HStack(spacing: 16) {
-            Image(systemName: "figure.outdoor.cycle")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(SpokeStyle.primaryAction)
-                .frame(width: 44, height: 44)
-                .background(SpokeStyle.background, in: Circle())
-                .accessibilityHidden(true)
-
             VStack(alignment: .leading, spacing: 5) {
                 Text("Last Ride")
-                    .font(.headline.weight(.bold))
+                    .font(.headline)
                     .foregroundStyle(SpokeStyle.text)
 
                 Text(
@@ -303,8 +285,8 @@ private struct HomeWeatherView: View {
     let isDeveloperModeEnabled: Bool
     let onExpireAndReload: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 68
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 62
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 52
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 36
 
     @ViewBuilder
     var body: some View {
@@ -329,18 +311,18 @@ private struct HomeWeatherView: View {
 
             if let snapshot {
                 HStack(alignment: .center, spacing: 12) {
-                    windLabel(snapshot: snapshot)
+                    VStack(alignment: .leading, spacing: 4) {
+                        windLabel(snapshot: snapshot)
+
+                        Text("\(snapshot.isStale(at: date) || isUnavailable ? "Last updated" : "Updated") \(snapshot.fetchedAt.formatted(.relative(presentation: .named)))")
+                            .font(.caption)
+                            .foregroundStyle(SpokeStyle.secondaryText)
+                    }
 
                     Spacer(minLength: 8)
 
                     HomeWeatherAttribution(snapshot: snapshot)
                 }
-            }
-
-            if let snapshot {
-                Text("\(snapshot.isStale(at: date) || isUnavailable ? "Last updated" : "Updated") \(snapshot.fetchedAt.formatted(.relative(presentation: .named)))")
-                    .font(.caption)
-                    .foregroundStyle(SpokeStyle.secondaryText)
             }
 
             if isUnavailable || snapshot?.isStale(at: date) == true {
@@ -357,18 +339,17 @@ private struct HomeWeatherView: View {
                 }
             }
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
+        .padding(20)
         .frame(
             maxWidth: .infinity,
-            minHeight: 192,
+            minHeight: 176,
             alignment: .leading
         )
         .background {
-            Image("ForestLandscape")
+            Image("WeatherLandscape")
                 .resizable()
                 .scaledToFill()
-                .overlay(.black.opacity(0.52))
+                .overlay(.black.opacity(0.35))
                 .accessibilityHidden(true)
         }
         .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
@@ -385,7 +366,7 @@ private struct HomeWeatherView: View {
                     .minimumScaleFactor(0.72)
 
                 Text(snapshot.condition)
-                    .font(.title3.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(SpokeStyle.secondaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
@@ -477,25 +458,12 @@ private struct HomeGreeting: View {
     let timeOfDay: TimeOfDay
     let name: String
 
-    @ScaledMetric(relativeTo: .largeTitle) private var nameSize: CGFloat = 36
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(timeOfDay.salutation + (name.isEmpty ? "" : ","))
-                .font(name.isEmpty ? .largeTitle.bold() : .title3.weight(.medium))
-                .foregroundStyle(name.isEmpty ? SpokeStyle.text : SpokeStyle.secondaryText)
-
-            if !name.isEmpty {
-                Text(name)
-                    .font(.system(size: nameSize, weight: .bold))
-                    .foregroundStyle(SpokeStyle.text)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(timeOfDay.salutation + (name.isEmpty ? "" : ", \(name)"))
+        Text(timeOfDay.salutation + (name.isEmpty ? "" : ", \(name)"))
+            .font(.title.bold())
+            .foregroundStyle(SpokeStyle.text)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

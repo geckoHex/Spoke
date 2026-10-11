@@ -28,7 +28,7 @@ struct HistoryView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Your rides")
-                    .font(.largeTitle.bold())
+                    .font(.title.bold())
                     .foregroundStyle(SpokeStyle.text)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("historyTitle")
@@ -102,10 +102,10 @@ private struct RideHistoryRow: View {
         HStack(alignment: .center, spacing: 12) {
             if !dynamicTypeSize.isAccessibilitySize {
                 RideRouteThumbnail(points: ride.routePoints)
-                    .frame(width: 76, height: 90)
+                    .frame(width: 56, height: 64)
                     .accessibilityHidden(true)
             }
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ride.historyTitle)
                         .font(.headline.weight(.bold))
@@ -127,16 +127,14 @@ private struct RideHistoryRow: View {
                         title: "Duration",
                         value: RideMetrics.unpaddedDuration(
                             ride.elapsedDuration()
-                        ),
-                        systemImage: "timer"
+                        )
                     )
 
                     metric(
                         title: "Distance",
                         value: RideMetrics.distance(
                             RideMetrics.distanceInMeters(for: ride)
-                        ),
-                        systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+                        )
                     )
                 }
             }
@@ -147,8 +145,7 @@ private struct RideHistoryRow: View {
                 .foregroundStyle(SpokeStyle.secondaryText)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 18)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             isHighlighted ? SpokeStyle.elevatedSurface : SpokeStyle.surface,
@@ -160,25 +157,16 @@ private struct RideHistoryRow: View {
 
     private func metric(
         title: String,
-        value: String,
-        systemImage: String
+        value: String
     ) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(SpokeStyle.secondaryText)
-                .frame(width: 16)
-                .accessibilityHidden(true)
-
-            Text(value)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(SpokeStyle.secondaryText)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityLabel("\(title), \(value)")
+        Text(value)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(SpokeStyle.secondaryText)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel("\(title), \(value)")
     }
 }
 
@@ -398,9 +386,6 @@ struct RideHistoryDetailView: View {
                             )
                         )
                     }
-                    .padding(.vertical, 12)
-                    .background(SpokeStyle.surface, in: .rect(cornerRadius: SpokeStyle.cardRadius))
-
                     if let note = ride.note {
                         Button {
                             actionSheet = .note
@@ -603,7 +588,7 @@ struct RideHistoryDetailView: View {
     ) -> some View {
         VStack(spacing: 7) {
             Text(value)
-                .font(.title2.weight(.bold))
+                .font(.title2.weight(.semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -613,7 +598,7 @@ struct RideHistoryDetailView: View {
                 .foregroundStyle(SpokeStyle.secondaryText)
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 82)
+        .frame(minHeight: 64)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
     }

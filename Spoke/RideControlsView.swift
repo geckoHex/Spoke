@@ -39,10 +39,6 @@ struct RideControlsView: View {
                 }
                 .background(SpokeStyle.surface)
                 .clipShape(Capsule())
-                .overlay {
-                    Capsule()
-                        .strokeBorder(SpokeStyle.separator, lineWidth: 1)
-                }
                 .contentShape(.rect)
                 .onLongPressGesture(minimumDuration: 1, maximumDistance: 32) {
                     isHolding = false
