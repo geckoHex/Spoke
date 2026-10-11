@@ -112,26 +112,9 @@ struct RideReplayView: View {
             && ProcessInfo.processInfo.arguments.contains("--reduce-motion"))
     }
 
-    private var cameraPosition: MapCameraPosition {
-        guard !route.coordinates.isEmpty else { return .automatic }
-
-        let rect = route.coordinates.reduce(MKMapRect.null) {
-            partialResult,
-            coordinate in
-            let point = MKMapPoint(coordinate)
-            let pointRect = MKMapRect(x: point.x, y: point.y, width: 1, height: 1)
-            return partialResult.union(pointRect)
-        }
-        let horizontalPadding = max(rect.size.width * 0.18, 500)
-        let verticalPadding = max(rect.size.height * 0.18, 500)
-        return .rect(
-            rect.insetBy(dx: -horizontalPadding, dy: -verticalPadding)
-        )
-    }
-
     var body: some View {
         SpokeSheet(title: "Replay", fillsHeight: true) {
-            Map(initialPosition: cameraPosition, interactionModes: []) {
+            Map(initialPosition: .automatic, interactionModes: []) {
                 ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                     _, segment in
                     MapPolyline(coordinates: segment.coordinates)
@@ -142,9 +125,11 @@ struct RideReplayView: View {
                     Annotation("Start", coordinate: start, anchor: .top) {
                         RideEndpointMarker(title: "Start", symbol: "circle.fill")
                     }
+                    .annotationTitles(.hidden)
                     Annotation("Finish", coordinate: finish, anchor: .bottom) {
                         RideEndpointMarker(title: "Finish", symbol: "flag.checkered")
                     }
+                    .annotationTitles(.hidden)
                 }
 
                 if !reduceMotion, let currentCoordinate {

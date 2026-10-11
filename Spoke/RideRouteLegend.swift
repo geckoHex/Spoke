@@ -70,5 +70,7 @@ struct RideEndpointMarker: View {
             .padding(.vertical, 6)
             .fixedSize()
             .accessibilityElement(children: .combine)
+            .accessibilityLabel(title)
+            .accessibilityIdentifier("routeEndpoint\(title)")
     }
 }

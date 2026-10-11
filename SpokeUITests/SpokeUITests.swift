@@ -200,8 +200,14 @@ final class SpokeUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 2)
         XCTAssertTrue(app.buttons["Ride actions"].exists, "Home clock updates must not pop the detail screen")
         XCTAssertTrue(app.staticTexts["Morning Loop"].exists)
-        for title in ["Usual / faster", "Slower", "Stopped", "Start", "Finish"] {
+        for title in ["Usual / faster", "Slower", "Stopped"] {
             XCTAssertTrue(app.staticTexts[title].exists, "Route must explain \(title)")
+        }
+        let map = app.descendants(matching: .any)["rideRouteMap"].firstMatch
+        for title in ["Start", "Finish"] {
+            let marker = app.descendants(matching: .any)["routeEndpoint\(title)"].firstMatch
+            XCTAssertTrue(marker.waitForExistence(timeout: 5))
+            XCTAssertTrue(map.frame.contains(marker.frame), "\(title) must fit inside the map")
         }
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Route legend and endpoints"

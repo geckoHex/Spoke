@@ -266,21 +266,6 @@ struct RideHistoryDetailView: View {
         return "\(date)        \(time)"
     }
 
-    private var cameraPosition: MapCameraPosition {
-        guard !coordinates.isEmpty else { return .automatic }
-
-        let rect = coordinates.reduce(MKMapRect.null) { partialResult, coordinate in
-            let point = MKMapPoint(coordinate)
-            let pointRect = MKMapRect(x: point.x, y: point.y, width: 1, height: 1)
-            return partialResult.union(pointRect)
-        }
-        let horizontalPadding = max(rect.size.width * 0.18, 500)
-        let verticalPadding = max(rect.size.height * 0.18, 500)
-        return .rect(
-            rect.insetBy(dx: -horizontalPadding, dy: -verticalPadding)
-        )
-    }
-
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -297,7 +282,7 @@ struct RideHistoryDetailView: View {
                             .foregroundStyle(SpokeStyle.secondaryText)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
-                            Map(initialPosition: cameraPosition) {
+                            Map(initialPosition: .automatic) {
                                 if coordinates.count > 1 {
                                     ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                                         _, segment in
@@ -309,9 +294,11 @@ struct RideHistoryDetailView: View {
                                         Annotation("Start", coordinate: start, anchor: .top) {
                                             RideEndpointMarker(title: "Start", symbol: "circle.fill")
                                         }
+                                        .annotationTitles(.hidden)
                                         Annotation("Finish", coordinate: finish, anchor: .bottom) {
                                             RideEndpointMarker(title: "Finish", symbol: "flag.checkered")
                                         }
+                                        .annotationTitles(.hidden)
                                     }
 
                                     ForEach(routeStops) { stop in
@@ -337,6 +324,11 @@ struct RideHistoryDetailView: View {
                                     }
                                 }
                             }
+                            .frame(
+                                width: max(1, geometry.size.width - SpokeStyle.pageInset * 2),
+                                height: max(240, geometry.size.height - 360)
+                            )
+                            .id(geometry.size)
                             .mapStyle(
                                 .standard(
                                     elevation: .flat,
@@ -345,6 +337,7 @@ struct RideHistoryDetailView: View {
                                     showsTraffic: false
                                 )
                             )
+                            .accessibilityIdentifier("rideRouteMap")
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .overlay(alignment: .bottomTrailing) {
                                 Button {
