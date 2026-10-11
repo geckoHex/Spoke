@@ -17,6 +17,10 @@ struct HomeWeatherSnapshot: Codable, Equatable, Sendable {
     let windDirection: String?
     let attributionMarkURL: URL
     let legalPageURL: URL
+
+    func isStale(at date: Date) -> Bool {
+        date.timeIntervalSince(fetchedAt) >= HomeWeatherCache.duration
+    }
 }
 
 struct HomeWeatherCache {
@@ -42,7 +46,7 @@ struct HomeWeatherCache {
 
     func freshSnapshot(at date: Date = .now) -> HomeWeatherSnapshot? {
         guard let snapshot = storedSnapshot(),
-              date.timeIntervalSince(snapshot.fetchedAt) < Self.duration
+              !snapshot.isStale(at: date)
         else { return nil }
 
         return snapshot
@@ -86,37 +90,27 @@ final class HomeWeatherModel {
 
     @ObservationIgnored private let cache: HomeWeatherCache
 
-    init() {
-        let cache = HomeWeatherCache()
+    @ObservationIgnored private let fetch: () async throws -> HomeWeatherSnapshot
+
+    init(
+        cache: HomeWeatherCache? = nil,
+        fetch: @escaping () async throws -> HomeWeatherSnapshot = { try await HomeWeatherModel.fetchSnapshot() }
+    ) {
+        let cache = cache ?? HomeWeatherCache()
         self.cache = cache
+        self.fetch = fetch
         snapshot = cache.storedSnapshot()
     }
 
-    init(cache: HomeWeatherCache) {
-        self.cache = cache
-        snapshot = cache.storedSnapshot()
-    }
-
-    func expireCacheAndReload() async {
-        guard !isLoading else { return }
-
-        cache.invalidate()
-        snapshot = nil
-        isUnavailable = false
-        _ = await loadIfNeeded()
+    func refresh() async {
+        _ = await loadIfNeeded(forceRefresh: true)
     }
 
     func maintainWeather() async {
         while !Task.isCancelled {
-            let shouldScheduleRefresh = await loadIfNeeded()
-
-            guard shouldScheduleRefresh,
-                  let nextRequestDate = cache.nextRequestDate()
-            else { return }
-            let delay = max(nextRequestDate.timeIntervalSinceNow, 1)
-
+            guard await loadIfNeeded(), let nextRequestDate = cache.nextRequestDate() else { return }
             do {
-                try await Task.sleep(for: .seconds(delay))
+                try await Task.sleep(for: .seconds(max(nextRequestDate.timeIntervalSinceNow, 1)))
             } catch {
                 return
             }
@@ -124,72 +118,68 @@ final class HomeWeatherModel {
     }
 
     @discardableResult
-    func loadIfNeeded(at date: Date = .now) async -> Bool {
-        if let cachedSnapshot = cache.freshSnapshot(at: date) {
-            snapshot = cachedSnapshot
-            isUnavailable = false
-            return true
-        }
-
-        guard cache.canRequest(at: date) else {
-            isUnavailable = snapshot == nil
-            return true
-        }
-
+    func loadIfNeeded(at date: Date = .now, forceRefresh: Bool = false) async -> Bool {
         guard !isLoading else { return true }
+        if !forceRefresh {
+            if let cachedSnapshot = cache.freshSnapshot(at: date) {
+                snapshot = cachedSnapshot
+                return true
+            }
+            guard cache.canRequest(at: date) else { return true }
+        }
 
         isLoading = true
-        isUnavailable = false
         defer { isLoading = false }
-        var didStartRequest = false
-
+        cache.recordRequest(at: date)
         do {
-            let location = try await Self.currentLocation()
-            let requestDate = Date.now
-            cache.recordRequest(at: requestDate)
-            didStartRequest = true
-            async let currentWeather = WeatherService.shared.weather(
-                for: location,
-                including: .current
-            )
-            async let attribution = WeatherService.shared.attribution
-            let (weather, weatherAttribution) = try await (
-                currentWeather,
-                attribution
-            )
-
-            let updatedSnapshot = HomeWeatherSnapshot(
-                fetchedAt: requestDate,
-                temperature: weather.temperature.formatted(
-                    .measurement(
-                        width: .abbreviated,
-                        usage: .weather,
-                        numberFormatStyle: .number.precision(.fractionLength(0))
-                    )
-                ),
-                condition: weather.condition.description,
-                symbolName: weather.symbolName,
-                windSpeed: weather.wind.speed.formatted(
-                    .measurement(
-                        width: .abbreviated,
-                        usage: .wind,
-                        numberFormatStyle: .number.precision(.fractionLength(0))
-                    )
-                ),
-                windDirection: weather.wind.compassDirection.abbreviation,
-                attributionMarkURL: weatherAttribution.combinedMarkDarkURL,
-                legalPageURL: weatherAttribution.legalPageURL
-            )
-
+            let updatedSnapshot = try await fetch()
             cache.save(updatedSnapshot)
             snapshot = updatedSnapshot
+            isUnavailable = false
             return true
         } catch is CancellationError {
             return false
         } catch {
-            isUnavailable = snapshot == nil
-            return didStartRequest
+            isUnavailable = true
+            return true
         }
+    }
+
+    private static func fetchSnapshot() async throws -> HomeWeatherSnapshot {
+        let location = try await Self.currentLocation()
+        let requestDate = Date.now
+        async let currentWeather = WeatherService.shared.weather(
+            for: location,
+            including: .current
+        )
+        async let attribution = WeatherService.shared.attribution
+        let (weather, weatherAttribution) = try await (
+            currentWeather,
+            attribution
+        )
+
+        return HomeWeatherSnapshot(
+            fetchedAt: requestDate,
+            temperature: weather.temperature.formatted(
+                .measurement(
+                    width: .abbreviated,
+                    usage: .weather,
+                    numberFormatStyle: .number.precision(.fractionLength(0))
+                )
+            ),
+            condition: weather.condition.description,
+            symbolName: weather.symbolName,
+            windSpeed: weather.wind.speed.formatted(
+                .measurement(
+                    width: .abbreviated,
+                    usage: .wind,
+                    numberFormatStyle: .number.precision(.fractionLength(0))
+                )
+            ),
+            windDirection: weather.wind.compassDirection.abbreviation,
+            attributionMarkURL: weatherAttribution.combinedMarkDarkURL,
+            legalPageURL: weatherAttribution.legalPageURL
+        )
     }
 
     nonisolated private static func currentLocation() async throws -> CLLocation {

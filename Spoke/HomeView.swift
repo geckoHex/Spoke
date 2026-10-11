@@ -28,12 +28,13 @@ struct HomeView: View {
                         HomeGreeting(timeOfDay: timeOfDay, name: displayName)
 
                         HomeWeatherView(
+                            date: currentDate,
                             snapshot: weatherModel.snapshot,
                             isLoading: weatherModel.isLoading,
                             isUnavailable: weatherModel.isUnavailable,
                             isDeveloperModeEnabled: settings?.developerModeEnabled == true,
                             onExpireAndReload: {
-                                Task { await weatherModel.expireCacheAndReload() }
+                                Task { await weatherModel.refresh() }
                             }
                         )
 
@@ -273,6 +274,7 @@ private struct HomeRideActivity: View {
 }
 
 private struct HomeWeatherView: View {
+    let date: Date
     let snapshot: HomeWeatherSnapshot?
     let isLoading: Bool
     let isUnavailable: Bool
@@ -310,6 +312,26 @@ private struct HomeWeatherView: View {
                     Spacer(minLength: 8)
 
                     HomeWeatherAttribution(snapshot: snapshot)
+                }
+            }
+
+            if let snapshot {
+                Text("\(snapshot.isStale(at: date) || isUnavailable ? "Last updated" : "Updated") \(snapshot.fetchedAt.formatted(.relative(presentation: .named)))")
+                    .font(.caption)
+                    .foregroundStyle(SpokeStyle.secondaryText)
+            }
+
+            if isUnavailable || snapshot?.isStale(at: date) == true {
+                HStack(spacing: 12) {
+                    Text(isLoading ? "Updating weather…" : (snapshot == nil ? "Couldn’t load weather" : "Weather may be out of date"))
+                        .font(.caption)
+                        .foregroundStyle(SpokeStyle.secondaryText)
+                    Spacer(minLength: 0)
+                    Button(isLoading ? "Updating…" : "Retry", action: onExpireAndReload)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(minWidth: 44, minHeight: 44)
+                        .disabled(isLoading)
+                        .accessibilityLabel("Retry weather")
                 }
             }
         }

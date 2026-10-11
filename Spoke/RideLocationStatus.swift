@@ -1,6 +1,6 @@
 import Foundation
 
-enum RideLocationStatus {
+nonisolated enum RideLocationStatus {
     case acquiring, recording, unavailable, denied, restricted
 
     var title: String {
