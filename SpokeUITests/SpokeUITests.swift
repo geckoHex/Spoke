@@ -180,7 +180,9 @@ final class SpokeUITests: XCTestCase {
         name.typeText("Rider")
         app.keyboards.buttons["Done"].tap()
         XCTAssertFalse(clear.exists)
-        app.switches["Enable Developer Mode"].tap()
+        let developerMode = app.switches["Enable Developer Mode"]
+        developerMode.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(developerMode.value as? String, "1")
         app.buttons["Ride"].tap()
         app.buttons["Start Ride"].tap()
         XCTAssertTrue(app.otherElements["Simulated speed"].waitForExistence(timeout: 10))
@@ -278,8 +280,9 @@ final class SpokeUITests: XCTestCase {
             XCTAssertTrue(label.isHittable, "\(title) must be reachable at the largest text size")
         }
         let soundtrack = app.buttons["Ride soundtrack"]
-        for _ in 0..<5 where !soundtrack.isHittable { content.swipeUp() }
+        for _ in 0..<5 where !content.frame.contains(soundtrack.frame) { content.swipeUp() }
         XCTAssertTrue(soundtrack.isHittable)
+        XCTAssertTrue(content.frame.contains(soundtrack.frame))
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Accessible ride details"
         screenshot.lifetime = .keepAlways

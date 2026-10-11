@@ -460,12 +460,12 @@ private struct HomeWeatherAttribution: View {
                 image
                     .resizable()
                     .scaledToFit()
+                    .frame(width: 72, height: 10, alignment: .trailing)
             } placeholder: {
                 Text("Apple Weather")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(SpokeStyle.secondaryText)
             }
-            .frame(width: 72, height: 10, alignment: .trailing)
             .frame(minWidth: 72, minHeight: 44, alignment: .trailing)
             .contentShape(.rect)
         }
