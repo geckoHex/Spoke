@@ -15,7 +15,10 @@ struct HomeView: View {
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
 
-    @State private var weatherModel = HomeWeatherModel()
+    @State private var weatherModel =
+        ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            && ProcessInfo.processInfo.arguments.contains("--weather-fixture")
+        ? RideUITestFixture.weatherModel() : HomeWeatherModel()
 
     var body: some View {
         NavigationStack {
@@ -455,8 +458,9 @@ private struct HomeWeatherAttribution: View {
                     .foregroundStyle(SpokeStyle.secondaryText)
             }
             .frame(width: 72, height: 10, alignment: .trailing)
+            .frame(minWidth: 72, minHeight: 44, alignment: .trailing)
+            .contentShape(.rect)
         }
-        .offset(y: 3)
         .accessibilityLabel("Apple Weather attribution")
     }
 }

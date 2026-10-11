@@ -2,6 +2,20 @@ import Foundation
 import SwiftData
 
 enum RideUITestFixture {
+    static func weatherModel() -> HomeWeatherModel {
+        let suite = "SpokeUITests.Weather"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let cache = HomeWeatherCache(defaults: defaults)
+        cache.save(HomeWeatherSnapshot(
+            fetchedAt: .now.addingTimeInterval(-3_600), temperature: "72°F", condition: "Clear",
+            symbolName: "sun.max", windSpeed: "8 mph", windDirection: "NW",
+            attributionMarkURL: URL(fileURLWithPath: "/unavailable-weather-mark"),
+            legalPageURL: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!
+        ))
+        return HomeWeatherModel(cache: cache) { throw URLError(.notConnectedToInternet) }
+    }
+
     static func insert(into context: ModelContext) throws {
         let ride = TrackedRide(startedAt: .now.addingTimeInterval(-3_600))
         ride.customName = "Morning Loop"

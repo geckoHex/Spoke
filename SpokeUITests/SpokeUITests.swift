@@ -152,6 +152,41 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testTouchTargetsWeatherRecoveryAndSimulatedSpeed() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture"]
+        app.launch()
+        let attribution = app.links["Apple Weather attribution"]
+        XCTAssertTrue(attribution.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(attribution.frame.height, 44)
+        let retry = app.buttons["Retry weather"]
+        XCTAssertTrue(retry.isHittable)
+        retry.tap()
+        XCTAssertTrue(app.staticTexts["Weather may be out of date"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["72°F"].exists)
+        let weather = XCTAttachment(screenshot: app.screenshot())
+        weather.name = "Stale weather and retry"
+        weather.lifetime = .keepAlways
+        add(weather)
+
+        app.buttons["Settings"].tap()
+        let name = app.textFields["Name"]
+        name.tap()
+        let clear = app.buttons["Clear name"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(clear.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(clear.frame.height, 44)
+        clear.tap()
+        name.typeText("Rider")
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertFalse(clear.exists)
+        app.switches["Enable Developer Mode"].tap()
+        app.buttons["Ride"].tap()
+        app.buttons["Start Ride"].tap()
+        XCTAssertTrue(app.otherElements["Simulated speed"].waitForExistence(timeout: 10))
+    }
+
+    @MainActor
     func testLastRideOpensDetailsAndExplainsTheRoute() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ride-fixture"]

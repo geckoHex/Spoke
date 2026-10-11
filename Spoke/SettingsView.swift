@@ -68,6 +68,8 @@ private struct SettingsForm: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(SpokeStyle.secondaryText)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear name")
