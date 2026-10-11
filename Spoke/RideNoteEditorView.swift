@@ -11,8 +11,10 @@ struct RideNoteEditorView: View {
     let ride: TrackedRide
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @State private var isNoteFocused = false
     @State private var noteText: String
+    @State private var hasSaveError = false
 
     init(ride: TrackedRide) {
         self.ride = ride
@@ -20,7 +22,9 @@ struct RideNoteEditorView: View {
     }
 
     var body: some View {
-        SpokeSheet(title: "Ride Notes") {
+        SpokeSheet(title: "Ride Notes", onClose: {
+            if saveNote() { dismiss() }
+        }) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Note")
                     .font(.subheadline)
@@ -48,6 +52,14 @@ struct RideNoteEditorView: View {
                 .padding(8)
                 .frame(minHeight: 52)
                 .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
+
+                if hasSaveError {
+                    Text("Your note couldn’t be saved. Your text is still here.")
+                        .font(.subheadline)
+                        .foregroundStyle(SpokeStyle.danger)
+                    Button("Retry") { saveNote() }
+                        .buttonStyle(SpokeSecondaryButtonStyle())
+                }
             }
             .padding(.horizontal, SpokeStyle.pageInset)
             .padding(.vertical, 12)
@@ -61,8 +73,23 @@ struct RideNoteEditorView: View {
                 .onTapGesture { isNoteFocused = false }
         }
         .onChange(of: noteText) {
-            ride.updateNote(to: noteText)
-            try? modelContext.save()
+            saveNote()
+        }
+        .interactiveDismissDisabled(hasSaveError)
+    }
+
+    @discardableResult
+    private func saveNote() -> Bool {
+        let previousNote = ride.note
+        ride.updateNote(to: noteText)
+        do {
+            try modelContext.save()
+            hasSaveError = false
+            return true
+        } catch {
+            ride.note = previousNote
+            hasSaveError = true
+            return false
         }
     }
 }

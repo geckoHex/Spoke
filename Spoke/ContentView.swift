@@ -68,10 +68,19 @@ struct ContentView: View {
                     selectedTab = .history
                 },
                 onDiscard: {
-                    guard rideSession.discardRide(ride) else { return }
+                    guard rideSession.discardRide(ride) else { return false }
                     completedRide = nil
+                    return true
                 }
             )
+        }
+        .alert("Ride couldn’t be updated", isPresented: Binding(
+            get: { rideSession.errorMessage != nil },
+            set: { if !$0 { rideSession.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { rideSession.errorMessage = nil }
+        } message: {
+            Text(rideSession.errorMessage ?? "Please try again.")
         }
         .task {
             createSettingsIfNeeded()

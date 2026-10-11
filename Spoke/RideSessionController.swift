@@ -11,6 +11,7 @@ import SwiftData
 @MainActor
 @Observable
 final class RideSessionController {
+    var errorMessage: String?
     private(set) var activeRide: TrackedRide?
     private(set) var speedInMilesPerHour = 0
     private(set) var currentMapState: RideMapState?
@@ -31,6 +32,11 @@ final class RideSessionController {
     @ObservationIgnored private let speedProcessor = RideSpeedProcessor()
 
     private let positionRecordingInterval: TimeInterval = 5
+    @ObservationIgnored private let saveChanges: (ModelContext) throws -> Void
+
+    init(saveChanges: @escaping (ModelContext) throws -> Void = { try $0.save() }) {
+        self.saveChanges = saveChanges
+    }
 
     func configure(modelContext: ModelContext) {
         guard self.modelContext == nil else { return }
@@ -66,13 +72,15 @@ final class RideSessionController {
     @discardableResult
     func startRide(at date: Date = .now) -> TrackedRide? {
         guard let modelContext, activeRide == nil else { return nil }
+        errorMessage = nil
 
         let ride = TrackedRide(startedAt: date)
         modelContext.insert(ride)
 
         do {
-            try modelContext.save()
+            try saveChanges(modelContext)
         } catch {
+            errorMessage = "Your ride couldn’t start. Please try again."
             modelContext.delete(ride)
             return nil
         }
@@ -89,6 +97,7 @@ final class RideSessionController {
     func togglePause(at date: Date = .now) {
         guard let ride = activeRide, ride.endedAt == nil else { return }
 
+        errorMessage = nil
         let previousPausedAt = ride.pausedAt
         let previousPausedDuration = ride.accumulatedPausedDuration
 
@@ -99,8 +108,9 @@ final class RideSessionController {
         }
 
         do {
-            try modelContext?.save()
+            if let modelContext { try saveChanges(modelContext) }
         } catch {
+            errorMessage = "Your ride couldn’t \(previousPausedAt == nil ? "pause" : "resume"). Please try again."
             ride.pausedAt = previousPausedAt
             ride.accumulatedPausedDuration = previousPausedDuration
             return
@@ -117,6 +127,7 @@ final class RideSessionController {
     func endRide(at date: Date = .now) -> TrackedRide? {
         guard let ride = activeRide, ride.endedAt == nil else { return nil }
 
+        errorMessage = nil
         let endingLocation = currentLocation ?? ride.routePoints
             .max(by: { $0.recordedAt < $1.recordedAt })
             .map(RideLocationSample.init)
@@ -127,8 +138,9 @@ final class RideSessionController {
         ride.end(at: date)
 
         do {
-            try modelContext?.save()
+            if let modelContext { try saveChanges(modelContext) }
         } catch {
+            errorMessage = "Your ride couldn’t finish saving. It is still open; please try again."
             ride.endedAt = nil
             ride.pausedAt = previousPausedAt
             ride.accumulatedPausedDuration = previousPausedDuration
@@ -161,7 +173,7 @@ final class RideSessionController {
         modelContext.delete(ride)
 
         do {
-            try modelContext.save()
+            try saveChanges(modelContext)
         } catch {
             modelContext.rollback()
             return false

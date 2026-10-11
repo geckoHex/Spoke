@@ -2,10 +2,11 @@ import SwiftUI
 
 struct RideRenameView: View {
     @Binding var name: String
-    let onSave: () -> Void
+    let onSave: () -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isNameFocused: Bool
+    @State private var hasSaveError = false
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -60,11 +61,16 @@ struct RideRenameView: View {
             SpokeStyle.surface
                 .onTapGesture { isNameFocused = false }
         }
+        .alert("Name wasn’t saved", isPresented: $hasSaveError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your changes are still here. Please try saving again.")
+        }
     }
 
     private func save() {
         guard canSave else { return }
-        onSave()
-        dismiss()
+        if onSave() { dismiss() }
+        else { hasSaveError = true }
     }
 }

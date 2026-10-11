@@ -4,7 +4,8 @@ struct SpokeConfirmationView: View {
     let title: String
     let message: String
     let actionTitle: String
-    let onConfirm: () -> Void
+    let onConfirm: () -> Bool
+    @State private var hasSaveError = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -18,8 +19,8 @@ struct SpokeConfirmationView: View {
 
                 VStack(spacing: 8) {
                     Button(actionTitle, role: .destructive) {
-                        dismiss()
-                        onConfirm()
+                        if onConfirm() { dismiss() }
+                        else { hasSaveError = true }
                     }
                     .buttonStyle(SpokePrimaryButtonStyle())
 
@@ -31,6 +32,11 @@ struct SpokeConfirmationView: View {
             }
             .padding(.horizontal, SpokeStyle.pageInset)
             .padding(.vertical, 12)
+        }
+        .alert("Ride wasn’t deleted", isPresented: $hasSaveError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your ride is still saved. Please try again.")
         }
     }
 }

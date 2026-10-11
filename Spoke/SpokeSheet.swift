@@ -3,6 +3,7 @@ import SwiftUI
 struct SpokeSheet<Content: View>: View {
     let title: String
     var fillsHeight = false
+    var onClose: (() -> Void)? = nil
     @ViewBuilder let content: Content
 
     @Environment(\.dismiss) private var dismiss
@@ -41,7 +42,8 @@ struct SpokeSheet<Content: View>: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close", systemImage: "xmark") {
-                        dismiss()
+                        if let onClose { onClose() }
+                        else { dismiss() }
                     }
                     .labelStyle(.iconOnly)
                     .buttonStyle(SpokeToolbarButtonStyle())

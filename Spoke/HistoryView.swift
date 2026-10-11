@@ -516,15 +516,28 @@ private struct RideHistoryDetailView: View {
         }
     }
 
-    private func renameRide() {
+    private func renameRide() -> Bool {
+        let previousName = ride.customName
         ride.rename(to: trimmedRideName)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            ride.customName = previousName
+            return false
+        }
     }
 
-    private func deleteRide() {
+    private func deleteRide() -> Bool {
         modelContext.delete(ride)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            return false
+        }
         dismiss()
+        return true
     }
 
     private func metric(

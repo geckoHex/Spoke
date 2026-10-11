@@ -8,7 +8,7 @@ import SwiftUI
 struct RideSummaryView: View {
     let ride: TrackedRide
     let onDone: () -> Void
-    let onDiscard: () -> Void
+    let onDiscard: () -> Bool
 
     @State private var isConfirmingDiscard = false
 
