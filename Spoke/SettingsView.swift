@@ -99,7 +99,7 @@ private struct SettingsForm: View {
             Section {
                 if spotifyAuthentication.sessionID != nil {
                     Label("Connected to Spotify", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(SpokeStyle.accent)
+                        .foregroundStyle(SpokeStyle.success)
 
                     Button("Disconnect Spotify", role: .destructive) {
                         Task { await spotifyAuthentication.signOut() }
@@ -113,7 +113,7 @@ private struct SettingsForm: View {
                         HStack(spacing: 10) {
                             if spotifyAuthentication.isConnecting {
                                 ProgressView()
-                                    .tint(SpokeStyle.background)
+                                    .tint(.white)
                             }
                             Text(spotifyAuthentication.isConnecting ? "Signing in…" : "Sign in with Spotify")
                         }
@@ -131,12 +131,14 @@ private struct SettingsForm: View {
             .listRowBackground(SpokeStyle.surface)
         }
         .textCase(nil)
+        .listSectionSpacing(24)
+        .listRowSeparatorTint(SpokeStyle.separator)
         .foregroundStyle(SpokeStyle.text)
         .environment(\.defaultMinListRowHeight, 56)
         .scrollContentBackground(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .background(SpokeStyle.background)
-        .tint(SpokeStyle.accent)
+        .tint(SpokeStyle.primaryAction)
         .toggleStyle(.switch)
         .coordinateSpace(name: "settingsForm")
         .onPreferenceChange(SettingsInputFramePreferenceKey.self) {

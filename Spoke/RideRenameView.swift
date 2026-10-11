@@ -17,7 +17,7 @@ struct RideRenameView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Ride name")
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(SpokeStyle.secondaryText)
 
                     HStack {
@@ -43,7 +43,7 @@ struct RideRenameView: View {
                     .padding(.leading, 16)
                     .padding(.trailing, 4)
                     .frame(minHeight: 52)
-                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
+                    .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: SpokeStyle.controlRadius))
                 }
 
                 Button("Save", action: save)

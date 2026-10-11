@@ -27,7 +27,7 @@ struct RideNoteEditorView: View {
         }) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Note")
-                    .font(.subheadline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(.rect)
@@ -51,7 +51,7 @@ struct RideNoteEditorView: View {
                 }
                 .padding(8)
                 .frame(minHeight: 52)
-                .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: 12))
+                .background(SpokeStyle.elevatedSurface, in: .rect(cornerRadius: SpokeStyle.controlRadius))
 
                 if hasSaveError {
                     Text("Your note couldn’t be saved. Your text is still here.")

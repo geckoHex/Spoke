@@ -21,7 +21,7 @@ struct RideSummaryView: View {
                         .foregroundStyle(SpokeStyle.secondaryText)
 
                     Text(RideMetrics.duration(ride.elapsedDuration()))
-                        .font(.largeTitle.weight(.semibold))
+                        .font(.largeTitle.weight(.bold))
                         .monospacedDigit()
                         .minimumScaleFactor(0.75)
                         .lineLimit(1)
@@ -64,7 +64,7 @@ struct RideSummaryView: View {
     private func summaryItem(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(value)
-                .font(.title3.weight(.semibold))
+                .font(.title3.weight(.bold))
                 .monospacedDigit()
 
             Text(title)

@@ -3,7 +3,7 @@ import SwiftUI
 extension RideRouteMotion {
     var color: Color {
         switch self {
-        case .normalOrFaster: SpokeStyle.accent
+        case .normalOrFaster: SpokeStyle.success
         case .slower: SpokeStyle.caution
         case .stopped: SpokeStyle.danger
         }

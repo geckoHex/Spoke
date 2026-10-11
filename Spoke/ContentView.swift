@@ -106,7 +106,7 @@ struct ContentView: View {
                 } label: {
                     VStack(spacing: 5) {
                         Image(systemName: tab.symbol)
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: 22, weight: .semibold))
                         Text(tab.title)
                             .font(.caption.weight(.semibold))
                             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
@@ -124,8 +124,8 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.top, 8)
-        .background(SpokeStyle.background)
+        .padding(.top, 4)
+        .background(SpokeStyle.surface.ignoresSafeArea(edges: .bottom))
         .overlay(alignment: .top) {
             Rectangle().fill(SpokeStyle.separator).frame(height: 0.5)
         }

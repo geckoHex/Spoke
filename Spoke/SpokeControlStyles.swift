@@ -1,17 +1,20 @@
 import SwiftUI
 
 enum SpokeStyle {
-    static let background = Color(red: 23 / 255, green: 28 / 255, blue: 24 / 255)
-    static let surface = Color(red: 37 / 255, green: 45 / 255, blue: 38 / 255)
-    static let elevatedSurface = Color(red: 49 / 255, green: 59 / 255, blue: 49 / 255)
-    static let text = Color(red: 243 / 255, green: 238 / 255, blue: 221 / 255)
-    static let secondaryText = Color(red: 184 / 255, green: 193 / 255, blue: 173 / 255)
-    static let accent = Color(red: 196 / 255, green: 214 / 255, blue: 160 / 255)
-    static let caution = Color(red: 230 / 255, green: 199 / 255, blue: 121 / 255)
-    static let danger = Color(red: 218 / 255, green: 155 / 255, blue: 121 / 255)
-    static let separator = text.opacity(0.14)
-    static let cardRadius: CGFloat = 20
-    static let controlRadius: CGFloat = 14
+    static let background = Color(white: 18 / 255)
+    static let surface = Color(white: 28 / 255)
+    static let elevatedSurface = Color(white: 42 / 255)
+    static let text = Color.white
+    static let secondaryText = Color(white: 184 / 255)
+    static let primaryAction = Color(red: 235 / 255, green: 23 / 255, blue: 0)
+    // Lighter red keeps small labels and icons legible on dark surfaces.
+    static let accent = Color(red: 255 / 255, green: 111 / 255, blue: 92 / 255)
+    static let success = Color(red: 104 / 255, green: 211 / 255, blue: 145 / 255)
+    static let caution = Color(red: 255 / 255, green: 200 / 255, blue: 87 / 255)
+    static let danger = Color(red: 255 / 255, green: 128 / 255, blue: 121 / 255)
+    static let separator = Color(white: 56 / 255)
+    static let cardRadius: CGFloat = 16
+    static let controlRadius: CGFloat = 12
     static let pageInset: CGFloat = 20
 }
 
@@ -33,14 +36,14 @@ struct SpokePrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
-            .foregroundStyle(SpokeStyle.background)
+            .font(.headline.weight(.bold))
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(minHeight: minHeight)
             .padding(.horizontal, 16)
             .background(
-                configuration.role == .destructive ? SpokeStyle.danger : SpokeStyle.accent,
-                in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
+                SpokeStyle.primaryAction,
+                in: Capsule()
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
     }
@@ -62,11 +65,11 @@ struct SpokeToolbarButtonStyle: ButtonStyle {
 struct SpokeSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
+            .font(.headline.weight(.semibold))
             .foregroundStyle(configuration.role == .destructive ? SpokeStyle.danger : SpokeStyle.text)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: 48)
             .padding(.horizontal, 16)
-            .contentShape(.rect)
+            .background(SpokeStyle.elevatedSurface, in: Capsule())
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

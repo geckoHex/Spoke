@@ -150,9 +150,6 @@ private struct HomeRideActivity: View {
         VStack(alignment: .leading, spacing: 20) {
             weeklySummary
 
-            Divider()
-                .overlay(SpokeStyle.separator)
-
             if let latestRide = rides.first {
                 Button {
                     onOpenRide(latestRide)
@@ -160,30 +157,31 @@ private struct HomeRideActivity: View {
                     latestRideRow(latestRide)
                 }
                 .buttonStyle(.plain)
+                .spokeCard(padding: 16)
                 .accessibilityIdentifier("lastRide")
             } else {
                 Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
                     .font(.body.weight(.medium))
                     .foregroundStyle(SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .spokeCard(padding: 16)
                     .accessibilityLabel("No completed rides yet")
             }
         }
-        .spokeCard()
         .accessibilityElement(children: .contain)
     }
 
     private var weeklySummary: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Last 7 Days")
-                    .font(.title3.weight(.semibold))
+                    .font(.title2.weight(.bold))
                     .foregroundStyle(SpokeStyle.text)
 
                 Spacer()
 
                 Text(rideCountDescription)
-                    .font(.headline)
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(SpokeStyle.secondaryText)
             }
 
@@ -200,6 +198,7 @@ private struct HomeRideActivity: View {
                     systemImage: "timer"
                 )
             }
+            .spokeCard(padding: 16)
         }
     }
 
@@ -210,7 +209,7 @@ private struct HomeRideActivity: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(value)
-                .font(.largeTitle.weight(.bold))
+                .font(.title.weight(.bold))
                 .foregroundStyle(SpokeStyle.text)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -235,13 +234,14 @@ private struct HomeRideActivity: View {
         HStack(spacing: 16) {
             Image(systemName: "figure.outdoor.cycle")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(SpokeStyle.text)
-                .frame(width: 32)
+                .foregroundStyle(SpokeStyle.accent)
+                .frame(width: 44, height: 44)
+                .background(SpokeStyle.accent.opacity(0.10), in: Circle())
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text("Last Ride")
-                    .font(.headline)
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(SpokeStyle.text)
 
                 Text(
@@ -368,7 +368,7 @@ private struct HomeWeatherView: View {
             Image("ForestLandscape")
                 .resizable()
                 .scaledToFill()
-                .overlay(SpokeStyle.background.opacity(0.38))
+                .overlay(.black.opacity(0.52))
                 .accessibilityHidden(true)
         }
         .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
@@ -477,7 +477,7 @@ private struct HomeGreeting: View {
     let timeOfDay: TimeOfDay
     let name: String
 
-    @ScaledMetric(relativeTo: .largeTitle) private var nameSize: CGFloat = 42
+    @ScaledMetric(relativeTo: .largeTitle) private var nameSize: CGFloat = 36
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

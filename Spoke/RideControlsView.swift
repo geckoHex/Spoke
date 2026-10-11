@@ -25,7 +25,7 @@ struct RideControlsView: View {
             .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
 
             Label(isHolding ? "Keep holding" : "Hold to end", systemImage: "stop.fill")
-                .font(.headline)
+                .font(.headline.weight(.bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .foregroundStyle(SpokeStyle.danger)
@@ -38,10 +38,10 @@ struct RideControlsView: View {
                     }
                 }
                 .background(SpokeStyle.surface)
-                .clipShape(.rect(cornerRadius: SpokeStyle.controlRadius))
+                .clipShape(Capsule())
                 .overlay {
-                    RoundedRectangle(cornerRadius: SpokeStyle.controlRadius)
-                        .strokeBorder(SpokeStyle.danger, lineWidth: 1.5)
+                    Capsule()
+                        .strokeBorder(SpokeStyle.separator, lineWidth: 1)
                 }
                 .contentShape(.rect)
                 .onLongPressGesture(minimumDuration: 1, maximumDistance: 32) {

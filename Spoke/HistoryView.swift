@@ -108,7 +108,7 @@ private struct RideHistoryRow: View {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ride.historyTitle)
-                        .font(.headline)
+                        .font(.headline.weight(.bold))
                         .foregroundStyle(SpokeStyle.text)
                         .layoutPriority(1)
 
@@ -191,7 +191,7 @@ private struct RideRouteThumbnail: View {
         }
 
         ZStack {
-            SpokeStyle.background
+            SpokeStyle.accent.opacity(0.08)
             if coordinates.count > 1 {
                 Canvas { context, size in
                     let minX = coordinates.map(\.x).min() ?? 0
@@ -345,11 +345,10 @@ struct RideHistoryDetailView: View {
                                 } label: {
                                     Label("Replay", systemImage: "play.fill")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(SpokeStyle.background)
+                                        .foregroundStyle(.white)
                                         .padding(.horizontal, 14)
                                         .frame(minHeight: 44)
-                                        .background(SpokeStyle.accent, in: RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous))
-                                        .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                                        .background(SpokeStyle.primaryAction, in: Capsule())
                                 }
                                 .buttonStyle(.plain)
                                 .padding(12)
@@ -602,7 +601,7 @@ struct RideHistoryDetailView: View {
     ) -> some View {
         VStack(spacing: 7) {
             Text(value)
-                .font(.title2.weight(.semibold))
+                .font(.title2.weight(.bold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
