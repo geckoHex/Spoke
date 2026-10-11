@@ -198,6 +198,9 @@ final class SpokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ride-fixture", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
+        for title in ["Home", "Ride", "History", "Settings"] {
+            XCTAssertLessThanOrEqual(app.buttons[title].frame.height, 80, "Navigation must leave room for content")
+        }
         app.buttons["History"].tap()
         app.scrollViews.buttons.firstMatch.tap()
         let content = app.scrollViews["rideDetailContent"]

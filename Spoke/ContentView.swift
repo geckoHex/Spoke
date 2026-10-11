@@ -109,6 +109,9 @@ struct ContentView: View {
                             .font(.system(size: 20, weight: .semibold))
                         Text(tab.title)
                             .font(.caption.weight(.semibold))
+                            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     .foregroundStyle(selectedTab == tab ? SpokeStyle.accent : SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity)
