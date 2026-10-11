@@ -118,6 +118,8 @@ struct RideReplayView: View {
                 ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                     _, segment in
                     MapPolyline(coordinates: segment.coordinates)
+                        .stroke(SpokeStyle.background, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                    MapPolyline(coordinates: segment.coordinates)
                         .stroke(segment.motion.color, style: segment.motion.strokeStyle)
                 }
 
@@ -161,7 +163,7 @@ struct RideReplayView: View {
                         .foregroundStyle(SpokeStyle.secondaryText)
                 } else {
                     ProgressView(value: progress)
-                        .tint(SpokeStyle.accent)
+                        .tint(SpokeStyle.primaryAction)
                         .accessibilityLabel("Replay progress")
                         .accessibilityValue("\(Int(progress * 100)) percent")
                     Button {
@@ -235,17 +237,17 @@ private struct ReplayBikeMarker: View {
     var body: some View {
         ZStack(alignment: .top) {
             ReplayBikePointerShape()
-                .fill(SpokeStyle.text)
+                .fill(SpokeStyle.primaryAction)
                 .frame(width: 16, height: 12)
                 .offset(y: 40)
 
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(SpokeStyle.text)
+                .fill(SpokeStyle.primaryAction)
                 .frame(width: 44, height: 44)
 
             Image(systemName: "bicycle")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(SpokeStyle.background)
+                .foregroundStyle(SpokeStyle.text)
                 .frame(width: 44, height: 44)
                 .scaleEffect(x: isFacingLeft ? -1 : 1, y: 1)
         }

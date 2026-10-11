@@ -234,9 +234,9 @@ private struct HomeRideActivity: View {
         HStack(spacing: 16) {
             Image(systemName: "figure.outdoor.cycle")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(SpokeStyle.accent)
+                .foregroundStyle(SpokeStyle.primaryAction)
                 .frame(width: 44, height: 44)
-                .background(SpokeStyle.accent.opacity(0.10), in: Circle())
+                .background(SpokeStyle.background, in: Circle())
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 5) {

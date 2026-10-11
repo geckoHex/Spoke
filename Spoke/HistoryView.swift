@@ -191,7 +191,7 @@ private struct RideRouteThumbnail: View {
         }
 
         ZStack {
-            SpokeStyle.accent.opacity(0.08)
+            SpokeStyle.background
             if coordinates.count > 1 {
                 Canvas { context, size in
                     let minX = coordinates.map(\.x).min() ?? 0
@@ -208,7 +208,7 @@ private struct RideRouteThumbnail: View {
                         if index == 0 { path.move(to: position) }
                         else { path.addLine(to: position) }
                     }
-                    context.stroke(path, with: .color(SpokeStyle.accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    context.stroke(path, with: .color(SpokeStyle.primaryAction), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                 }
             } else {
                 Image(systemName: "bicycle")
@@ -287,6 +287,8 @@ struct RideHistoryDetailView: View {
                                     ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                                         _, segment in
                                         MapPolyline(coordinates: segment.coordinates)
+                                            .stroke(SpokeStyle.background, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                                        MapPolyline(coordinates: segment.coordinates)
                                             .stroke(segment.motion.color, style: segment.motion.strokeStyle)
                                     }
 
@@ -315,11 +317,11 @@ struct RideHistoryDetailView: View {
                                 } else if let coordinate = coordinates.first {
                                     Annotation("Ride location", coordinate: coordinate) {
                                         Circle()
-                                            .fill(SpokeStyle.text)
+                                            .fill(SpokeStyle.primaryAction)
                                             .frame(width: 12, height: 12)
                                             .overlay {
                                                 Circle()
-                                                    .stroke(SpokeStyle.background, lineWidth: 2)
+                                                    .stroke(SpokeStyle.text, lineWidth: 2)
                                             }
                                     }
                                 }
@@ -636,7 +638,7 @@ private struct RideStopBubble: View {
                 .foregroundStyle(SpokeStyle.text)
         } icon: {
             Image(systemName: "octagon.fill")
-                .foregroundStyle(SpokeStyle.danger)
+                .foregroundStyle(RideRouteMotion.stopped.color)
         }
         .font(.caption2.weight(.semibold))
         .padding(.horizontal, 9)

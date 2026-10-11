@@ -249,7 +249,7 @@ private struct RideDashboardView: View {
             }
         }
         .font(.subheadline.weight(.semibold))
-        .foregroundStyle(rideSession.activeRide?.isPaused == true || rideSession.locationStatus != .recording ? SpokeStyle.caution : SpokeStyle.success)
+        .foregroundStyle(SpokeStyle.text)
         .frame(minHeight: 24)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rideRecordingStatus")
@@ -440,11 +440,11 @@ private struct RideDashboardView: View {
     private func arcColor(for speed: Int) -> Color {
         switch speed {
         case ..<20:
-            SpokeStyle.success
+            SpokeStyle.text
         case 20..<25:
             SpokeStyle.caution
         default:
-            SpokeStyle.danger
+            SpokeStyle.primaryAction
         }
     }
 }

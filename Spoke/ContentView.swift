@@ -106,14 +106,16 @@ struct ContentView: View {
                 } label: {
                     VStack(spacing: 5) {
                         Image(systemName: tab.symbol)
+                            .symbolVariant(selectedTab == tab ? .fill : .none)
                             .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(selectedTab == tab ? SpokeStyle.primaryAction : SpokeStyle.secondaryText)
                         Text(tab.title)
                             .font(.caption.weight(.semibold))
                             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
+                            .foregroundStyle(selectedTab == tab ? SpokeStyle.text : SpokeStyle.secondaryText)
                     }
-                    .foregroundStyle(selectedTab == tab ? SpokeStyle.accent : SpokeStyle.secondaryText)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 60)
                     .contentShape(.rect)
@@ -125,7 +127,7 @@ struct ContentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.top, 4)
-        .background(SpokeStyle.surface.ignoresSafeArea(edges: .bottom))
+        .background(SpokeStyle.background.ignoresSafeArea(edges: .bottom))
         .overlay(alignment: .top) {
             Rectangle().fill(SpokeStyle.separator).frame(height: 0.5)
         }
@@ -188,10 +190,10 @@ private enum AppTab: Hashable, CaseIterable {
 
     var symbol: String {
         switch self {
-        case .home: "house.fill"
+        case .home: "house"
         case .ride: "bicycle"
-        case .history: "clock.arrow.trianglehead.counterclockwise.rotate.90"
-        case .settings: "gear"
+        case .history: "clock"
+        case .settings: "gearshape"
         }
     }
 }

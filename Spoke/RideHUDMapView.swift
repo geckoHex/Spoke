@@ -19,12 +19,13 @@ struct RideHUDMapView: UIViewRepresentable {
         let mapView = MKMapView()
         let configuration = MKStandardMapConfiguration(
             elevationStyle: .flat,
-            emphasisStyle: .default
+            emphasisStyle: .muted
         )
         configuration.pointOfInterestFilter = .excludingAll
 
         mapView.preferredConfiguration = configuration
         mapView.overrideUserInterfaceStyle = .dark
+        mapView.tintColor = UIColor(SpokeStyle.primaryAction)
         mapView.delegate = context.coordinator
         mapView.showsUserLocation = true
         mapView.showsCompass = false

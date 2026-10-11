@@ -250,6 +250,10 @@ final class SpokeUITests: XCTestCase {
         let pausedValue = progress.value as? String
         Thread.sleep(forTimeInterval: 1)
         XCTAssertEqual(progress.value as? String, pausedValue)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Paused route replay"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
         playback.tap()
         let finished = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == 'Replay'"), object: playback

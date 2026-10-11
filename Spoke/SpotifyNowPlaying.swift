@@ -113,7 +113,7 @@ struct SpotifyNowPlayingView: View {
 
                 ProgressView(value: progress, total: max(track.duration, 1))
                     .progressViewStyle(.linear)
-                    .tint(SpokeStyle.accent)
+                    .tint(SpokeStyle.primaryAction)
                     .accessibilityLabel("Song progress")
                     .accessibilityValue(progressDescription(progress: progress))
             }

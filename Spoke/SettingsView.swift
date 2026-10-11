@@ -99,7 +99,7 @@ private struct SettingsForm: View {
             Section {
                 if spotifyAuthentication.sessionID != nil {
                     Label("Connected to Spotify", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(SpokeStyle.success)
+                        .foregroundStyle(SpokeStyle.text)
 
                     Button("Disconnect Spotify", role: .destructive) {
                         Task { await spotifyAuthentication.signOut() }

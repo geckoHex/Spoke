@@ -8,10 +8,9 @@ enum SpokeStyle {
     static let secondaryText = Color(white: 184 / 255)
     static let primaryAction = Color(red: 235 / 255, green: 23 / 255, blue: 0)
     // Lighter red keeps small labels and icons legible on dark surfaces.
-    static let accent = Color(red: 255 / 255, green: 111 / 255, blue: 92 / 255)
-    static let success = Color(red: 104 / 255, green: 211 / 255, blue: 145 / 255)
+    static let accent = Color(red: 255 / 255, green: 85 / 255, blue: 74 / 255)
     static let caution = Color(red: 255 / 255, green: 200 / 255, blue: 87 / 255)
-    static let danger = Color(red: 255 / 255, green: 128 / 255, blue: 121 / 255)
+    static let danger = accent
     static let separator = Color(white: 56 / 255)
     static let cardRadius: CGFloat = 16
     static let controlRadius: CGFloat = 12
@@ -57,7 +56,7 @@ struct SpokeToolbarButtonStyle: ButtonStyle {
             .font(.body.weight(.semibold))
             .foregroundStyle(SpokeStyle.text)
             .frame(width: size, height: size)
-            .background(SpokeStyle.elevatedSurface, in: Circle())
+            .background(SpokeStyle.surface, in: Circle())
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
