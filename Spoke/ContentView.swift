@@ -137,7 +137,7 @@ struct ContentView: View {
     }
 
     private var shouldKeepScreenOn: Bool {
-        settings?.keepScreenOn ?? true
+        (settings?.keepScreenOn ?? true) && rideSession.activeRide != nil
     }
 
     private func createSettingsIfNeeded() {

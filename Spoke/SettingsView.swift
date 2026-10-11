@@ -78,7 +78,7 @@ private struct SettingsForm: View {
             .listRowBackground(SpokeStyle.surface)
 
             Section("On the bike") {
-                Toggle("Keep screen on", isOn: $settings.keepScreenOn)
+                Toggle("Keep screen on during rides", isOn: $settings.keepScreenOn)
             }
             .listRowBackground(SpokeStyle.surface)
 
