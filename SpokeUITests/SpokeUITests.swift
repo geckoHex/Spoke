@@ -156,6 +156,7 @@ final class SpokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ride-fixture"]
         app.launch()
+        XCTAssertTrue(app.staticTexts["Last 7 Days"].waitForExistence(timeout: 5))
         let lastRide = app.buttons["lastRide"]
         XCTAssertTrue(lastRide.waitForExistence(timeout: 5))
         if !lastRide.isHittable { app.scrollViews.firstMatch.swipeUp() }

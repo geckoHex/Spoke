@@ -113,26 +113,26 @@ private struct HomeRideActivity: View {
     let rides: [TrackedRide]
     let date: Date
 
-    private var ridesThisWeek: [TrackedRide] {
+    private var recentRides: [TrackedRide] {
         rides.filter {
             RideMetrics.startedInLastSevenDays($0, relativeTo: date)
         }
     }
 
     private var totalDistance: Double {
-        ridesThisWeek.reduce(0) { result, ride in
+        recentRides.reduce(0) { result, ride in
             result + RideMetrics.distanceInMeters(for: ride)
         }
     }
 
     private var totalDuration: TimeInterval {
-        ridesThisWeek.reduce(0) { result, ride in
+        recentRides.reduce(0) { result, ride in
             result + ride.elapsedDuration()
         }
     }
 
     private var rideCountDescription: String {
-        let count = ridesThisWeek.count
+        let count = recentRides.count
         return "\(count) \(count == 1 ? "ride" : "rides")"
     }
 
@@ -166,7 +166,7 @@ private struct HomeRideActivity: View {
     private var weeklySummary: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(alignment: .firstTextBaseline) {
-                Text("This Week")
+                Text("Last 7 Days")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(SpokeStyle.text)
 
