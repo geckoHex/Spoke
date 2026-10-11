@@ -302,7 +302,16 @@ private struct RideHistoryDetailView: View {
                                     ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                                         _, segment in
                                         MapPolyline(coordinates: segment.coordinates)
-                                            .stroke(segment.motion.color, lineWidth: 5)
+                                            .stroke(segment.motion.color, style: segment.motion.strokeStyle)
+                                    }
+
+                                    if let start = coordinates.first, let finish = coordinates.last {
+                                        Annotation("Start", coordinate: start, anchor: .top) {
+                                            RideEndpointMarker(title: "Start", symbol: "circle.fill")
+                                        }
+                                        Annotation("Finish", coordinate: finish, anchor: .bottom) {
+                                            RideEndpointMarker(title: "Finish", symbol: "flag.checkered")
+                                        }
                                     }
 
                                     ForEach(routeStops) { stop in
@@ -354,7 +363,9 @@ private struct RideHistoryDetailView: View {
                             }
                         }
                     }
-                    .frame(height: max(240, geometry.size.height - 310))
+                    .frame(height: max(240, geometry.size.height - 360))
+
+                    if coordinates.count > 1 { RideRouteLegend() }
 
                     LazyVGrid(
                         columns: Array(
@@ -644,19 +655,6 @@ private struct RideStopBubbleShape: Shape {
         path.addLine(to: CGPoint(x: rect.midX + 5, y: bubbleRect.maxY))
         path.closeSubpath()
         return path
-    }
-}
-
-private extension RideRouteMotion {
-    var color: Color {
-        switch self {
-        case .normalOrFaster:
-            SpokeStyle.accent
-        case .slower:
-            SpokeStyle.caution
-        case .stopped:
-            SpokeStyle.danger
-        }
     }
 }
 

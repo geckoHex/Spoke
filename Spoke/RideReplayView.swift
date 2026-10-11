@@ -135,7 +135,16 @@ struct RideReplayView: View {
                 ForEach(Array(routeSegments.enumerated()), id: \.offset) {
                     _, segment in
                     MapPolyline(coordinates: segment.coordinates)
-                        .stroke(segment.motion.color, lineWidth: 5)
+                        .stroke(segment.motion.color, style: segment.motion.strokeStyle)
+                }
+
+                if let start = route.firstCoordinate, let finish = route.lastCoordinate {
+                    Annotation("Start", coordinate: start, anchor: .top) {
+                        RideEndpointMarker(title: "Start", symbol: "circle.fill")
+                    }
+                    Annotation("Finish", coordinate: finish, anchor: .bottom) {
+                        RideEndpointMarker(title: "Finish", symbol: "flag.checkered")
+                    }
                 }
 
                 if !reduceMotion, let currentCoordinate {
@@ -160,6 +169,7 @@ struct RideReplayView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
+                RideRouteLegend()
                 if reduceMotion || route.points.count < 2 {
                     Text("Route overview")
                         .font(.subheadline)
@@ -268,19 +278,6 @@ private struct ReplayBikePointerShape: Shape {
         path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
         path.closeSubpath()
         return path
-    }
-}
-
-private extension RideRouteMotion {
-    var color: Color {
-        switch self {
-        case .normalOrFaster:
-            SpokeStyle.accent
-        case .slower:
-            SpokeStyle.caution
-        case .stopped:
-            SpokeStyle.danger
-        }
     }
 }
 
