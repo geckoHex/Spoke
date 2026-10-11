@@ -286,8 +286,14 @@ final class SpokeUITests: XCTestCase {
         assertCompactSheet(endingWith: note, bottomPadding: 20)
         app.buttons["Close"].tap()
         actions.tap()
-        app.buttons["Add Note"].tap()
+        app.buttons["Edit Note"].tap()
         XCTAssertEqual(app.textViews["Note"].value as? String, "A quiet morning ride.")
+        app.buttons["Close"].tap()
+        let notePreview = app.buttons["rideNotePreview"]
+        if !notePreview.isHittable { app.scrollViews["rideDetailContent"].swipeUp() }
+        XCTAssertTrue(notePreview.isHittable)
+        notePreview.tap()
+        XCTAssertTrue(app.textViews["Note"].waitForExistence(timeout: 5))
         app.buttons["Close"].tap()
 
         app.buttons["Ride soundtrack"].tap()

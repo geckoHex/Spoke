@@ -396,6 +396,27 @@ private struct RideHistoryDetailView: View {
                     .padding(.vertical, 12)
                     .background(SpokeStyle.surface, in: .rect(cornerRadius: SpokeStyle.cardRadius))
 
+                    if let note = ride.note {
+                        Button {
+                            actionSheet = .note
+                        } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label("Note", systemImage: "square.and.pencil")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(SpokeStyle.secondaryText)
+                                Text(note)
+                                    .font(.body)
+                                    .foregroundStyle(SpokeStyle.text)
+                                    .lineLimit(3)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Edit this note")
+                        .accessibilityIdentifier("rideNotePreview")
+                    }
+
                     Button("Ride soundtrack") {
                         isShowingSoundtrack = true
                     }
@@ -488,7 +509,7 @@ private struct RideHistoryDetailView: View {
                 Button {
                     actionSheet = .note
                 } label: {
-                    Label("Add Note", systemImage: "square.and.pencil")
+                    Label(ride.note == nil ? "Add Note" : "Edit Note", systemImage: "square.and.pencil")
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         .contentShape(.rect)
                 }
