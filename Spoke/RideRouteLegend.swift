@@ -16,6 +16,13 @@ extension RideRouteMotion {
         case .stopped: StrokeStyle(lineWidth: 5, lineCap: .round, dash: [1, 7])
         }
     }
+
+    var mapStrokeStyle: StrokeStyle {
+        var style = strokeStyle
+        // MapKit renders patterned strokes wider than solid strokes at the same nominal width.
+        if !style.dash.isEmpty { style.lineWidth = 3 }
+        return style
+    }
 }
 
 struct RideRouteLegend: View {

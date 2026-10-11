@@ -277,7 +277,7 @@ struct RideHistoryDetailView: View {
                                         MapPolyline(coordinates: segment.coordinates)
                                             .stroke(SpokeStyle.background, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                                         MapPolyline(coordinates: segment.coordinates)
-                                            .stroke(segment.motion.color, style: segment.motion.strokeStyle)
+                                            .stroke(segment.motion.color, style: segment.motion.mapStrokeStyle)
                                     }
 
                                     if let start = coordinates.first, let finish = coordinates.last {
