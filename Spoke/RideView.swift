@@ -376,7 +376,7 @@ private struct RideDashboardView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
 
-                    Text("mph")
+                    Text(isDeveloperModeEnabled ? "mph · simulated" : "mph")
                         .font(.headline)
                         .foregroundStyle(SpokeStyle.secondaryText)
                 }
@@ -406,7 +406,7 @@ private struct RideDashboardView: View {
             await runDeveloperSpeedControl()
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Speed")
+        .accessibilityLabel(isDeveloperModeEnabled ? "Simulated speed" : "Speed")
         .accessibilityValue(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.locationStatus != .recording ? "Unavailable" : "\(displayedSpeedInMilesPerHour) miles per hour")
     }
 

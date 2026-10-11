@@ -82,8 +82,15 @@ private struct SettingsForm: View {
             }
             .listRowBackground(SpokeStyle.surface)
 
-            Section("Developer") {
+            Section {
                 Toggle("Enable Developer Mode", isOn: $settings.developerModeEnabled)
+            } header: {
+                Text("Developer")
+            } footer: {
+                if settings.developerModeEnabled {
+                    Text("Speed is simulated. Hold the speedometer to increase it; release to slow down.")
+                        .foregroundStyle(SpokeStyle.secondaryText)
+                }
             }
             .listRowBackground(SpokeStyle.surface)
 
