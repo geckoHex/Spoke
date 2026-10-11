@@ -13,6 +13,15 @@ import Testing
 @testable import Spoke
 
 struct SpokeTests {
+    @Test func recordingStatusRequiresAUsableFixAndRecovers() {
+        #expect(RideLocationStatus.acquiring.receiving(hasUsableLocation: false, stationary: true) == .acquiring)
+        #expect(RideLocationStatus.acquiring.receiving(hasUsableLocation: true, stationary: false) == .recording)
+        #expect(RideLocationStatus.recording.receiving(hasUsableLocation: false, stationary: true) == .recording)
+        #expect(RideLocationStatus.recording.receiving(hasUsableLocation: false, stationary: false) == .unavailable)
+        #expect(RideLocationStatus.unavailable.receiving(hasUsableLocation: true, stationary: false) == .recording)
+        #expect(RideLocationStatus.denied.receiving(hasUsableLocation: true, stationary: false) == .recording)
+    }
+
     @Test func speedUsesItsOwnAccuracyRatherThanCoordinateAccuracy() async throws {
         let processor = RideSpeedProcessor()
         let now = Date(timeIntervalSince1970: 10_000)

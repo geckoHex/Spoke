@@ -185,7 +185,7 @@ final class SpokeUITests: XCTestCase {
         let pause = app.buttons["Pause Ride"]
         XCTAssertTrue(pause.waitForExistence(timeout: 10))
         XCTAssertGreaterThanOrEqual(pause.frame.height, 60)
-        XCTAssertTrue(app.staticTexts["Riding"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["rideRecordingStatus"].waitForExistence(timeout: 10))
         capture("Refined Ride")
         pause.tap()
         let resume = app.buttons["Resume Ride"]

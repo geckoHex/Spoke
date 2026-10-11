@@ -14,6 +14,7 @@ final class RideSessionController {
     private(set) var activeRide: TrackedRide?
     private(set) var speedInMilesPerHour = 0
     private(set) var currentMapState: RideMapState?
+    private(set) var locationStatus: RideLocationStatus = .acquiring
 
     var currentLocation: RideLocationSample? {
         currentMapState?.location
@@ -232,17 +233,23 @@ final class RideSessionController {
               activeRide.endedAt == nil
         else { return }
 
+        locationStatus = .acquiring
         backgroundActivity = CLBackgroundActivitySession()
         locationSessionGeneration += 1
         let generation = locationSessionGeneration
         let processor = speedProcessor
-        let publish: @MainActor @Sendable (RideSpeedUpdate) -> Void = { [weak self] update in
+        let publish: @MainActor @Sendable (RideSpeedUpdate?, RideLocationStatus?, Bool) -> Void = { [weak self] update, status, stationary in
             guard let self,
                   self.locationTask != nil,
                   self.locationSessionGeneration == generation
             else { return }
 
-            self.receive(update)
+            self.locationStatus = status ?? self.locationStatus.receiving(
+                hasUsableLocation: update?.mapLocation != nil,
+                stationary: stationary
+            )
+            if let update { self.receive(update) }
+            if self.locationStatus != .recording { self.speedInMilesPerHour = 0 }
         }
 
         locationTask = Task.detached(priority: .userInitiated) {
@@ -250,9 +257,31 @@ final class RideSessionController {
                 for try await update in CLLocationUpdate.liveUpdates(.fitness) {
                     try Task.checkCancellation()
 
+                    if update.authorizationDenied || update.authorizationDeniedGlobally {
+                        await publish(nil, .denied, false)
+                        continue
+                    }
+                    if update.authorizationRestricted {
+                        await publish(nil, .restricted, false)
+                        continue
+                    }
+                    if update.locationUnavailable {
+                        await publish(nil, .unavailable, false)
+                        continue
+                    }
+
                     if update.stationary {
-                        let processedUpdate = await processor.processStationary()
-                        await publish(processedUpdate)
+                        let position = if let location = update.location {
+                            await processor.process([RideLocationSample(location: location)], now: .now)
+                        } else {
+                            nil as RideSpeedUpdate?
+                        }
+                        let stopped = await processor.processStationary()
+                        await publish(RideSpeedUpdate(
+                            mapLocation: position?.mapLocation,
+                            mapHeading: position?.mapHeading,
+                            speedInMilesPerHour: stopped.speedInMilesPerHour
+                        ), nil, true)
                         continue
                     }
 
@@ -262,12 +291,20 @@ final class RideSessionController {
                         [RideLocationSample(location: location)],
                         now: .now
                     )
-                    await publish(processedUpdate)
+                    await publish(processedUpdate, nil, false)
                 }
+                await publish(nil, .unavailable, false)
+            } catch is CancellationError {
+                return
             } catch {
-                // Cancellation and unavailable location updates both end quietly.
+                await publish(nil, .unavailable, false)
             }
         }
+    }
+
+    func retryLocation() {
+        endLocationUpdates()
+        beginLocationUpdates()
     }
 
     private func endLocationUpdates() {

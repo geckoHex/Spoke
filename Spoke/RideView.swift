@@ -5,6 +5,7 @@
 
 import SwiftUI
 import CoreLocation
+import UIKit
 
 struct RideView: View {
     let settings: AppSettings?
@@ -233,13 +234,25 @@ private struct RideDashboardView: View {
     }
 
     private var rideStatus: some View {
-        Label(
-            rideSession.activeRide?.isPaused == true ? "Paused" : "Riding",
-            systemImage: rideSession.activeRide?.isPaused == true ? "pause.circle.fill" : "record.circle"
-        )
+        HStack(spacing: 12) {
+            if rideSession.activeRide?.isPaused == true {
+                Label("Paused", systemImage: "pause.circle.fill")
+            } else {
+                Label(rideSession.locationStatus.title, systemImage: rideSession.locationStatus.symbol)
+                if rideSession.locationStatus == .denied {
+                    Link("Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
+                        .frame(minHeight: 44)
+                } else if rideSession.locationStatus == .unavailable {
+                    Button("Retry", action: rideSession.retryLocation)
+                        .frame(minHeight: 44)
+                }
+            }
+        }
         .font(.subheadline.weight(.semibold))
-        .foregroundStyle(rideSession.activeRide?.isPaused == true ? SpokeStyle.caution : SpokeStyle.accent)
+        .foregroundStyle(rideSession.activeRide?.isPaused == true || rideSession.locationStatus != .recording ? SpokeStyle.caution : SpokeStyle.accent)
         .frame(minHeight: 24)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("rideRecordingStatus")
     }
 
     private var overspeedAlertSpeed: Int? {
@@ -352,7 +365,7 @@ private struct RideDashboardView: View {
                     .frame(width: arcWidth, height: arcHeight)
 
                 VStack(spacing: 2) {
-                    Text(String(speed))
+                    Text(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.locationStatus != .recording ? "—" : String(speed))
                         .font(
                             .system(
                                 size: min(112, arcWidth * 0.34),
@@ -394,7 +407,7 @@ private struct RideDashboardView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed")
-        .accessibilityValue("\(displayedSpeedInMilesPerHour) miles per hour")
+        .accessibilityValue(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.locationStatus != .recording ? "Unavailable" : "\(displayedSpeedInMilesPerHour) miles per hour")
     }
 
     private func runDeveloperSpeedControl() async {
