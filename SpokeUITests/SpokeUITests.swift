@@ -152,19 +152,53 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testReplayRespectsReducedMotion() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ride-fixture", "--reduce-motion"]
+        app.launch()
+        app.buttons["History"].tap()
+        app.scrollViews.buttons.firstMatch.tap()
+        app.buttons["Replay"].tap()
+        XCTAssertTrue(app.staticTexts["Route overview"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["replayPlayback"].exists)
+        XCTAssertTrue(app.buttons["Close"].isHittable)
+    }
+
+    @MainActor
+    func testReplayCanPauseResumeAndStayOpen() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ride-fixture"]
+        app.launch()
+        app.buttons["History"].tap()
+        app.scrollViews.buttons.firstMatch.tap()
+        app.buttons["Replay"].tap()
+        let playback = app.buttons["replayPlayback"]
+        XCTAssertTrue(playback.waitForExistence(timeout: 5))
+        XCTAssertEqual(playback.label, "Pause")
+        playback.tap()
+        XCTAssertEqual(playback.label, "Resume")
+        let progress = app.progressIndicators["Replay progress"]
+        let pausedValue = progress.value as? String
+        Thread.sleep(forTimeInterval: 1)
+        XCTAssertEqual(progress.value as? String, pausedValue)
+        playback.tap()
+        let finished = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == 'Replay'"), object: playback
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 15), .completed)
+        XCTAssertTrue(app.navigationBars["Replay"].exists)
+        playback.tap()
+        XCTAssertEqual(playback.label, "Pause")
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["Ride actions"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testRideDetailsAtAccessibilityTextSize() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-testing", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launchArguments = ["--ui-testing", "--ride-fixture", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
-        app.buttons["Ride"].tap()
-        app.buttons["Start Ride"].tap()
-        let end = app.buttons["End Ride"]
-        XCTAssertTrue(end.waitForExistence(timeout: 10))
-        end.press(forDuration: 1.3)
-        let done = app.buttons["Done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5))
-        if !done.isHittable { app.scrollViews["sheetContent"].swipeUp() }
-        done.tap()
+        app.buttons["History"].tap()
         app.scrollViews.buttons.firstMatch.tap()
         let content = app.scrollViews["rideDetailContent"]
         XCTAssertTrue(content.waitForExistence(timeout: 5))

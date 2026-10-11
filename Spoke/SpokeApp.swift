@@ -25,7 +25,12 @@ struct SpokeApp: App {
         )
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            if modelConfiguration.isStoredInMemoryOnly,
+               ProcessInfo.processInfo.arguments.contains("--ride-fixture") {
+                try RideUITestFixture.insert(into: container.mainContext)
+            }
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -36,6 +41,7 @@ struct SpokeApp: App {
             ContentView()
                 .environmentObject(spotifyAuthentication)
                 .disablesKeyboardSafeArea()
+
         }
         .modelContainer(sharedModelContainer)
     }

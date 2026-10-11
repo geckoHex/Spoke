@@ -94,7 +94,9 @@ struct RideReplayView: View {
     private let route: RideReplayRoute
     private let routeSegments: [RideRouteSegment]
 
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @State private var isPlaying = true
+    @State private var progress = 0.0
     @State private var currentCoordinate: CLLocationCoordinate2D?
     @State private var isBikeFacingLeft = false
 
@@ -103,6 +105,11 @@ struct RideReplayView: View {
         self.route = route
         routeSegments = RideRouteSpeed.segments(for: routePoints)
         _currentCoordinate = State(initialValue: route.firstCoordinate)
+    }
+
+    private var reduceMotion: Bool {
+        systemReduceMotion || (ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            && ProcessInfo.processInfo.arguments.contains("--reduce-motion"))
     }
 
     private var cameraPosition: MapCameraPosition {
@@ -131,7 +138,7 @@ struct RideReplayView: View {
                         .stroke(segment.motion.color, lineWidth: 5)
                 }
 
-                if let currentCoordinate {
+                if !reduceMotion, let currentCoordinate {
                     Annotation(
                         "",
                         coordinate: currentCoordinate,
@@ -151,8 +158,43 @@ struct RideReplayView: View {
                 )
             )
         }
-        .task {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 12) {
+                if reduceMotion || route.points.count < 2 {
+                    Text("Route overview")
+                        .font(.subheadline)
+                        .foregroundStyle(SpokeStyle.secondaryText)
+                } else {
+                    ProgressView(value: progress)
+                        .tint(SpokeStyle.accent)
+                        .accessibilityLabel("Replay progress")
+                        .accessibilityValue("\(Int(progress * 100)) percent")
+                    Button {
+                        if progress >= 1 {
+                            progress = 0
+                            currentCoordinate = route.firstCoordinate
+                        }
+                        isPlaying.toggle()
+                    } label: {
+                        Label(
+                            progress >= 1 ? "Replay" : (isPlaying ? "Pause" : "Resume"),
+                            systemImage: isPlaying ? "pause.fill" : "play.fill"
+                        )
+                    }
+                    .buttonStyle(SpokePrimaryButtonStyle())
+                    .accessibilityIdentifier("replayPlayback")
+                }
+            }
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.vertical, 12)
+            .background(SpokeStyle.surface)
+        }
+        .task(id: isPlaying && !reduceMotion) {
+            guard isPlaying && !reduceMotion else { return }
             await playRoute()
+        }
+        .onChange(of: reduceMotion) {
+            if reduceMotion { isPlaying = false }
         }
     }
 
@@ -161,10 +203,11 @@ struct RideReplayView: View {
             var direction = RideReplayDirection()
             let clock = ContinuousClock()
             let startedAt = clock.now
+            let initialProgress = progress
 
             while !Task.isCancelled {
                 let elapsed = startedAt.duration(to: clock.now).timeInterval
-                let progress = min(elapsed / RideReplayRoute.playbackDuration, 1)
+                progress = min(initialProgress + elapsed / RideReplayRoute.playbackDuration, 1)
                 let nextCoordinate = route.coordinate(at: progress)
 
                 if let currentCoordinate, let nextCoordinate {
@@ -184,15 +227,10 @@ struct RideReplayView: View {
             }
         }
 
+        guard !Task.isCancelled else { return }
         currentCoordinate = route.lastCoordinate
-
-        do {
-            try await Task.sleep(for: .seconds(1))
-        } catch {
-            return
-        }
-
-        dismiss()
+        progress = 1
+        isPlaying = false
     }
 }
 
