@@ -152,6 +152,29 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testLastRideOpensDetailsAndExplainsTheRoute() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ride-fixture"]
+        app.launch()
+        let lastRide = app.buttons["lastRide"]
+        XCTAssertTrue(lastRide.waitForExistence(timeout: 5))
+        if !lastRide.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        lastRide.tap()
+        XCTAssertTrue(app.buttons["Ride actions"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Morning Loop"].exists)
+        for title in ["Usual / faster", "Slower", "Stopped", "Start", "Finish"] {
+            XCTAssertTrue(app.staticTexts[title].exists, "Route must explain \(title)")
+        }
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Route legend and endpoints"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.buttons["Back"].tap()
+        XCTAssertTrue(lastRide.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Home"].isSelected)
+    }
+
+    @MainActor
     func testReplayRespectsReducedMotion() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ride-fixture", "--reduce-motion"]

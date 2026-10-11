@@ -220,7 +220,7 @@ private struct RideRouteThumbnail: View {
     }
 }
 
-private struct RideHistoryDetailView: View {
+struct RideHistoryDetailView: View {
     let ride: TrackedRide
 
     @Environment(\.dismiss) private var dismiss

@@ -144,7 +144,13 @@ private struct HomeRideActivity: View {
                 .overlay(SpokeStyle.separator)
 
             if let latestRide = rides.first {
-                latestRideRow(latestRide)
+                NavigationLink {
+                    RideHistoryDetailView(ride: latestRide)
+                } label: {
+                    latestRideRow(latestRide)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("lastRide")
             } else {
                 Label("No completed rides yet", systemImage: "figure.outdoor.cycle")
                     .font(.body.weight(.medium))
@@ -256,6 +262,11 @@ private struct HomeRideActivity: View {
                     .foregroundStyle(SpokeStyle.secondaryText)
                     .monospacedDigit()
             }
+
+            Image(systemName: "chevron.right")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(SpokeStyle.secondaryText)
+                .accessibilityHidden(true)
         }
         .accessibilityElement(children: .combine)
     }
