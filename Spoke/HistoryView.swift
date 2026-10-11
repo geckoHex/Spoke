@@ -428,10 +428,30 @@ struct RideHistoryDetailView: View {
                         .accessibilityIdentifier("rideNotePreview")
                     }
 
-                    Button("Ride soundtrack") {
+                    Button {
                         isShowingSoundtrack = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Ride soundtrack")
+                                    .font(.headline)
+                                    .foregroundStyle(SpokeStyle.text)
+                                Text(soundtrackCount)
+                                    .font(.subheadline)
+                                    .foregroundStyle(SpokeStyle.secondaryText)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(SpokeStyle.secondaryText)
+                                .accessibilityHidden(true)
+                        }
+                        .frame(minHeight: 44)
+                        .contentShape(.rect)
                     }
-                    .buttonStyle(SpokePrimaryButtonStyle())
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Ride soundtrack")
+                    .accessibilityValue(soundtrackCount)
                 }
                 .padding(.horizontal, SpokeStyle.pageInset)
                 .padding(.bottom, 16)
@@ -512,6 +532,11 @@ struct RideHistoryDetailView: View {
                 )
             }
         }
+    }
+
+    private var soundtrackCount: String {
+        let count = ride.soundtrackEntries.count
+        return count == 0 ? "No songs recorded" : "\(count) \(count == 1 ? "song" : "songs")"
     }
 
     private var rideActions: some View {
@@ -689,7 +714,7 @@ private struct RideSoundtrackView: View {
                         Label("No Songs Recorded", systemImage: "music.note.list")
                             .font(.headline)
 
-                        Text("Songs played during this ride will appear here.")
+                        Text("No songs were recorded during this ride.")
                             .foregroundStyle(SpokeStyle.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
                     }

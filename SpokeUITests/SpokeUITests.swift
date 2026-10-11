@@ -359,7 +359,7 @@ final class SpokeUITests: XCTestCase {
         app.buttons["Ride soundtrack"].tap()
         XCTAssertTrue(app.navigationBars["Ride Soundtrack"].waitForExistence(timeout: 5))
         capture("Refined Soundtrack")
-        assertCompactSheet(endingWith: app.staticTexts["Songs played during this ride will appear here."])
+        assertCompactSheet(endingWith: app.staticTexts["No songs were recorded during this ride."])
         app.buttons["Close"].tap()
 
         if app.buttons["Replay"].exists {
