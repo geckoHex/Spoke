@@ -292,6 +292,7 @@ private struct HomeWeatherView: View {
     let isDeveloperModeEnabled: Bool
     let onExpireAndReload: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 52
     @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 88
 
@@ -423,6 +424,11 @@ private struct HomeWeatherView: View {
                 .font(.system(size: weatherIconSize, weight: .regular))
                 .symbolRenderingMode(.monochrome)
                 .foregroundStyle(SpokeStyle.text)
+                .symbolEffect(
+                    .wiggle.byLayer,
+                    options: .repeat(.periodic(delay: 3)).speed(0.55),
+                    isActive: !reduceMotion
+                )
                 .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
                 .accessibilityHidden(true)
         } else if isLoading || !isUnavailable {
