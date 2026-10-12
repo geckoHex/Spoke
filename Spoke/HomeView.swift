@@ -196,17 +196,20 @@ private struct HomeRideActivity: View {
 
                 activityMetric(
                     value: compactDuration(totalDuration),
-                    label: "Ride Time"
+                    label: "Ride Time",
+                    alignment: .trailing
                 )
+                .multilineTextAlignment(.trailing)
             }
         }
     }
 
     private func activityMetric(
         value: String,
-        label: String
+        label: String,
+        alignment: HorizontalAlignment = .leading
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: alignment, spacing: 8) {
             Text(value)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(SpokeStyle.text)
@@ -218,7 +221,7 @@ private struct HomeRideActivity: View {
                 .font(.subheadline)
                 .foregroundStyle(SpokeStyle.secondaryText)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: Alignment(horizontal: alignment, vertical: .center))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(value)")
     }
