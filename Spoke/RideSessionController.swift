@@ -35,17 +35,24 @@ final class RideSessionController {
     @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var backgroundActivity: CLBackgroundActivitySession?
     @ObservationIgnored private var serviceSession: CLServiceSession?
+    @ObservationIgnored private let liveActivity: (any RideLiveActivityManaging)?
+    @ObservationIgnored private var lastLiveActivityUpdateAt: Date?
 
     private let positionRecordingInterval: TimeInterval = 5
     @ObservationIgnored private let saveChanges: (ModelContext) throws -> Void
 
-    init(saveChanges: @escaping (ModelContext) throws -> Void = { try $0.save() }) {
+    init(
+        liveActivity: (any RideLiveActivityManaging)? = nil,
+        saveChanges: @escaping (ModelContext) throws -> Void = { try $0.save() }
+    ) {
+        self.liveActivity = liveActivity
         self.saveChanges = saveChanges
     }
 
     func configure(modelContext: ModelContext) {
         guard self.modelContext == nil else { return }
         self.modelContext = modelContext
+        defer { synchronizeLiveActivity(requestIfNeeded: true) }
 
         var descriptor = FetchDescriptor<TrackedRide>(
             predicate: #Predicate { $0.endedAt == nil },
@@ -96,6 +103,7 @@ final class RideSessionController {
         lastRecordedPositionAt = nil
         lastSpotifyTrackIdentity = nil
         beginLocationUpdates()
+        synchronizeLiveActivity(at: date, requestIfNeeded: true)
         return ride
     }
 
@@ -128,6 +136,29 @@ final class RideSessionController {
         } else {
             beginLocationUpdates()
         }
+        synchronizeLiveActivity(at: date)
+    }
+
+    func setPausedFromLiveActivity(
+        rideID: String,
+        isPaused: Bool,
+        at date: Date = .now
+    ) async throws {
+        guard let ride = activeRide,
+              ride.liveActivityID.uuidString == rideID,
+              ride.endedAt == nil
+        else { throw RideLiveActivityActionError.rideUnavailable }
+
+        // A repeated tap on an old Pause button must not resume the ride.
+        if ride.isPaused != isPaused {
+            togglePause(at: date)
+            guard ride.isPaused == isPaused else {
+                throw RideLiveActivityActionError.saveFailed
+            }
+        } else {
+            synchronizeLiveActivity(at: date)
+        }
+        await liveActivity?.flush()
     }
 
     @discardableResult
@@ -162,6 +193,7 @@ final class RideSessionController {
         currentMapState = nil
         lastRecordedPositionAt = nil
         lastSpotifyTrackIdentity = nil
+        synchronizeLiveActivity(at: date)
 
         if let endingLocation {
             resolveEndAddressIfNeeded(endingLocation, for: ride)
@@ -275,10 +307,12 @@ final class RideSessionController {
             )
             if let update { self.receive(update) }
             if self.locationStatus != .recording { self.speedInMilesPerHour = 0 }
+            self.synchronizeLiveActivity(force: false)
         }
         let finish: @MainActor @Sendable () -> Void = { [weak self] in
             guard let self, self.locationSessionGeneration == generation else { return }
             self.endLocationUpdates()
+            self.synchronizeLiveActivity()
         }
 
         locationTask = Task.detached(priority: .userInitiated) {
@@ -335,11 +369,36 @@ final class RideSessionController {
 
     func resumeLocationUpdatesIfNeeded() {
         beginLocationUpdates()
+        synchronizeLiveActivity(requestIfNeeded: true)
     }
 
     func retryLocation() {
         endLocationUpdates()
         beginLocationUpdates()
+        synchronizeLiveActivity()
+    }
+
+    private func synchronizeLiveActivity(
+        at date: Date = .now,
+        force: Bool = true,
+        requestIfNeeded: Bool = false
+    ) {
+        guard let liveActivity else { return }
+        // The system renders the ticking timer; GPS snapshots need at most one update per five seconds.
+        if !force, let lastLiveActivityUpdateAt,
+           date.timeIntervalSince(lastLiveActivityUpdateAt) < 5 {
+            return
+        }
+        lastLiveActivityUpdateAt = date
+        let snapshot = activeRide.map {
+            RideLiveActivitySnapshot(
+                ride: $0,
+                speedInMilesPerHour: speedInMilesPerHour,
+                locationStatus: locationStatus,
+                at: date
+            )
+        }
+        liveActivity.synchronize(snapshot, requestIfNeeded: requestIfNeeded)
     }
 
     private func endLocationUpdates() {

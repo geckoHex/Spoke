@@ -8,6 +8,7 @@ import SwiftData
 
 @Model
 final class TrackedRide {
+    var liveActivityID: UUID = UUID()
     var startedAt: Date
     var customName: String?
     var note: String?
