@@ -11,6 +11,49 @@ import XCTest
 final class SpokeUITests: XCTestCase {
 
     @MainActor
+    func testRideStartTransitionFromBothScreens() throws {
+        for tab in ["Home", "Ride"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--ui-testing", "--weather-fixture"]
+            app.launch()
+            app.buttons[tab].tap()
+            app.buttons["Start Ride"].tap()
+
+            let transition = XCTAttachment(screenshot: app.screenshot())
+            transition.name = "Ride start from \(tab)"
+            transition.lifetime = .keepAlways
+            add(transition)
+
+            let pause = app.buttons["Pause Ride"]
+            XCTAssertTrue(pause.waitForExistence(timeout: 10))
+            XCTAssertTrue(pause.wait(for: \.isHittable, toEqual: true, timeout: 5))
+            XCTAssertTrue(app.buttons["Ride"].isSelected)
+            XCTAssertFalse(app.buttons["Start Ride"].exists)
+            let destination = XCTAttachment(screenshot: app.screenshot())
+            destination.name = "Ride start destination from \(tab)"
+            destination.lifetime = .keepAlways
+            add(destination)
+            pause.tap()
+            XCTAssertTrue(app.buttons["Resume Ride"].waitForExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
+    @MainActor
+    func testRideStartTransitionWithReducedMotion() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture", "--reduce-motion"]
+        app.launch()
+        defer { app.terminate() }
+        app.buttons["Start Ride"].tap()
+        let pause = app.buttons["Pause Ride"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 10))
+        XCTAssertTrue(pause.wait(for: \.isHittable, toEqual: true, timeout: 5))
+        pause.tap()
+        XCTAssertTrue(app.buttons["Resume Ride"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testRideRecordsAnOutAndBackRouteWhileMapsIsOpen() throws {
         let device = XCUIDevice.shared
         let previousLocation = device.location

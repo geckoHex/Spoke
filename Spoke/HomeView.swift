@@ -9,7 +9,8 @@ import SwiftUI
 struct HomeView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
-    let onRideStarted: () -> Void
+    let onStartRide: () -> Void
+    let onShowRide: () -> Void
     let onEndRide: () -> Void
 
     @Query(sort: \TrackedRide.startedAt, order: .reverse)
@@ -77,7 +78,7 @@ struct HomeView: View {
     private func rideAction(date: Date) -> some View {
         if let ride = rideSession.activeRide {
             VStack(spacing: 12) {
-                Button(action: onRideStarted) {
+                Button(action: onShowRide) {
                     HStack {
                         Label(ride.isPaused ? "Ride paused" : rideSession.locationStatus.title, systemImage: "bicycle")
                         Spacer()
@@ -101,13 +102,13 @@ struct HomeView: View {
                 )
             }
         } else {
-            Button {
-                guard rideSession.startRide() != nil else { return }
-                onRideStarted()
-            } label: {
+            Button(action: onStartRide) {
                 Text("Start Ride")
             }
             .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
+            .anchorPreference(key: RideStartButtonPreference.self, value: .bounds) {
+                [.home: $0]
+            }
         }
     }
 
@@ -505,7 +506,8 @@ private enum TimeOfDay {
     HomeView(
         settings: AppSettings(),
         rideSession: RideSessionController(),
-        onRideStarted: {},
+        onStartRide: {},
+        onShowRide: {},
         onEndRide: {}
     )
     .modelContainer(

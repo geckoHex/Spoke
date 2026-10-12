@@ -10,6 +10,7 @@ import UIKit
 struct RideView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
+    let onStartRide: () -> Void
     let onEndRide: () -> Void
 
     @State private var resources: RideSessionResources?
@@ -24,12 +25,13 @@ struct RideView: View {
                     } description: {
                         Text("Your speed, route, and ride controls in one place.")
                     } actions: {
-                        Button {
-                            rideSession.startRide()
-                        } label: {
+                        Button(action: onStartRide) {
                             Label("Start Ride", systemImage: "play.fill")
                         }
                         .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
+                        .anchorPreference(key: RideStartButtonPreference.self, value: .bounds) {
+                            [.ride: $0]
+                        }
                         .padding(.horizontal, SpokeStyle.pageInset)
                     }
                     .background(SpokeStyle.background)
@@ -64,7 +66,8 @@ struct RideView: View {
                     RideControlsView(
                         ride: ride,
                         onPauseToggle: { rideSession.togglePause() },
-                        onEnd: onEndRide
+                        onEnd: onEndRide,
+                        isRideStartDestination: true
                     )
                     .padding(.horizontal, SpokeStyle.pageInset)
                     .padding(.vertical, 12)
@@ -629,6 +632,7 @@ private struct SpeedometerArc: Shape {
     RideView(
         settings: AppSettings(),
         rideSession: RideSessionController(),
+        onStartRide: {},
         onEndRide: {}
     )
         .environmentObject(SpotifyAuthenticationStore())

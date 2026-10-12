@@ -4,6 +4,7 @@ struct RideControlsView: View {
     let ride: TrackedRide
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
+    var isRideStartDestination = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -23,6 +24,9 @@ struct RideControlsView: View {
             }
             .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
             .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
+            .anchorPreference(key: RideStartButtonPreference.self, value: .bounds) {
+                isRideStartDestination ? [.pause: $0] : [:]
+            }
 
             Label(isHolding ? "Keep holding" : "Hold to end", systemImage: "stop.fill")
                 .font(.headline.weight(.bold))

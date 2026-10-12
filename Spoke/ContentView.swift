@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .home
     @State private var highlightedRideID: PersistentIdentifier?
     @State private var completedRide: TrackedRide?
+    @State private var rideStartSource: RideStartButton?
     let rideSession: RideSessionController
 
     var body: some View {
@@ -25,7 +26,8 @@ struct ContentView: View {
                     HomeView(
                         settings: settings,
                         rideSession: rideSession,
-                        onRideStarted: {
+                        onStartRide: { rideStartSource = .home },
+                        onShowRide: {
                             selectedTab = .ride
                         },
                         onEndRide: endRide
@@ -34,8 +36,13 @@ struct ContentView: View {
                 }
 
                 Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
-                    RideView(settings: settings, rideSession: rideSession, onEndRide: endRide)
-                        .toolbar(.hidden, for: .tabBar)
+                    RideView(
+                        settings: settings,
+                        rideSession: rideSession,
+                        onStartRide: { rideStartSource = .ride },
+                        onEndRide: endRide
+                    )
+                    .toolbar(.hidden, for: .tabBar)
                 }
 
                 Tab(
@@ -59,6 +66,26 @@ struct ContentView: View {
         .background(SpokeStyle.background)
         .preferredColorScheme(.dark)
         .tint(SpokeStyle.accent)
+        .allowsHitTesting(rideStartSource == nil)
+        .accessibilityHidden(rideStartSource != nil)
+        .overlayPreferenceValue(RideStartButtonPreference.self) { anchors in
+            GeometryReader { proxy in
+                if let rideStartSource {
+                    RideStartTransition(
+                        sourceFrame: anchors[rideStartSource].map { proxy[$0] } ?? .zero,
+                        destinationFrame: anchors[.pause].map { proxy[$0] },
+                        onCovered: {
+                            guard rideSession.startRide() != nil else { return false }
+                            selectedTab = .ride
+                            return true
+                        },
+                        onFinished: { self.rideStartSource = nil }
+                    )
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(rideStartSource != nil)
+        }
         .sheet(item: $completedRide) { ride in
             RideSummaryView(
                 ride: ride,
@@ -89,6 +116,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active { rideSession.resumeLocationUpdatesIfNeeded() }
+            if scenePhase == .background { rideStartSource = nil }
             updateIdleTimer()
         }
         .onChange(of: shouldKeepScreenOn) {
