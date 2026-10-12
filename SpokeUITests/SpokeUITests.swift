@@ -198,12 +198,18 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
-    func testSolidNavigationAndControls() throws {
+    func testNativeTabNavigationAndControls() throws {
         let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ride-fixture", "--weather-fixture"]
         app.launch()
+        defer { app.terminate() }
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+        XCTAssertEqual(tabBar.buttons.count, 4)
 
         for title in ["Home", "Ride", "History", "Settings"] {
-            let tab = app.buttons[title]
+            let tab = tabBar.buttons[title]
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
             tab.tap()
             XCTAssertTrue(tab.isSelected)
@@ -213,14 +219,15 @@ final class SpokeUITests: XCTestCase {
             let developerToggle = app.switches["Enable Developer Mode"]
             XCTAssertTrue(developerToggle.waitForExistence(timeout: 5))
             let originalValue = developerToggle.value as? String
+            let toggleControl = developerToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5))
             defer {
                 if developerToggle.value as? String != originalValue {
-                    developerToggle.tap()
+                    toggleControl.tap()
                 }
             }
-            developerToggle.tap()
+            toggleControl.tap()
             XCTAssertNotEqual(developerToggle.value as? String, originalValue)
-            developerToggle.tap()
+            toggleControl.tap()
             XCTAssertEqual(developerToggle.value as? String, originalValue)
         }
 

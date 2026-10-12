@@ -26,47 +26,39 @@ struct ContentView: View {
     let rideSession: RideSessionController
 
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selectedTab) {
-                Tab(AppTab.home.title, systemImage: AppTab.home.symbol, value: .home) {
-                    HomeView(
-                        settings: settings,
-                        rideSession: rideSession,
-                        onStartRide: { startRide(from: .home) },
-                        onShowRide: {
-                            selectedTab = .ride
-                        },
-                        onEndRide: endRide
-                    )
-                    .toolbar(.hidden, for: .tabBar)
-                }
-
-                Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
-                    RideView(
-                        settings: settings,
-                        rideSession: rideSession,
-                        onStartRide: { startRide(from: .ride) },
-                        onEndRide: endRide
-                    )
-                    .toolbar(.hidden, for: .tabBar)
-                }
-
-                Tab(
-                    AppTab.history.title,
-                    systemImage: AppTab.history.symbol,
-                    value: .history
-                ) {
-                    HistoryView(highlightedRideID: $highlightedRideID)
-                        .toolbar(.hidden, for: .tabBar)
-                }
-
-                Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
-                    SettingsView(settings: settings)
-                        .toolbar(.hidden, for: .tabBar)
-                }
+        TabView(selection: $selectedTab) {
+            Tab(AppTab.home.title, systemImage: AppTab.home.symbol, value: .home) {
+                HomeView(
+                    settings: settings,
+                    rideSession: rideSession,
+                    onStartRide: { startRide(from: .home) },
+                    onShowRide: {
+                        selectedTab = .ride
+                    },
+                    onEndRide: endRide
+                )
             }
 
-            tabBar
+            Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
+                RideView(
+                    settings: settings,
+                    rideSession: rideSession,
+                    onStartRide: { startRide(from: .ride) },
+                    onEndRide: endRide
+                )
+            }
+
+            Tab(
+                AppTab.history.title,
+                systemImage: AppTab.history.symbol,
+                value: .history
+            ) {
+                HistoryView(highlightedRideID: $highlightedRideID)
+            }
+
+            Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
+                SettingsView(settings: settings)
+            }
         }
         .foregroundStyle(SpokeStyle.text)
         .background(SpokeStyle.background)
@@ -138,38 +130,6 @@ struct ContentView: View {
         }
     }
 
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(AppTab.allCases, id: \.self) { tab in
-                Button {
-                    selectedTab = tab
-                } label: {
-                    VStack(spacing: 5) {
-                        Image(systemName: tab.symbol)
-                            .symbolVariant(selectedTab == tab ? .fill : .none)
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(selectedTab == tab ? SpokeStyle.primaryAction : SpokeStyle.secondaryText)
-                        Text(tab.title)
-                            .font(.caption2.weight(.medium))
-                            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                            .foregroundStyle(selectedTab == tab ? SpokeStyle.text : SpokeStyle.secondaryText)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 60)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tab.title)
-                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-        .background(SpokeStyle.background.ignoresSafeArea(edges: .bottom))
-    }
-
     private func startRide(from source: RideStartButton) {
         rideStartSource = source
         Task {
@@ -228,7 +188,7 @@ struct ContentView: View {
     }
 }
 
-private enum AppTab: Hashable, CaseIterable {
+private enum AppTab: Hashable {
     case home
     case ride
     case history
