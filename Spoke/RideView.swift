@@ -598,7 +598,8 @@ private struct RideSessionResources: Sendable {
         let alertPlayer = RideAudioPlayer(
             resourceURL: Bundle.main.url(
                 forResource: "overspeed-alert",
-                withExtension: "mp3"
+                withExtension: "mp3",
+                subdirectory: "sounds"
             )
         )
         overspeedAlertController = RideOverspeedAlertController(player: alertPlayer)

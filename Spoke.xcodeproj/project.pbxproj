@@ -52,6 +52,9 @@
 			exceptions = (
 				51AB0001304149440042A92D /* Exceptions for "Spoke" folder in "Spoke" target */,
 			);
+			explicitFolders = (
+				sounds,
+			);
 			path = Spoke;
 			sourceTree = "<group>";
 		};

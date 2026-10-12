@@ -18,10 +18,10 @@ struct ContentView: View {
     @State private var completedRide: TrackedRide?
     @State private var rideStartSource: RideStartButton?
     @State private var rideStartSound = RideAudioPlayer(
-        resourceURL: Bundle.main.url(forResource: "ride-start", withExtension: "mp3")
+        resourceURL: Bundle.main.url(forResource: "ride-start", withExtension: "mp3", subdirectory: "sounds")
     )
     @State private var rideEndSound = RideAudioPlayer(
-        resourceURL: Bundle.main.url(forResource: "ride-end", withExtension: "mp3")
+        resourceURL: Bundle.main.url(forResource: "ride-end", withExtension: "mp3", subdirectory: "sounds")
     )
     let rideSession: RideSessionController
 
