@@ -7,6 +7,7 @@ import CoreLocation
 import Foundation
 import Observation
 import SwiftData
+import UIKit
 
 @MainActor
 @Observable
@@ -21,6 +22,10 @@ final class RideSessionController {
         currentMapState?.location
     }
 
+    var isTrackingLocation: Bool {
+        locationTask != nil && serviceSession != nil && backgroundActivity != nil
+    }
+
     @ObservationIgnored private var modelContext: ModelContext?
     @ObservationIgnored private var locationTask: Task<Void, Never>?
     @ObservationIgnored private var locationSessionGeneration = 0
@@ -29,7 +34,7 @@ final class RideSessionController {
     @ObservationIgnored private var startAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var backgroundActivity: CLBackgroundActivitySession?
-    @ObservationIgnored private let speedProcessor = RideSpeedProcessor()
+    @ObservationIgnored private var serviceSession: CLServiceSession?
 
     private let positionRecordingInterval: TimeInterval = 5
     @ObservationIgnored private let saveChanges: (ModelContext) throws -> Void
@@ -100,6 +105,7 @@ final class RideSessionController {
         errorMessage = nil
         let previousPausedAt = ride.pausedAt
         let previousPausedDuration = ride.accumulatedPausedDuration
+        let previousResumedAt = ride.lastResumedAt
 
         if ride.isPaused {
             ride.resume(at: date)
@@ -113,6 +119,7 @@ final class RideSessionController {
             errorMessage = "Your ride couldn’t \(previousPausedAt == nil ? "pause" : "resume"). Please try again."
             ride.pausedAt = previousPausedAt
             ride.accumulatedPausedDuration = previousPausedDuration
+            ride.lastResumedAt = previousResumedAt
             return
         }
 
@@ -245,23 +252,33 @@ final class RideSessionController {
               activeRide.endedAt == nil
         else { return }
 
+        guard UIApplication.shared.applicationState != .background
+                || CLLocationManager().authorizationStatus != .notDetermined
+        else { return }
+
         locationStatus = .acquiring
+        serviceSession = CLServiceSession(authorization: .whenInUse)
         backgroundActivity = CLBackgroundActivitySession()
         locationSessionGeneration += 1
         let generation = locationSessionGeneration
-        let processor = speedProcessor
-        let publish: @MainActor @Sendable (RideSpeedUpdate?, RideLocationStatus?, Bool) -> Void = { [weak self] update, status, stationary in
+        let processor = RideSpeedProcessor()
+        let publish: @MainActor @Sendable (RideSpeedUpdate?, RideLocationStatus?, Bool, RideLocationSample?) -> Void = { [weak self] update, status, stationary, location in
             guard let self,
                   self.locationTask != nil,
                   self.locationSessionGeneration == generation
             else { return }
 
+            if let location { self.recordLocation(location) }
             self.locationStatus = status ?? self.locationStatus.receiving(
                 hasUsableLocation: update?.mapLocation != nil,
                 stationary: stationary
             )
             if let update { self.receive(update) }
             if self.locationStatus != .recording { self.speedInMilesPerHour = 0 }
+        }
+        let finish: @MainActor @Sendable () -> Void = { [weak self] in
+            guard let self, self.locationSessionGeneration == generation else { return }
+            self.endLocationUpdates()
         }
 
         locationTask = Task.detached(priority: .userInitiated) {
@@ -270,15 +287,15 @@ final class RideSessionController {
                     try Task.checkCancellation()
 
                     if update.authorizationDenied || update.authorizationDeniedGlobally {
-                        await publish(nil, .denied, false)
+                        await publish(nil, .denied, false, nil)
                         continue
                     }
                     if update.authorizationRestricted {
-                        await publish(nil, .restricted, false)
+                        await publish(nil, .restricted, false, nil)
                         continue
                     }
                     if update.locationUnavailable {
-                        await publish(nil, .unavailable, false)
+                        await publish(nil, .unavailable, false, nil)
                         continue
                     }
 
@@ -293,25 +310,31 @@ final class RideSessionController {
                             mapLocation: position?.mapLocation,
                             mapHeading: position?.mapHeading,
                             speedInMilesPerHour: stopped.speedInMilesPerHour
-                        ), nil, true)
+                        ), nil, true, update.location.map(RideLocationSample.init))
                         continue
                     }
 
                     guard let location = update.location else { continue }
 
+                    let sample = RideLocationSample(location: location)
                     let processedUpdate = await processor.process(
-                        [RideLocationSample(location: location)],
+                        [sample],
                         now: .now
                     )
-                    await publish(processedUpdate, nil, false)
+                    await publish(processedUpdate, nil, false, sample)
                 }
-                await publish(nil, .unavailable, false)
+                await publish(nil, .unavailable, false, nil)
             } catch is CancellationError {
                 return
             } catch {
-                await publish(nil, .unavailable, false)
+                await publish(nil, .unavailable, false, nil)
             }
+            await finish()
         }
+    }
+
+    func resumeLocationUpdatesIfNeeded() {
+        beginLocationUpdates()
     }
 
     func retryLocation() {
@@ -322,14 +345,12 @@ final class RideSessionController {
     private func endLocationUpdates() {
         backgroundActivity?.invalidate()
         backgroundActivity = nil
+        serviceSession?.invalidate()
+        serviceSession = nil
         locationSessionGeneration += 1
         locationTask?.cancel()
         locationTask = nil
         speedInMilesPerHour = 0
-
-        Task {
-            await speedProcessor.reset()
-        }
     }
 
     private func receive(_ update: RideSpeedUpdate) {
@@ -340,11 +361,6 @@ final class RideSessionController {
                 location: location,
                 heading: update.mapHeading ?? currentMapState?.heading
             )
-            recordPositionIfNeeded(location, for: ride)
-            let startingLocation = ride.routePoints
-                .min(by: { $0.recordedAt < $1.recordedAt })
-                .map(RideLocationSample.init) ?? location
-            resolveStartAddressIfNeeded(startingLocation, for: ride)
         }
 
         if let speedInMilesPerHour = update.speedInMilesPerHour {
@@ -352,10 +368,20 @@ final class RideSessionController {
         }
     }
 
-    private func recordPositionIfNeeded(
+    func recordLocation(
         _ location: RideLocationSample,
-        for ride: TrackedRide
+        now: Date = .now
     ) {
+        // Background delivery can be delayed; only live speed needs a fresh fix.
+        guard let ride = activeRide, !ride.isPaused, ride.endedAt == nil,
+              location.timestamp >= max(ride.startedAt, ride.lastResumedAt ?? ride.startedAt),
+              location.timestamp <= now.addingTimeInterval(1),
+              (0...100).contains(location.horizontalAccuracy),
+              CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(
+                latitude: location.latitude, longitude: location.longitude
+              ))
+        else { return }
+
         if let lastRecordedPositionAt,
            location.timestamp.timeIntervalSince(lastRecordedPositionAt)
             < positionRecordingInterval
@@ -377,6 +403,10 @@ final class RideSessionController {
         do {
             try modelContext.save()
             lastRecordedPositionAt = location.timestamp
+            let startingLocation = ride.routePoints
+                .min(by: { $0.recordedAt < $1.recordedAt })
+                .map(RideLocationSample.init) ?? location
+            resolveStartAddressIfNeeded(startingLocation, for: ride)
         } catch {
             ride.routePoints.removeAll { $0 === point }
             modelContext.delete(point)
@@ -522,12 +552,6 @@ actor RideSpeedProcessor {
             mapHeading: mapLocation.flatMap { mapHeadingFilter.update(with: $0) },
             speedInMilesPerHour: speed
         )
-    }
-
-    func reset() {
-        filteredSpeed = nil
-        lastAcceptedSample = nil
-        mapHeadingFilter.reset()
     }
 
     func processStationary() -> RideSpeedUpdate {

@@ -5,9 +5,53 @@
 //  Created by Beck Orion on 8/27/26.
 //
 
+import CoreLocation
 import XCTest
 
 final class SpokeUITests: XCTestCase {
+
+    @MainActor
+    func testRideRecordsAnOutAndBackRouteWhileMapsIsOpen() throws {
+        let device = XCUIDevice.shared
+        let previousLocation = device.location
+        defer { device.location = previousLocation }
+        func setLocation(_ offset: Double) {
+            device.location = XCUILocation(location: CLLocation(
+                coordinate: CLLocationCoordinate2D(latitude: 37 + offset, longitude: -122),
+                altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5,
+                timestamp: .now
+            ))
+        }
+
+        setLocation(0)
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture"]
+        app.launch()
+        defer { app.terminate() }
+        app.buttons["Start Ride"].tap()
+        XCTAssertTrue(app.staticTexts["Recording"].waitForExistence(timeout: 15))
+
+        let maps = XCUIApplication(bundleIdentifier: "com.apple.Maps")
+        maps.activate()
+        XCTAssertTrue(maps.wait(for: .runningForeground, timeout: 10))
+        for offset in [0.00075, 0.0015, 0.00225, 0.003, 0.00225, 0.0015, 0.00075, 0] {
+            setLocation(offset)
+            Thread.sleep(forTimeInterval: 7)
+            XCTAssertEqual(maps.state, .runningForeground)
+        }
+
+        app.activate()
+        XCTAssertTrue(app.buttons["Pause Ride"].waitForExistence(timeout: 10))
+        // Finishing at the start means a foreground-only recorder would still show zero.
+        let distance = app.descendants(matching: .any).matching(NSPredicate(
+            format: "label CONTAINS %@ AND label CONTAINS %@", "Distance", "0.4 mi"
+        )).firstMatch
+        XCTAssertTrue(distance.waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Pause Ride"].tap()
+        XCTAssertTrue(app.buttons["Resume Ride"].waitForExistence(timeout: 5))
+        app.buttons["End Ride"].press(forDuration: 1.2)
+        XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
+    }
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

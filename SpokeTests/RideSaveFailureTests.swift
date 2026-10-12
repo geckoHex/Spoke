@@ -38,6 +38,8 @@ struct RideSaveFailureTests {
         controller.togglePause()
         #expect(ride.isPaused)
         #expect(controller.errorMessage != nil)
+        #expect(ride.lastResumedAt == nil)
+        #expect(!controller.isTrackingLocation)
         #expect(controller.endRide() == nil)
         #expect(ride.endedAt == nil)
         #expect(ride.isPaused)

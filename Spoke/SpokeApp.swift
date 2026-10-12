@@ -11,7 +11,8 @@ import SwiftData
 @main
 struct SpokeApp: App {
     @StateObject private var spotifyAuthentication = SpotifyAuthenticationStore()
-    var sharedModelContainer: ModelContainer = {
+    @State private var rideSession: RideSessionController
+    let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
             AppSettings.self,
@@ -36,9 +37,16 @@ struct SpokeApp: App {
         }
     }()
 
+    init() {
+        let rideSession = RideSessionController()
+        // Restore location sessions at launch, even when iOS launches us in the background.
+        rideSession.configure(modelContext: sharedModelContainer.mainContext)
+        _rideSession = State(initialValue: rideSession)
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(rideSession: rideSession)
                 .environmentObject(spotifyAuthentication)
                 .disablesKeyboardSafeArea()
 

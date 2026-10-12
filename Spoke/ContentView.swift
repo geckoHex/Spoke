@@ -16,7 +16,7 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .home
     @State private var highlightedRideID: PersistentIdentifier?
     @State private var completedRide: TrackedRide?
-    @State private var rideSession = RideSessionController()
+    let rideSession: RideSessionController
 
     var body: some View {
         VStack(spacing: 0) {
@@ -84,10 +84,11 @@ struct ContentView: View {
         }
         .task {
             createSettingsIfNeeded()
-            rideSession.configure(modelContext: modelContext)
+            rideSession.resumeLocationUpdatesIfNeeded()
             updateIdleTimer()
         }
         .onChange(of: scenePhase) {
+            if scenePhase == .active { rideSession.resumeLocationUpdatesIfNeeded() }
             updateIdleTimer()
         }
         .onChange(of: shouldKeepScreenOn) {
@@ -196,7 +197,7 @@ private enum AppTab: Hashable, CaseIterable {
 }
 
 #Preview {
-    ContentView()
+    ContentView(rideSession: RideSessionController())
         .environmentObject(SpotifyAuthenticationStore())
         .modelContainer(
             for: [

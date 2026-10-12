@@ -15,6 +15,7 @@ final class TrackedRide {
     var endAddress: String?
     var endedAt: Date?
     var pausedAt: Date?
+    var lastResumedAt: Date?
     var accumulatedPausedDuration: TimeInterval
 
     @Relationship(deleteRule: .cascade, inverse: \RideRoutePoint.ride)
@@ -31,6 +32,7 @@ final class TrackedRide {
         endAddress = nil
         endedAt = nil
         pausedAt = nil
+        lastResumedAt = nil
         accumulatedPausedDuration = 0
         routePoints = []
         soundtrackEntries = []
@@ -75,6 +77,7 @@ final class TrackedRide {
     func resume(at date: Date = .now) {
         guard endedAt == nil, let pausedAt else { return }
         accumulatedPausedDuration += max(date.timeIntervalSince(pausedAt), 0)
+        lastResumedAt = date
         self.pausedAt = nil
     }
 
