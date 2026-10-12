@@ -293,7 +293,7 @@ private struct HomeWeatherView: View {
     let onExpireAndReload: () -> Void
 
     @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 52
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 88
 
     @ViewBuilder
     var body: some View {
