@@ -17,6 +17,12 @@ struct ContentView: View {
     @State private var highlightedRideID: PersistentIdentifier?
     @State private var completedRide: TrackedRide?
     @State private var rideStartSource: RideStartButton?
+    @State private var rideStartSound = RideAudioPlayer(
+        resourceURL: Bundle.main.url(forResource: "ride-start", withExtension: "mp3")
+    )
+    @State private var rideEndSound = RideAudioPlayer(
+        resourceURL: Bundle.main.url(forResource: "ride-end", withExtension: "mp3")
+    )
     let rideSession: RideSessionController
 
     var body: some View {
@@ -26,7 +32,7 @@ struct ContentView: View {
                     HomeView(
                         settings: settings,
                         rideSession: rideSession,
-                        onStartRide: { rideStartSource = .home },
+                        onStartRide: { startRide(from: .home) },
                         onShowRide: {
                             selectedTab = .ride
                         },
@@ -39,7 +45,7 @@ struct ContentView: View {
                     RideView(
                         settings: settings,
                         rideSession: rideSession,
-                        onStartRide: { rideStartSource = .ride },
+                        onStartRide: { startRide(from: .ride) },
                         onEndRide: endRide
                     )
                     .toolbar(.hidden, for: .tabBar)
@@ -159,8 +165,18 @@ struct ContentView: View {
         .background(SpokeStyle.background.ignoresSafeArea(edges: .bottom))
     }
 
+    private func startRide(from source: RideStartButton) {
+        rideStartSource = source
+        Task { await rideStartSound.play() }
+    }
+
     private func endRide() {
         completedRide = rideSession.endRide()
+        guard completedRide != nil else { return }
+        Task {
+            await rideStartSound.stop()
+            await rideEndSound.play()
+        }
     }
 
     private var settings: AppSettings? {

@@ -35,6 +35,11 @@ final class SpokeUITests: XCTestCase {
             add(destination)
             pause.tap()
             XCTAssertTrue(app.buttons["Resume Ride"].waitForExistence(timeout: 5))
+            let end = app.buttons["End Ride"]
+            end.press(forDuration: 0.2)
+            XCTAssertTrue(app.buttons["Resume Ride"].exists, "A short hold must not end the ride")
+            end.press(forDuration: 1.2)
+            XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
             app.terminate()
         }
     }
