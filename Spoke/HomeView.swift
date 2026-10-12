@@ -312,22 +312,6 @@ private struct HomeWeatherView: View {
                 weatherIcon
             }
 
-            if let snapshot {
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        windLabel(snapshot: snapshot)
-
-                        Text("\(snapshot.isStale(at: date) || isUnavailable ? "Last updated" : "Updated") \(snapshot.fetchedAt.formatted(.relative(presentation: .named)))")
-                            .font(.caption)
-                            .foregroundStyle(SpokeStyle.secondaryText)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    HomeWeatherAttribution(snapshot: snapshot)
-                }
-            }
-
             if isUnavailable || snapshot?.isStale(at: date) == true {
                 HStack(spacing: 12) {
                     Text(isLoading ? "Updating weather…" : (snapshot == nil ? "Couldn’t load weather" : "Weather may be out of date"))
@@ -339,6 +323,24 @@ private struct HomeWeatherView: View {
                         .frame(minWidth: 44, minHeight: 44)
                         .disabled(isLoading)
                         .accessibilityLabel("Retry weather")
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if let snapshot {
+                HStack(alignment: .bottom, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        windLabel(snapshot: snapshot)
+
+                        Text("\(snapshot.isStale(at: date) || isUnavailable ? "Last updated" : "Updated") \(snapshot.fetchedAt.formatted(.relative(presentation: .named)))")
+                            .font(.caption)
+                            .foregroundStyle(SpokeStyle.secondaryText)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    HomeWeatherAttribution(snapshot: snapshot)
                 }
             }
         }
@@ -451,7 +453,7 @@ private struct HomeWeatherAttribution: View {
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(SpokeStyle.secondaryText)
             }
-            .frame(minWidth: 72, minHeight: 44, alignment: .trailing)
+            .frame(minWidth: 72, minHeight: 44, alignment: .bottomTrailing)
             .contentShape(.rect)
         }
         .accessibilityLabel("Apple Weather attribution")
