@@ -11,6 +11,7 @@ final class AppSettings {
     @Attribute(.unique) var key: String = "app"
     var name: String = "User"
     var keepScreenOn: Bool = true
+    var soundEffectsEnabled: Bool = true
     var developerModeEnabled: Bool = false
     // Retained for SwiftData migration; obsolete pasted credentials are cleared at launch.
     var spotifyClientID: String = ""

@@ -81,6 +81,7 @@ private struct SettingsForm: View {
 
             Section("On the bike") {
                 Toggle("Keep screen on during rides", isOn: $settings.keepScreenOn)
+                Toggle("Sound effects", isOn: $settings.soundEffectsEnabled)
             }
             .listRowBackground(SpokeStyle.surface)
 

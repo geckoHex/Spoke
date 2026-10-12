@@ -259,7 +259,8 @@ private struct RideDashboardView: View {
     }
 
     private var overspeedAlertSpeed: Int? {
-        rideSession.activeRide?.isPaused == true ? nil : displayedSpeedInMilesPerHour
+        guard settings?.soundEffectsEnabled != false else { return nil }
+        return rideSession.activeRide?.isPaused == true ? nil : displayedSpeedInMilesPerHour
     }
 
     private var isDeveloperModeEnabled: Bool {

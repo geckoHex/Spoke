@@ -120,6 +120,11 @@ struct ContentView: View {
             rideSession.resumeLocationUpdatesIfNeeded()
             updateIdleTimer()
         }
+        .task(id: soundEffectsEnabled) {
+            guard !soundEffectsEnabled else { return }
+            await rideStartSound.stop()
+            await rideEndSound.stop()
+        }
         .onChange(of: scenePhase) {
             if scenePhase == .active { rideSession.resumeLocationUpdatesIfNeeded() }
             if scenePhase == .background { rideStartSource = nil }
@@ -167,7 +172,10 @@ struct ContentView: View {
 
     private func startRide(from source: RideStartButton) {
         rideStartSource = source
-        Task { await rideStartSound.play() }
+        Task {
+            guard soundEffectsEnabled else { return }
+            await rideStartSound.play()
+        }
     }
 
     private func endRide() {
@@ -175,12 +183,17 @@ struct ContentView: View {
         guard completedRide != nil else { return }
         Task {
             await rideStartSound.stop()
+            guard soundEffectsEnabled else { return }
             await rideEndSound.play()
         }
     }
 
     private var settings: AppSettings? {
         storedSettings.first
+    }
+
+    private var soundEffectsEnabled: Bool {
+        settings?.soundEffectsEnabled ?? true
     }
 
     private var shouldKeepScreenOn: Bool {

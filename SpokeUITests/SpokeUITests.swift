@@ -11,6 +11,39 @@ import XCTest
 final class SpokeUITests: XCTestCase {
 
     @MainActor
+    func testSoundEffectsToggleAndMutedRide() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture"]
+        app.launch()
+        defer { app.terminate() }
+        app.buttons["Settings"].tap()
+
+        let sounds = app.switches["Sound effects"]
+        XCTAssertTrue(sounds.waitForExistence(timeout: 5))
+        XCTAssertEqual(sounds.value as? String, "1")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Sound effects settings"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        // A Form switch's accessibility frame includes its label; tap the trailing control.
+        sounds.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(sounds.value as? String, "0")
+
+        app.buttons["Home"].tap()
+        app.buttons["Start Ride"].tap()
+        let pause = app.buttons["Pause Ride"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 10))
+        XCTAssertTrue(pause.wait(for: \.isHittable, toEqual: true, timeout: 5))
+        app.buttons["End Ride"].press(forDuration: 1.2)
+        XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        app.buttons["Settings"].tap()
+        XCTAssertEqual(sounds.value as? String, "0")
+        sounds.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(sounds.value as? String, "1")
+    }
+
+    @MainActor
     func testRideStartTransitionFromBothScreens() throws {
         for tab in ["Home", "Ride"] {
             let app = XCUIApplication()
