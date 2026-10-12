@@ -17,6 +17,8 @@ struct HomeWeatherSnapshot: Codable, Equatable, Sendable {
     let windDirection: String?
     let attributionMarkURL: URL
     let legalPageURL: URL
+    let sunrise: Date?
+    let sunset: Date?
 
     func isStale(at date: Date) -> Bool {
         date.timeIntervalSince(fetchedAt) >= HomeWeatherCache.duration
@@ -148,13 +150,13 @@ final class HomeWeatherModel {
     private static func fetchSnapshot() async throws -> HomeWeatherSnapshot {
         let location = try await Self.currentLocation()
         let requestDate = Date.now
-        async let currentWeather = WeatherService.shared.weather(
+        async let forecast = WeatherService.shared.weather(
             for: location,
-            including: .current
+            including: .current, .daily
         )
         async let attribution = WeatherService.shared.attribution
-        let (weather, weatherAttribution) = try await (
-            currentWeather,
+        let ((weather, dailyWeather), weatherAttribution) = try await (
+            forecast,
             attribution
         )
 
@@ -178,7 +180,9 @@ final class HomeWeatherModel {
             ),
             windDirection: weather.wind.compassDirection.abbreviation,
             attributionMarkURL: weatherAttribution.combinedMarkDarkURL,
-            legalPageURL: weatherAttribution.legalPageURL
+            legalPageURL: weatherAttribution.legalPageURL,
+            sunrise: dailyWeather.first?.sun.sunrise,
+            sunset: dailyWeather.first?.sun.sunset
         )
     }
 

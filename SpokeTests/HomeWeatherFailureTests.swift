@@ -14,7 +14,8 @@ struct HomeWeatherFailureTests {
             HomeWeatherSnapshot(fetchedAt: date, temperature: "72°F", condition: "Clear",
                 symbolName: "sun.max", windSpeed: nil, windDirection: nil,
                 attributionMarkURL: URL(string: "https://example.com/mark")!,
-                legalPageURL: URL(string: "https://example.com/legal")!)
+                legalPageURL: URL(string: "https://example.com/legal")!,
+                sunrise: nil, sunset: nil)
         }
         let old = snapshot(at: now.addingTimeInterval(-1_200))
         cache.save(old)

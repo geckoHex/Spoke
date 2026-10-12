@@ -317,10 +317,11 @@ private struct HomeWeatherView: View {
                 HStack(spacing: 12) {
                     Text(isLoading ? "Updating weather…" : (snapshot == nil ? "Couldn’t load weather" : "Weather may be out of date"))
                         .font(.caption)
-                        .foregroundStyle(SpokeStyle.secondaryText)
+                        .foregroundStyle(SpokeStyle.text.opacity(0.9))
                     Spacer(minLength: 0)
                     Button(isLoading ? "Updating…" : "Retry", action: onExpireAndReload)
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SpokeStyle.text)
                         .frame(minWidth: 44, minHeight: 44)
                         .disabled(isLoading)
                         .accessibilityLabel("Retry weather")
@@ -336,7 +337,7 @@ private struct HomeWeatherView: View {
 
                         Text("\(snapshot.isStale(at: date) || isUnavailable ? "Last updated" : "Updated") \(snapshot.fetchedAt.formatted(.relative(presentation: .named)))")
                             .font(.caption)
-                            .foregroundStyle(SpokeStyle.secondaryText)
+                            .foregroundStyle(SpokeStyle.text.opacity(0.9))
                     }
 
                     Spacer(minLength: 8)
@@ -353,11 +354,19 @@ private struct HomeWeatherView: View {
             alignment: .leading
         )
         .background {
-            Image("WeatherLandscape")
-                .resizable()
-                .scaledToFill()
-                .overlay(.black.opacity(0.35))
-                .accessibilityHidden(true)
+            GeometryReader { geometry in
+                Image(HomeWeatherBackground.imageName(
+                    at: date,
+                    sunrise: snapshot?.sunrise,
+                    sunset: snapshot?.sunset
+                ))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .overlay(SpokeStyle.accent.opacity(0.16))
+                    .overlay(.black.opacity(0.55))
+                    .accessibilityHidden(true)
+            }
         }
         .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
     }
@@ -374,7 +383,7 @@ private struct HomeWeatherView: View {
 
                 Text(snapshot.condition)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(SpokeStyle.secondaryText)
+                    .foregroundStyle(SpokeStyle.text.opacity(0.9))
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
             }
@@ -382,7 +391,7 @@ private struct HomeWeatherView: View {
         } else {
             Text(isUnavailable ? "Weather unavailable" : "Loading weather")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(SpokeStyle.secondaryText)
+                .foregroundStyle(SpokeStyle.text.opacity(0.9))
                 .frame(minHeight: weatherIconSize + 8, alignment: .center)
         }
     }
@@ -399,7 +408,7 @@ private struct HomeWeatherView: View {
                     .accessibilityHidden(true)
             }
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(SpokeStyle.secondaryText)
+            .foregroundStyle(SpokeStyle.text.opacity(0.9))
             .accessibilityLabel("Wind, \(windSpeed), \(windDirection)")
         }
     }
@@ -416,14 +425,14 @@ private struct HomeWeatherView: View {
         } else if isLoading || !isUnavailable {
             ProgressView()
                 .controlSize(.large)
-                .tint(SpokeStyle.accent)
+                .tint(SpokeStyle.text)
                 .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
                 .accessibilityLabel("Loading")
         } else {
             Image(systemName: "cloud")
                 .font(.system(size: weatherIconSize - 8, weight: .regular))
                 .symbolRenderingMode(.monochrome)
-                .foregroundStyle(SpokeStyle.secondaryText)
+                .foregroundStyle(SpokeStyle.text.opacity(0.9))
                 .frame(width: weatherIconSize + 12, height: weatherIconSize + 12)
                 .accessibilityHidden(true)
         }
@@ -452,7 +461,7 @@ private struct HomeWeatherAttribution: View {
             } placeholder: {
                 Text("Apple Weather")
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(SpokeStyle.secondaryText)
+                    .foregroundStyle(SpokeStyle.text.opacity(0.9))
             }
             .frame(minWidth: 72, minHeight: 44, alignment: .bottomTrailing)
             .contentShape(.rect)

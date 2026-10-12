@@ -11,7 +11,9 @@ enum RideUITestFixture {
             fetchedAt: .now.addingTimeInterval(-3_600), temperature: "72°F", condition: "Clear",
             symbolName: "sun.max", windSpeed: "8 mph", windDirection: "NW",
             attributionMarkURL: URL(fileURLWithPath: "/unavailable-weather-mark"),
-            legalPageURL: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!
+            legalPageURL: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!,
+            sunrise: Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: .now),
+            sunset: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: .now)
         ))
         return HomeWeatherModel(cache: cache) { throw URLError(.notConnectedToInternet) }
     }

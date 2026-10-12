@@ -150,7 +150,9 @@ struct SpokeTests {
             windSpeed: "12 mph",
             windDirection: "NW",
             attributionMarkURL: URL(string: "https://example.com/mark")!,
-            legalPageURL: URL(string: "https://example.com/legal")!
+            legalPageURL: URL(string: "https://example.com/legal")!,
+            sunrise: fetchedAt.addingTimeInterval(7 * 60 * 60),
+            sunset: fetchedAt.addingTimeInterval(18 * 60 * 60)
         )
         cache.save(snapshot)
         cache.recordRequest(at: fetchedAt)
