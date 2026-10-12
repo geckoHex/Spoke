@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A11C0001304149440042A92D /* SpokeLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A11C0002304149440042A92D /* SpokeLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		A11C0003304149440042A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 31A5EF4F304149440042A92D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A11C0004304149440042A92D;
+			remoteInfo = SpokeLiveActivity;
+		};
 		31A5EF67304149450042A92D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 31A5EF4F304149440042A92D /* Project object */;
@@ -23,13 +34,35 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A11C0005304149440042A92D /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A11C0001304149440042A92D /* SpokeLiveActivity.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		A11C0002304149440042A92D /* SpokeLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpokeLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		31A5EF57304149440042A92D /* Spoke.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spoke.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		31A5EF66304149450042A92D /* SpokeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpokeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		31A5EF70304149450042A92D /* SpokeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpokeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A11C0006304149440042A92D /* Exceptions for "SpokeLiveActivity" folder in "SpokeLiveActivity" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A11C0004304149440042A92D /* SpokeLiveActivity */;
+		};
 		51AB0001304149440042A92D /* Exceptions for "Spoke" folder in "Spoke" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -47,6 +80,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A11C0007304149440042A92D /* SharedLiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharedLiveActivity;
+			sourceTree = "<group>";
+		};
+		A11C0008304149440042A92D /* SpokeLiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A11C0006304149440042A92D /* Exceptions for "SpokeLiveActivity" folder in "SpokeLiveActivity" target */,
+			);
+			path = SpokeLiveActivity;
+			sourceTree = "<group>";
+		};
 		31A5EF59304149440042A92D /* Spoke */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -71,6 +117,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A11C0009304149440042A92D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		31A5EF54304149440042A92D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -99,6 +152,8 @@
 			isa = PBXGroup;
 			children = (
 				31A5EF59304149440042A92D /* Spoke */,
+				A11C0007304149440042A92D /* SharedLiveActivity */,
+				A11C0008304149440042A92D /* SpokeLiveActivity */,
 				31A5EF69304149450042A92D /* SpokeTests */,
 				31A5EF73304149450042A92D /* SpokeUITests */,
 				31A5EF58304149440042A92D /* Products */,
@@ -109,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				31A5EF57304149440042A92D /* Spoke.app */,
+				A11C0002304149440042A92D /* SpokeLiveActivity.appex */,
 				31A5EF66304149450042A92D /* SpokeTests.xctest */,
 				31A5EF70304149450042A92D /* SpokeUITests.xctest */,
 			);
@@ -118,6 +174,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A11C0004304149440042A92D /* SpokeLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A11C000A304149440042A92D /* Build configuration list for PBXNativeTarget "SpokeLiveActivity" */;
+			buildPhases = (
+				A11C000B304149440042A92D /* Sources */,
+				A11C0009304149440042A92D /* Frameworks */,
+				A11C000C304149440042A92D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A11C0007304149440042A92D /* SharedLiveActivity */,
+				A11C0008304149440042A92D /* SpokeLiveActivity */,
+			);
+			name = SpokeLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = SpokeLiveActivity;
+			productReference = A11C0002304149440042A92D /* SpokeLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		31A5EF56304149440042A92D /* Spoke */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 31A5EF7A304149450042A92D /* Build configuration list for PBXNativeTarget "Spoke" */;
@@ -125,13 +204,16 @@
 				31A5EF53304149440042A92D /* Sources */,
 				31A5EF54304149440042A92D /* Frameworks */,
 				31A5EF55304149440042A92D /* Resources */,
+				A11C0005304149440042A92D /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A11C000D304149440042A92D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				31A5EF59304149440042A92D /* Spoke */,
+				A11C0007304149440042A92D /* SharedLiveActivity */,
 			);
 			name = Spoke;
 			packageProductDependencies = (
@@ -196,6 +278,9 @@
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					A11C0004304149440042A92D = {
+						CreatedOnToolsVersion = 26.6;
+					};
 					31A5EF56304149440042A92D = {
 						CreatedOnToolsVersion = 26.6;
 						SystemCapabilities = {
@@ -229,6 +314,7 @@
 			projectRoot = "";
 			targets = (
 				31A5EF56304149440042A92D /* Spoke */,
+				A11C0004304149440042A92D /* SpokeLiveActivity */,
 				31A5EF65304149450042A92D /* SpokeTests */,
 				31A5EF6F304149450042A92D /* SpokeUITests */,
 			);
@@ -236,6 +322,13 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A11C000C304149440042A92D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		31A5EF55304149440042A92D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -260,6 +353,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A11C000B304149440042A92D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		31A5EF53304149440042A92D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -284,6 +384,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A11C000D304149440042A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A11C0004304149440042A92D /* SpokeLiveActivity */;
+			targetProxy = A11C0003304149440042A92D /* PBXContainerItemProxy */;
+		};
 		31A5EF68304149450042A92D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 31A5EF56304149440042A92D /* Spoke */;
@@ -297,6 +402,66 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		A11C000E304149440042A92D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = D6W7UHVLBK;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpokeLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spoke;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckorion.Spoke.LiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) SPOKE_WIDGET_EXTENSION";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A11C000F304149440042A92D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = D6W7UHVLBK;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpokeLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spoke;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckorion.Spoke.LiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) SPOKE_WIDGET_EXTENSION";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		31A5EF78304149450042A92D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -575,6 +740,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A11C000A304149440042A92D /* Build configuration list for PBXNativeTarget "SpokeLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A11C000E304149440042A92D /* Debug */,
+				A11C000F304149440042A92D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		31A5EF52304149440042A92D /* Build configuration list for PBXProject "Spoke" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
