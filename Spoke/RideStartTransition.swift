@@ -66,8 +66,7 @@ struct RideStartTransition: View {
             do {
                 await Task.yield()
                 try Task.checkCancellation()
-                withAnimation(reduceMotion ? .easeOut(duration: 0.2)
-                    : .timingCurve(0.65, 0, 0.2, 1, duration: 0.3)) {
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 0.3)) {
                     phase = .covered
                 }
                 try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.3))
@@ -76,8 +75,7 @@ struct RideStartTransition: View {
                     return
                 }
                 try await Task.sleep(for: .seconds(0.15))
-                withAnimation(reduceMotion ? .easeInOut(duration: 0.2)
-                    : .timingCurve(0.76, 0, 0.24, 1, duration: 0.35)) {
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 0.35)) {
                     phase = .pause
                 }
                 try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.35))
