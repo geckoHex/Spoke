@@ -67,20 +67,20 @@ struct RideStartTransition: View {
                 await Task.yield()
                 try Task.checkCancellation()
                 withAnimation(reduceMotion ? .easeOut(duration: 0.2)
-                    : .timingCurve(0.65, 0, 0.2, 1, duration: 0.55)) {
+                    : .timingCurve(0.65, 0, 0.2, 1, duration: 0.3)) {
                     phase = .covered
                 }
-                try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.55))
+                try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.3))
                 guard onCovered() else {
                     onFinished()
                     return
                 }
-                try await Task.sleep(for: .seconds(1))
+                try await Task.sleep(for: .seconds(0.15))
                 withAnimation(reduceMotion ? .easeInOut(duration: 0.2)
-                    : .timingCurve(0.76, 0, 0.24, 1, duration: 0.65)) {
+                    : .timingCurve(0.76, 0, 0.24, 1, duration: 0.35)) {
                     phase = .pause
                 }
-                try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.65))
+                try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.35))
                 onFinished()
             } catch {
                 // Removing the overlay cancels the sequence when the app backgrounds.
