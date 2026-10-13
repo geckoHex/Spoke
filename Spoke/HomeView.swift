@@ -292,8 +292,8 @@ private struct HomeWeatherView: View {
     let onExpireAndReload: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 40
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 96
 
     @ViewBuilder
     var body: some View {
