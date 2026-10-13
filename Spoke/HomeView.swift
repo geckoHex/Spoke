@@ -28,34 +28,31 @@ struct HomeView: View {
                 let currentDate = max(context.date, Date.now)
                 let timeOfDay = TimeOfDay(date: currentDate)
 
-                GeometryReader { geometry in
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 24) {
-                            HomeGreeting(timeOfDay: timeOfDay, name: displayName)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 28) {
+                        HomeGreeting(timeOfDay: timeOfDay, name: displayName)
 
-                            HomeWeatherView(
-                                date: currentDate,
-                                snapshot: weatherModel.snapshot,
-                                isLoading: weatherModel.isLoading,
-                                isUnavailable: weatherModel.isUnavailable,
-                                isDeveloperModeEnabled: settings?.developerModeEnabled == true,
-                                onExpireAndReload: {
-                                    Task { await weatherModel.refresh() }
-                                }
-                            )
-
-                            HomeRideActivity(rides: completedRides, date: currentDate) {
-                                selectedRide = $0
+                        HomeWeatherView(
+                            date: currentDate,
+                            snapshot: weatherModel.snapshot,
+                            isLoading: weatherModel.isLoading,
+                            isUnavailable: weatherModel.isUnavailable,
+                            isDeveloperModeEnabled: settings?.developerModeEnabled == true,
+                            onExpireAndReload: {
+                                Task { await weatherModel.refresh() }
                             }
+                        )
+
+                        HomeRideActivity(rides: completedRides, date: currentDate) {
+                            selectedRide = $0
                         }
-                        .padding(.horizontal, SpokeStyle.pageInset)
-                        .padding(.top, 20)
-                        .padding(.bottom, 24)
-                        .frame(minHeight: geometry.size.height)
                     }
-                    .scrollIndicators(.hidden)
-                    .scrollBounceBehavior(.basedOnSize)
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.top, 20)
+                    .padding(.bottom, 24)
                 }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
                 .background(SpokeStyle.background)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     rideAction(date: currentDate)
@@ -180,6 +177,7 @@ private struct HomeRideActivity: View {
                 Text("Last 7 Days")
                     .font(.headline)
                     .foregroundStyle(SpokeStyle.text)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer()
 
@@ -196,32 +194,29 @@ private struct HomeRideActivity: View {
 
                 activityMetric(
                     value: compactDuration(totalDuration),
-                    label: "Ride Time",
-                    alignment: .trailing
+                    label: "Ride Time"
                 )
-                .multilineTextAlignment(.trailing)
             }
         }
     }
 
     private func activityMetric(
         value: String,
-        label: String,
-        alignment: HorizontalAlignment = .leading
+        label: String
     ) -> some View {
-        VStack(alignment: alignment, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(SpokeStyle.secondaryText)
+
             Text(value)
-                .font(.title2.weight(.semibold))
+                .font(.largeTitle.bold())
                 .foregroundStyle(SpokeStyle.text)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
-
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(SpokeStyle.secondaryText)
         }
-        .frame(maxWidth: .infinity, alignment: Alignment(horizontal: alignment, vertical: .center))
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(value)")
     }
@@ -230,7 +225,7 @@ private struct HomeRideActivity: View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 5) {
                 Text("Last Ride")
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(SpokeStyle.text)
 
                 Text(
@@ -240,7 +235,7 @@ private struct HomeRideActivity: View {
                         .month(.abbreviated)
                         .day()
                 )
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundStyle(SpokeStyle.secondaryText)
             }
 
@@ -252,12 +247,12 @@ private struct HomeRideActivity: View {
                         RideMetrics.distanceInMeters(for: ride)
                     )
                 )
-                .font(.title3.weight(.semibold))
+                .font(.headline)
                 .foregroundStyle(SpokeStyle.text)
                 .monospacedDigit()
 
                 Text(compactDuration(ride.elapsedDuration()))
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(SpokeStyle.secondaryText)
                     .monospacedDigit()
             }
@@ -267,6 +262,7 @@ private struct HomeRideActivity: View {
                 .foregroundStyle(SpokeStyle.secondaryText)
                 .accessibilityHidden(true)
         }
+        .frame(minHeight: 44)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
     }
@@ -293,8 +289,8 @@ private struct HomeWeatherView: View {
     let onExpireAndReload: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 52
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 88
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 44
 
     @ViewBuilder
     var body: some View {
@@ -332,8 +328,6 @@ private struct HomeWeatherView: View {
                 }
             }
 
-            Spacer(minLength: 0)
-
             if let snapshot {
                 HStack(alignment: .bottom, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -350,11 +344,10 @@ private struct HomeWeatherView: View {
                 }
             }
         }
-        .padding(20)
+        .padding(16)
         .frame(
             maxWidth: .infinity,
-            minHeight: 176,
-            maxHeight: .infinity,
+            minHeight: 156,
             alignment: .leading
         )
         .background {
