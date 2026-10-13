@@ -28,31 +28,34 @@ struct HomeView: View {
                 let currentDate = max(context.date, Date.now)
                 let timeOfDay = TimeOfDay(date: currentDate)
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        HomeGreeting(timeOfDay: timeOfDay, name: displayName)
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 28) {
+                            HomeGreeting(timeOfDay: timeOfDay, name: displayName)
 
-                        HomeWeatherView(
-                            date: currentDate,
-                            snapshot: weatherModel.snapshot,
-                            isLoading: weatherModel.isLoading,
-                            isUnavailable: weatherModel.isUnavailable,
-                            isDeveloperModeEnabled: settings?.developerModeEnabled == true,
-                            onExpireAndReload: {
-                                Task { await weatherModel.refresh() }
+                            HomeWeatherView(
+                                date: currentDate,
+                                snapshot: weatherModel.snapshot,
+                                isLoading: weatherModel.isLoading,
+                                isUnavailable: weatherModel.isUnavailable,
+                                isDeveloperModeEnabled: settings?.developerModeEnabled == true,
+                                onExpireAndReload: {
+                                    Task { await weatherModel.refresh() }
+                                }
+                            )
+
+                            HomeRideActivity(rides: completedRides, date: currentDate) {
+                                selectedRide = $0
                             }
-                        )
-
-                        HomeRideActivity(rides: completedRides, date: currentDate) {
-                            selectedRide = $0
                         }
+                        .padding(.horizontal, SpokeStyle.pageInset)
+                        .padding(.top, 20)
+                        .padding(.bottom, 24)
+                        .frame(minHeight: geometry.size.height)
                     }
-                    .padding(.horizontal, SpokeStyle.pageInset)
-                    .padding(.top, 20)
-                    .padding(.bottom, 24)
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize)
                 }
-                .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
                 .background(SpokeStyle.background)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     rideAction(date: currentDate)
@@ -328,6 +331,8 @@ private struct HomeWeatherView: View {
                 }
             }
 
+            Spacer(minLength: 0)
+
             if let snapshot {
                 HStack(alignment: .bottom, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -348,6 +353,7 @@ private struct HomeWeatherView: View {
         .frame(
             maxWidth: .infinity,
             minHeight: 156,
+            maxHeight: .infinity,
             alignment: .leading
         )
         .background {
