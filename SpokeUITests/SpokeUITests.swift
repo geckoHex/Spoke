@@ -32,9 +32,15 @@ final class SpokeUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["statsDistanceChart"].exists)
         XCTAssertTrue(app.staticTexts["Your riding"].exists)
         app.swipeUp()
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Fastest ride average")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Peak performance"].exists)
+        for label in ["Top speed", "Fastest ride average", "Longest distance", "Longest riding time"] {
+            let metric = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+            if !metric.isHittable { app.swipeUp() }
+            XCTAssertTrue(metric.isHittable)
+            XCTAssertFalse(metric.label.contains("—"))
+        }
         let summary = XCTAttachment(screenshot: app.screenshot())
-        summary.name = "Stats ride summary"
+        summary.name = "Stats peak performance"
         summary.lifetime = .keepAlways
         add(summary)
         app.buttons["Settings"].tap()
@@ -50,6 +56,7 @@ final class SpokeUITests: XCTestCase {
         app.buttons["Stats"].tap()
         XCTAssertTrue(app.staticTexts["No rides in the last 30 days"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.descendants(matching: .any)["statsSpeedChart"].exists)
+        XCTAssertFalse(app.staticTexts["Peak performance"].exists)
         app.buttons["History"].tap()
         XCTAssertTrue(app.staticTexts["No Rides Yet"].waitForExistence(timeout: 5))
     }

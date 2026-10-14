@@ -36,8 +36,9 @@ struct StatsView: View {
                             speedChart(stats)
                             distanceChart(stats)
                             rideSummary(stats)
+                            peakPerformance(stats)
 
-                            Text("Completed rides, grouped by start date. Distance comes from recorded routes. Average speed is total distance divided by riding time for rides with a timed route. Pauses are excluded.")
+                            Text("Completed rides, grouped by start date. Distance comes from recorded routes. Average speed is total distance divided by riding time for rides with a timed route. Pauses are excluded. Top speed is estimated from recorded route segments.")
                                 .font(.footnote)
                                 .foregroundStyle(SpokeStyle.secondaryText)
                         }
@@ -138,8 +139,25 @@ struct StatsView: View {
                 metric("Riding time", value: RideMetrics.duration(stats.duration))
                 metric("Average ride time", value: RideMetrics.duration(stats.averageDuration))
                 metric("Average distance", value: RideMetrics.distance(stats.averageDistance))
-                metric("Longest ride", value: stats.longestRide.map { RideMetrics.distance($0) } ?? "—")
+            }
+        }
+    }
+
+    private func peakPerformance(_ stats: RideStatistics) -> some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Peak performance")
+                .font(.title3.bold())
+                .accessibilityAddTraits(.isHeader)
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2),
+                alignment: .leading,
+                spacing: 24
+            ) {
+                metric("Top speed", value: stats.topSpeed.map { RideMetrics.speedInMilesPerHour($0) } ?? "—")
                 metric("Fastest ride average", value: stats.fastestRide.map { RideMetrics.speedInMilesPerHour($0) } ?? "—")
+                metric("Longest distance", value: stats.longestRide.map { RideMetrics.distance($0) } ?? "—")
+                metric("Longest riding time", value: stats.longestDuration.map { RideMetrics.duration($0) } ?? "—")
             }
         }
     }

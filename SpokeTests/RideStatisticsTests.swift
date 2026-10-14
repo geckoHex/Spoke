@@ -62,6 +62,49 @@ struct RideStatisticsTests {
         #expect(stats.activeDays == 2)
         #expect(stats.days.first?.date == boundary)
         #expect(stats.days.last?.date == date(14, hour: 0))
+        #expect(abs((stats.topSpeed ?? 0) - 41.5024) < 0.01)
+        #expect(stats.longestDuration == 600)
+    }
+
+    @Test func peakSpeedUsesTheFastestSegmentAndLongestTimeExcludesPauses() {
+        let steady = ride(at: date(13), duration: 1_800)
+        let sprint = ride(at: date(12), duration: 3_600)
+        sprint.routePoints.append(RideRoutePoint(
+            latitude: 0, longitude: 0.02, horizontalAccuracy: 5,
+            recordedAt: sprint.startedAt.addingTimeInterval(180)
+        ))
+        let paused = ride(at: date(11), duration: 7_200, withRoute: false)
+        paused.accumulatedPausedDuration = 6_000
+        let stats = RideStatistics(rides: [steady, sprint, paused], now: date(14), calendar: calendar)
+
+        #expect(abs((stats.topSpeed ?? 0) - 27.6683) < 0.01)
+        #expect(abs((stats.fastestRide ?? 0) - 13.8341) < 0.01)
+        #expect(stats.longestDuration == 3_600)
+    }
+
+    @Test func peakRecordsExcludeOldActiveAndFutureRides() {
+        let active = ride(at: date(13), duration: 60)
+        active.endedAt = nil
+        let stats = RideStatistics(rides: [
+            ride(at: date(13), duration: 1_800),
+            ride(at: date(14, month: 9), duration: 60),
+            ride(at: date(15), duration: 60),
+            ride(at: date(12, month: 9), duration: 7_200),
+            active,
+        ], now: date(14), calendar: calendar)
+
+        #expect(abs((stats.topSpeed ?? 0) - 13.8341) < 0.01)
+        #expect(stats.longestDuration == 1_800)
+    }
+
+    @Test func topSpeedRequiresTwoPointsWithDifferentTimestamps() {
+        let recorded = ride(at: date(13), duration: 0)
+        #expect(RideRouteSpeed.topSpeed(for: recorded.routePoints) == nil)
+        #expect(RideRouteSpeed.topSpeed(for: Array(recorded.routePoints.prefix(1))) == nil)
+
+        let stopped = ride(at: date(13))
+        stopped.routePoints[1].longitude = 0
+        #expect(RideRouteSpeed.topSpeed(for: stopped.routePoints) == 0)
     }
 
     @Test func excludesPausedTimeAndDoesNotTreatMissingRoutesAsZeroSpeed() {
@@ -85,6 +128,8 @@ struct RideStatisticsTests {
             #expect(stats.averageSpeed == nil)
             #expect(stats.longestRide == nil)
             #expect(stats.fastestRide == nil)
+            #expect(stats.topSpeed == nil)
+            #expect(stats.longestDuration == (rides.isEmpty ? nil : 600))
             #expect(stats.days.count == 30)
             #expect(stats.days.allSatisfy { $0.averageSpeed == nil && $0.distanceInMeters == 0 })
         }

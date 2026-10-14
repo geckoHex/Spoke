@@ -13,6 +13,7 @@ struct RideStatistics {
         let date: Date
         let distance: Double?
         let duration: TimeInterval
+        let topSpeed: Double?
     }
 
     let startDate: Date
@@ -25,6 +26,8 @@ struct RideStatistics {
     let averageSpeed: Double?
     let longestRide: Double?
     let fastestRide: Double?
+    let topSpeed: Double?
+    let longestDuration: TimeInterval?
 
     var averageDistance: Double { rideCount > 0 ? distanceInMeters / Double(rideCount) : 0 }
     var averageDuration: TimeInterval { rideCount > 0 ? duration / Double(rideCount) : 0 }
@@ -44,7 +47,8 @@ struct RideStatistics {
             return Ride(
                 date: calendar.startOfDay(for: ride.startedAt),
                 distance: ride.routePoints.count > 1 ? RideMetrics.distanceInMeters(for: ride) : nil,
-                duration: ride.elapsedDuration()
+                duration: ride.elapsedDuration(),
+                topSpeed: RideRouteSpeed.topSpeed(for: ride.routePoints)
             )
         }
         let byDay = Dictionary(grouping: completed, by: \.date)
@@ -64,6 +68,8 @@ struct RideStatistics {
         averageSpeed = Self.averageSpeed(for: completed)
         longestRide = completed.compactMap(\.distance).max()
         fastestRide = completed.compactMap { Self.averageSpeed(for: [$0]) }.max()
+        topSpeed = completed.compactMap(\.topSpeed).max()
+        longestDuration = completed.map(\.duration).max()
     }
 
     private static func averageSpeed(for rides: [Ride]) -> Double? {
