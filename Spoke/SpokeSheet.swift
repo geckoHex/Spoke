@@ -59,6 +59,6 @@ struct SpokeSheet<Content: View>: View {
             fillsHeight || contentHeight == 0 ? [.large] : [.height(contentHeight + topInset)]
         )
         .presentationDragIndicator(.visible)
-        .presentationCornerRadius(24)
+        .presentationCornerRadius(SpokeStyle.cardRadius)
     }
 }

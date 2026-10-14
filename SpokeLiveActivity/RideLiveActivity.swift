@@ -149,8 +149,8 @@ private struct RideActivityPauseButton: View {
             .minimumScaleFactor(0.8)
             .padding(.horizontal, 16)
             .frame(minHeight: 44)
-            .foregroundStyle(.white)
-            .background(RideActivityStyle.primaryAction, in: Capsule())
+            .foregroundStyle(.black)
+            .background(RideActivityStyle.primaryAction, in: .rect(cornerRadius: 4))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(context.state.isPaused ? "Resume ride" : "Pause ride")
@@ -158,10 +158,10 @@ private struct RideActivityPauseButton: View {
 }
 
 private enum RideActivityStyle {
-    static let background = Color(white: 18 / 255)
+    static let background = Color.black
     static let secondaryText = Color(white: 184 / 255)
-    static let primaryAction = Color(red: 235 / 255, green: 23 / 255, blue: 0)
-    static let accent = Color(red: 1, green: 85 / 255, blue: 74 / 255)
+    static let primaryAction = Color.white
+    static let accent = Color.white
 }
 
 #Preview("Riding", as: .content, using: RideActivityAttributes(rideID: "preview")) {

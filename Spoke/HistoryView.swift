@@ -204,7 +204,7 @@ private struct RideRouteThumbnail: View {
                     .foregroundStyle(SpokeStyle.secondaryText)
             }
         }
-        .clipShape(.rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: SpokeStyle.cardRadius))
     }
 }
 
@@ -309,7 +309,7 @@ struct RideHistoryDetailView: View {
                                             .frame(width: 12, height: 12)
                                             .overlay {
                                                 Circle()
-                                                    .stroke(SpokeStyle.text, lineWidth: 2)
+                                                    .stroke(SpokeStyle.background, lineWidth: 2)
                                             }
                                     }
                                 }
@@ -328,17 +328,17 @@ struct RideHistoryDetailView: View {
                                 )
                             )
                             .accessibilityIdentifier("rideRouteMap")
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous))
                             .overlay(alignment: .bottomTrailing) {
                                 Button {
                                     isShowingReplay = true
                                 } label: {
                                     Label("Replay", systemImage: "play.fill")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(SpokeStyle.onPrimaryAction)
                                         .padding(.horizontal, 14)
                                         .frame(minHeight: 44)
-                                        .background(SpokeStyle.primaryAction, in: Capsule())
+                                        .background(SpokeStyle.primaryAction, in: .rect(cornerRadius: SpokeStyle.controlRadius))
                                 }
                                 .buttonStyle(.plain)
                                 .padding(12)
@@ -651,7 +651,7 @@ private struct RideStopBubbleShape: Shape {
         )
         var path = Path(
             roundedRect: bubbleRect,
-            cornerRadius: 9,
+            cornerRadius: SpokeStyle.controlRadius,
             style: .continuous
         )
         path.move(to: CGPoint(x: rect.midX - 5, y: bubbleRect.maxY))
@@ -764,7 +764,7 @@ private struct RideSoundtrackRow: View {
             }
         }
         .frame(width: 56, height: 56)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous))
         .accessibilityHidden(true)
     }
 

@@ -54,7 +54,7 @@ struct RideStartTransition: View {
             let button = phase == .pause ? (destinationFrame ?? sourceFrame) : sourceFrame
             let frame = reduceMotion ? screen : (phase == .covered ? cover : button)
 
-            RoundedRectangle(cornerRadius: reduceMotion ? 0 : min(frame.width, frame.height) / 2)
+            RoundedRectangle(cornerRadius: reduceMotion ? 0 : SpokeStyle.controlRadius)
                 .fill(SpokeStyle.primaryAction)
                 .frame(width: frame.width, height: frame.height)
                 .position(x: frame.midX, y: frame.midY)

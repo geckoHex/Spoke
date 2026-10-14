@@ -515,7 +515,7 @@ private struct RideSkeletonView: View {
     }
 
     private var mapSkeleton: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
             .fill(.white.opacity(0.1))
     }
 
@@ -533,11 +533,11 @@ private struct RideSkeletonView: View {
                     .frame(width: arcWidth, height: arcHeight)
 
                 VStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
                         .fill(.white.opacity(0.18))
                         .frame(width: min(116, arcWidth * 0.36), height: 54)
 
-                    Capsule()
+                    RoundedRectangle(cornerRadius: SpokeStyle.controlRadius)
                         .fill(SpokeStyle.elevatedSurface)
                         .frame(width: 36, height: 10)
                 }
@@ -549,17 +549,17 @@ private struct RideSkeletonView: View {
 
     private var spotifySkeleton: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
                 .fill(.white.opacity(0.16))
                 .frame(width: 64, height: 64)
 
             VStack(alignment: .leading, spacing: 10) {
-                Capsule()
+                RoundedRectangle(cornerRadius: SpokeStyle.controlRadius)
                     .fill(.white.opacity(0.18))
                     .frame(maxWidth: 170)
                     .frame(height: 13)
 
-                Capsule()
+                RoundedRectangle(cornerRadius: SpokeStyle.controlRadius)
                     .fill(.white.opacity(0.12))
                     .frame(maxWidth: 104)
                     .frame(height: 11)

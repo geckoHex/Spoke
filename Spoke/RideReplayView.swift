@@ -241,13 +241,13 @@ private struct ReplayBikeMarker: View {
                 .frame(width: 16, height: 12)
                 .offset(y: 40)
 
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
+            RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
                 .fill(SpokeStyle.primaryAction)
                 .frame(width: 44, height: 44)
 
             Image(systemName: "bicycle")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(SpokeStyle.text)
+                .foregroundStyle(SpokeStyle.onPrimaryAction)
                 .frame(width: 44, height: 44)
                 .scaleEffect(x: isFacingLeft ? -1 : 1, y: 1)
         }

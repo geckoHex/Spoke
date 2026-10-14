@@ -42,7 +42,7 @@ struct RideControlsView: View {
                     }
                 }
                 .background(SpokeStyle.surface)
-                .clipShape(Capsule())
+                .clipShape(.rect(cornerRadius: SpokeStyle.controlRadius))
                 .contentShape(.rect)
                 .onLongPressGesture(minimumDuration: 1, maximumDistance: 32) {
                     isHolding = false

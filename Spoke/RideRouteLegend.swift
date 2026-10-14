@@ -4,8 +4,8 @@ extension RideRouteMotion {
     var color: Color {
         switch self {
         case .normalOrFaster: SpokeStyle.primaryAction
-        case .slower: SpokeStyle.text
-        case .stopped: SpokeStyle.secondaryText
+        case .slower: SpokeStyle.secondaryText
+        case .stopped: Color(white: 128 / 255)
         }
     }
 
@@ -73,7 +73,7 @@ struct RideEndpointMarker: View {
             .foregroundStyle(SpokeStyle.text)
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(SpokeStyle.background, in: Capsule())
+            .background(SpokeStyle.background, in: .rect(cornerRadius: SpokeStyle.controlRadius))
             .padding(.vertical, 6)
             .fixedSize()
             .accessibilityElement(children: .combine)

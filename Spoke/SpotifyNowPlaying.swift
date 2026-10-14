@@ -139,7 +139,7 @@ struct SpotifyNowPlayingView: View {
             }
         }
         .frame(width: 48, height: 48)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous))
         .accessibilityHidden(true)
     }
 
@@ -151,7 +151,7 @@ struct SpotifyNowPlayingView: View {
 struct SpotifyPausedView: View {
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
                 .fill(SpokeStyle.elevatedSurface)
                 .frame(width: 48, height: 48)
                 .accessibilityHidden(true)

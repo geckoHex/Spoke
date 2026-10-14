@@ -114,7 +114,7 @@ private struct SettingsForm: View {
                         HStack(spacing: 10) {
                             if spotifyAuthentication.isConnecting {
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(SpokeStyle.onPrimaryAction)
                             }
                             Text(spotifyAuthentication.isConnecting ? "Signing in…" : "Sign in with Spotify")
                         }
@@ -141,7 +141,7 @@ private struct SettingsForm: View {
         .scrollDismissesKeyboard(.interactively)
         .background(SpokeStyle.background)
         .tint(SpokeStyle.primaryAction)
-        .toggleStyle(.switch)
+        .toggleStyle(SwitchToggleStyle(tint: Color(white: 112 / 255)))
         .coordinateSpace(name: "settingsForm")
         .onPreferenceChange(SettingsInputFramePreferenceKey.self) {
             inputFrames = $0

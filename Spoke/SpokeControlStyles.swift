@@ -1,19 +1,19 @@
 import SwiftUI
 
 enum SpokeStyle {
-    static let background = Color(white: 18 / 255)
-    static let surface = Color(white: 28 / 255)
-    static let elevatedSurface = Color(white: 42 / 255)
+    static let background = Color.black
+    static let surface = Color(white: 20 / 255)
+    static let elevatedSurface = Color(white: 40 / 255)
     static let text = Color.white
     static let secondaryText = Color(white: 184 / 255)
-    static let primaryAction = Color(red: 235 / 255, green: 23 / 255, blue: 0)
-    // Lighter red keeps small labels and icons legible on dark surfaces.
-    static let accent = Color(red: 255 / 255, green: 85 / 255, blue: 74 / 255)
+    static let primaryAction = Color.white
+    static let onPrimaryAction = Color.black
+    static let accent = Color.white
     static let caution = Color(red: 255 / 255, green: 200 / 255, blue: 87 / 255)
-    static let danger = accent
+    static let danger = Color(red: 1, green: 85 / 255, blue: 74 / 255)
     static let separator = Color(white: 56 / 255)
-    static let cardRadius: CGFloat = 16
-    static let controlRadius: CGFloat = 12
+    static let cardRadius: CGFloat = 4
+    static let controlRadius: CGFloat = 4
     static let pageInset: CGFloat = 20
 }
 
@@ -24,13 +24,13 @@ struct SpokePrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline.weight(.bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(SpokeStyle.onPrimaryAction)
             .frame(maxWidth: .infinity)
             .frame(minHeight: minHeight)
             .padding(.horizontal, 16)
             .background(
                 SpokeStyle.primaryAction,
-                in: Capsule()
+                in: .rect(cornerRadius: SpokeStyle.controlRadius)
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
     }
