@@ -37,10 +37,6 @@ struct StatsView: View {
                             distanceChart(stats)
                             rideSummary(stats)
                             peakPerformance(stats)
-
-                            Text("Completed rides, grouped by start date. Distance comes from recorded routes. Average speed is total distance divided by riding time for rides with a timed route. Pauses are excluded. Top speed is estimated from recorded route segments.")
-                                .font(.footnote)
-                                .foregroundStyle(SpokeStyle.secondaryText)
                         }
                     }
                     .padding(.horizontal, SpokeStyle.pageInset)
