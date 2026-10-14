@@ -17,6 +17,8 @@ Inputs: show a visible text label above and outside every field's editable row o
 
 Use the correct keyboard for each input. The keyboard's own `Done` key and an outside tap should dismiss it; never add a `Done` button or any other button in a toolbar/accessory above the keyboard.
 
+Never add unneeded text. Never use ` · ` as a text separator.
+
 ## Coding Instructions
 
 Write clean, pragmatic code. Fragment code up into files with one clear purpose.

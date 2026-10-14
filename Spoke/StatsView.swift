@@ -80,7 +80,7 @@ struct StatsView: View {
                 .accessibilityLabel("Daily average ride speed")
                 .accessibilityIdentifier("statsSpeedChart")
 
-                Text("Daily average · mph · days with timed routes")
+                Text("Daily average (mph)")
                     .font(.caption)
                     .foregroundStyle(SpokeStyle.secondaryText)
             } else {
@@ -114,7 +114,7 @@ struct StatsView: View {
             .accessibilityLabel("Daily distance ridden")
             .accessibilityIdentifier("statsDistanceChart")
 
-            Text("Daily distance · mi")
+            Text("Daily distance (mi)")
                 .font(.caption)
                 .foregroundStyle(SpokeStyle.secondaryText)
         }
