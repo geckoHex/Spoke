@@ -2,6 +2,25 @@ import Foundation
 import SwiftData
 
 enum RideUITestFixture {
+    static func insertStats(into context: ModelContext) throws {
+        for offset in [1, 3, 4, 7, 9, 12, 14, 17, 20, 22, 25, 28] {
+            let start = Calendar.current.date(byAdding: .day, value: -offset, to: .now)!
+            let ride = TrackedRide(startedAt: start)
+            ride.end(at: start.addingTimeInterval(Double(30 + offset) * 60))
+            context.insert(ride)
+            for index in 0...1 {
+                let point = RideRoutePoint(
+                    latitude: 37, longitude: -122 + Double(index) * Double(10 + offset % 8) / 100,
+                    horizontalAccuracy: 5,
+                    recordedAt: index == 0 ? start : ride.endedAt!
+                )
+                context.insert(point)
+                ride.routePoints.append(point)
+            }
+        }
+        try context.save()
+    }
+
     static func weatherModel() -> HomeWeatherModel {
         let suite = "SpokeUITests.Weather"
         let defaults = UserDefaults(suiteName: suite)!

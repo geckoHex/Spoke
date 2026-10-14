@@ -11,6 +11,50 @@ import XCTest
 final class SpokeUITests: XCTestCase {
 
     @MainActor
+    func testStatsTabShowsMonthlyChartsAndMetrics() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture", "--stats-fixture"]
+        app.launch()
+        defer { app.terminate() }
+        let stats = app.buttons["Stats"]
+        XCTAssertTrue(stats.waitForExistence(timeout: 5))
+        XCTAssertLessThan(app.buttons["History"].frame.midX, stats.frame.midX)
+        XCTAssertLessThan(stats.frame.midX, app.buttons["Settings"].frame.midX)
+        stats.tap()
+        XCTAssertTrue(app.staticTexts["statsTitle"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Last 30 days"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["statsSpeedChart"].exists)
+        let charts = XCTAttachment(screenshot: app.screenshot())
+        charts.name = "Stats monthly charts"
+        charts.lifetime = .keepAlways
+        add(charts)
+        app.swipeUp()
+        XCTAssertTrue(app.descendants(matching: .any)["statsDistanceChart"].exists)
+        XCTAssertTrue(app.staticTexts["Your riding"].exists)
+        app.swipeUp()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Fastest ride average")).firstMatch.exists)
+        let summary = XCTAttachment(screenshot: app.screenshot())
+        summary.name = "Stats ride summary"
+        summary.lifetime = .keepAlways
+        add(summary)
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.staticTexts["settingsTitle"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testStatsEmptyState() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture"]
+        app.launch()
+        defer { app.terminate() }
+        app.buttons["Stats"].tap()
+        XCTAssertTrue(app.staticTexts["No rides in the last 30 days"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["statsSpeedChart"].exists)
+        app.buttons["History"].tap()
+        XCTAssertTrue(app.staticTexts["No Rides Yet"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testSoundEffectsToggleAndMutedRide() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--weather-fixture"]

@@ -56,6 +56,10 @@ struct ContentView: View {
                 HistoryView(highlightedRideID: $highlightedRideID)
             }
 
+            Tab(AppTab.stats.title, systemImage: AppTab.stats.symbol, value: .stats) {
+                StatsView()
+            }
+
             Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
                 SettingsView(settings: settings)
             }
@@ -192,6 +196,7 @@ private enum AppTab: Hashable {
     case home
     case ride
     case history
+    case stats
     case settings
 
     var title: String {
@@ -199,6 +204,7 @@ private enum AppTab: Hashable {
         case .home: "Home"
         case .ride: "Ride"
         case .history: "History"
+        case .stats: "Stats"
         case .settings: "Settings"
         }
     }
@@ -208,6 +214,7 @@ private enum AppTab: Hashable {
         case .home: "house"
         case .ride: "bicycle"
         case .history: "clock"
+        case .stats: "chart.bar.xaxis"
         case .settings: "gearshape"
         }
     }

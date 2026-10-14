@@ -24,6 +24,10 @@ enum RideSessionStore {
                ProcessInfo.processInfo.arguments.contains("--ride-fixture") {
                 try RideUITestFixture.insert(into: container.mainContext)
             }
+            if configuration.isStoredInMemoryOnly,
+               ProcessInfo.processInfo.arguments.contains("--stats-fixture") {
+                try RideUITestFixture.insertStats(into: container.mainContext)
+            }
             return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
