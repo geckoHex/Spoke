@@ -144,4 +144,29 @@ struct RideStatisticsTests {
             #expect(calendar.dateComponents([.day], from: stats.startDate, to: stats.endDate).day == 30)
         }
     }
+
+    @Test func recordsRetainTheirRidesAndResolveTiesToTheLatestRide() {
+        let earlier = ride(at: date(12), duration: 600)
+        let latest = ride(at: date(13), duration: 600)
+        let longestTime = ride(at: date(11), duration: 1_800, withRoute: false)
+        let stats = RideStatistics(rides: [latest, earlier, longestTime], now: date(14), calendar: calendar)
+        #expect(stats.longestDistanceRide === latest)
+        #expect(stats.fastestAverageRide === latest)
+        #expect(stats.topSpeedRide === latest)
+        #expect(stats.longestTimeRide === longestTime)
+        let empty = RideStatistics(rides: [], now: date(14), calendar: calendar)
+        #expect(empty.longestDistanceRide == nil)
+        #expect(empty.fastestAverageRide == nil)
+    }
+
+    @Test func weeklyCalendarRespectsFirstWeekdayAndIncludesDaysWithoutRoutes() {
+        var mondayFirst = calendar
+        mondayFirst.firstWeekday = 2
+        let stats = RideStatistics(rides: [ride(at: date(13), withRoute: false)], now: date(14), calendar: mondayFirst)
+        #expect(stats.calendarLeadingDays == 1)
+        #expect(stats.weekdaySymbols.first == mondayFirst.veryShortStandaloneWeekdaySymbols[1])
+        #expect(stats.days.first { $0.date == date(13, hour: 0) }?.rideCount == 1)
+        #expect(stats.days.filter { $0.rideCount > 0 }.count == stats.activeDays)
+        #expect(stats.days.reduce(0) { $0 + $1.rideCount } == stats.rideCount)
+    }
 }

@@ -31,18 +31,37 @@ final class SpokeUITests: XCTestCase {
         app.swipeUp()
         XCTAssertTrue(app.descendants(matching: .any)["statsDistanceChart"].exists)
         XCTAssertTrue(app.staticTexts["Your riding"].exists)
-        app.swipeUp()
-        XCTAssertTrue(app.staticTexts["Peak performance"].exists)
-        for label in ["Top speed", "Fastest ride average", "Longest distance", "Longest riding time"] {
-            let metric = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
-            if !metric.isHittable { app.swipeUp() }
-            XCTAssertTrue(metric.isHittable)
-            XCTAssertFalse(metric.label.contains("—"))
+        func reveal(_ element: XCUIElement) {
+            for _ in 0..<12 {
+                if element.isHittable { break }
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.8))
+                    .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.3)))
+            }
+            XCTAssertTrue(element.isHittable)
+        }
+        for title in ["Weekly activity", "Speed distribution", "Moving vs. stopped", "Exploration", "Peak performance"] {
+            reveal(app.staticTexts[title])
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = "Stats \(title)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+        for id in ["statsTopSpeed", "statsFastestAverage", "statsLongestDistance", "statsLongestTime"] {
+            let record = app.buttons[id]
+            reveal(record)
+            XCTAssertFalse(record.label.contains("—"))
+            XCTAssertTrue(record.label.contains(Date.now.formatted(.dateTime.year())))
         }
         let summary = XCTAttachment(screenshot: app.screenshot())
         summary.name = "Stats peak performance"
         summary.lifetime = .keepAlways
         add(summary)
+        for id in ["statsLongestDistance", "statsFastestAverage"] {
+            app.buttons[id].tap()
+            XCTAssertTrue(app.descendants(matching: .any)["rideDetailContent"].waitForExistence(timeout: 5))
+            app.buttons["Back"].tap()
+            XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5))
+        }
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["settingsTitle"].waitForExistence(timeout: 5))
     }

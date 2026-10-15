@@ -100,6 +100,7 @@ final class RideRoutePoint {
     var longitude: Double
     var horizontalAccuracy: Double
     var recordedAt: Date
+    var recordingStartedAt: Date? = nil
     var ride: TrackedRide?
 
     init(

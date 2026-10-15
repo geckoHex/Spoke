@@ -456,6 +456,7 @@ final class RideSessionController {
             horizontalAccuracy: location.horizontalAccuracy,
             recordedAt: location.timestamp
         )
+        point.recordingStartedAt = ride.lastResumedAt ?? ride.startedAt
         modelContext.insert(point)
         ride.routePoints.append(point)
 

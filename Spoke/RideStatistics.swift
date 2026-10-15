@@ -5,11 +5,13 @@ struct RideStatistics {
         let date: Date
         let distanceInMeters: Double
         let averageSpeed: Double?
+        let rideCount: Int
 
         var id: Date { date }
     }
 
     private struct Ride {
+        let model: TrackedRide
         let date: Date
         let distance: Double?
         let duration: TimeInterval
@@ -28,6 +30,13 @@ struct RideStatistics {
     let fastestRide: Double?
     let topSpeed: Double?
     let longestDuration: TimeInterval?
+    let longestDistanceRide: TrackedRide?
+    let fastestAverageRide: TrackedRide?
+    let topSpeedRide: TrackedRide?
+    let longestTimeRide: TrackedRide?
+    let timeBreakdown: RideTimeBreakdown
+    let calendarLeadingDays: Int
+    let weekdaySymbols: [String]
 
     var averageDistance: Double { rideCount > 0 ? distanceInMeters / Double(rideCount) : 0 }
     var averageDuration: TimeInterval { rideCount > 0 ? duration / Double(rideCount) : 0 }
@@ -37,6 +46,8 @@ struct RideStatistics {
         let start = calendar.date(byAdding: .day, value: -29, to: today)!
         startDate = start
         endDate = calendar.date(byAdding: .day, value: 1, to: today)!
+        calendarLeadingDays = (calendar.component(.weekday, from: start) - calendar.firstWeekday + 7) % 7
+        weekdaySymbols = (0..<7).map { calendar.veryShortStandaloneWeekdaySymbols[($0 + calendar.firstWeekday - 1) % 7] }
 
         let completed = rides.compactMap { ride -> Ride? in
             guard let endedAt = ride.endedAt,
@@ -45,6 +56,7 @@ struct RideStatistics {
             else { return nil }
 
             return Ride(
+                model: ride,
                 date: calendar.startOfDay(for: ride.startedAt),
                 distance: ride.routePoints.count > 1 ? RideMetrics.distanceInMeters(for: ride) : nil,
                 duration: ride.elapsedDuration(),
@@ -58,7 +70,8 @@ struct RideStatistics {
             return Day(
                 date: date,
                 distanceInMeters: rides.reduce(0) { $0 + ($1.distance ?? 0) },
-                averageSpeed: Self.averageSpeed(for: rides)
+                averageSpeed: Self.averageSpeed(for: rides),
+                rideCount: rides.count
             )
         }
         rideCount = completed.count
@@ -70,6 +83,22 @@ struct RideStatistics {
         fastestRide = completed.compactMap { Self.averageSpeed(for: [$0]) }.max()
         topSpeed = completed.compactMap(\.topSpeed).max()
         longestDuration = completed.map(\.duration).max()
+        longestDistanceRide = Self.record(in: completed, value: { $0.distance })
+        fastestAverageRide = Self.record(in: completed, value: { Self.averageSpeed(for: [$0]) })
+        topSpeedRide = Self.record(in: completed, value: { $0.topSpeed })
+        longestTimeRide = Self.record(in: completed, value: { $0.duration })
+        timeBreakdown = RideTimeBreakdown(rides: completed.map(\.model))
+    }
+
+    private static func record(in rides: [Ride], value: (Ride) -> Double?) -> TrackedRide? {
+        let candidates: [(ride: TrackedRide, value: Double)] = rides.compactMap { ride in
+            guard let measured = value(ride) else { return nil }
+            return (ride.model, measured)
+        }
+        return candidates.max { lhs, rhs in
+            if lhs.value == rhs.value { return lhs.ride.startedAt < rhs.ride.startedAt }
+            return lhs.value < rhs.value
+        }?.ride
     }
 
     private static func averageSpeed(for rides: [Ride]) -> Double? {

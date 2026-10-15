@@ -22,6 +22,10 @@ struct BackgroundRideTrackingTests {
         controller.recordLocation(first)
 
         #expect(ride.routePoints.count == 2)
+
+        let points = ride.routePoints.sorted { $0.recordedAt < $1.recordedAt }
+        #expect(points.first?.recordingStartedAt == start)
+        #expect(points.last?.recordingStartedAt == start)
         #expect(try container.mainContext.fetchCount(FetchDescriptor<RideRoutePoint>()) == 2)
         #expect(ride.routePoints.map(\.recordedAt).sorted() == [first.timestamp, second.timestamp])
 
@@ -53,6 +57,7 @@ struct BackgroundRideTrackingTests {
         controller.recordLocation(sample(at: start.addingTimeInterval(15)))
         controller.recordLocation(sample(at: start.addingTimeInterval(25)))
         #expect(ride.routePoints.count == 2)
+        #expect(ride.routePoints.max(by: { $0.recordedAt < $1.recordedAt })?.recordingStartedAt == start.addingTimeInterval(20))
 
         controller.endRide(at: start.addingTimeInterval(30))
         #expect(!controller.isTrackingLocation)

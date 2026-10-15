@@ -3,17 +3,22 @@ import SwiftData
 
 enum RideUITestFixture {
     static func insertStats(into context: ModelContext) throws {
-        for offset in [1, 3, 4, 7, 9, 12, 14, 17, 20, 22, 25, 28] {
+        for offset in [1, 3, 4, 7, 9, 12, 14, 17, 20, 22, 25, 28, 40] {
             let start = Calendar.current.date(byAdding: .day, value: -offset, to: .now)!
             let ride = TrackedRide(startedAt: start)
             ride.end(at: start.addingTimeInterval(Double(30 + offset) * 60))
             context.insert(ride)
-            for index in 0...1 {
+            var longitude = -122.0
+            let seconds = (30 + offset) * 60
+            for elapsed in stride(from: 0, through: seconds, by: 5) {
+                let speed = [0.0, 3, 8, 12, 18][(elapsed / 120) % 5]
+                if elapsed > 0 { longitude += speed / 2.236_936_292_1 * 5 / 89_012 }
                 let point = RideRoutePoint(
-                    latitude: 37, longitude: -122 + Double(index) * Double(10 + offset % 8) / 100,
+                    latitude: 37 + Double(offset % 3) * 0.001, longitude: longitude,
                     horizontalAccuracy: 5,
-                    recordedAt: index == 0 ? start : ride.endedAt!
+                    recordedAt: start.addingTimeInterval(Double(elapsed))
                 )
+                point.recordingStartedAt = start
                 context.insert(point)
                 ride.routePoints.append(point)
             }

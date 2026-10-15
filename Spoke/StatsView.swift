@@ -40,6 +40,13 @@ struct StatsView: View {
                             Divider().overlay(SpokeStyle.separator)
                             rideSummary(stats)
                             Divider().overlay(SpokeStyle.separator)
+                            StatsActivityCalendar(stats: stats)
+                            Divider().overlay(SpokeStyle.separator)
+                            StatsTimeBreakdown(stats: stats)
+                            Divider().overlay(SpokeStyle.separator)
+                            StatsExplorationMap(rides: rides, startDate: stats.startDate, now: context.date)
+                                .id(stats.startDate)
+                            Divider().overlay(SpokeStyle.separator)
                             peakPerformance(stats)
                         }
                     }
@@ -150,11 +157,40 @@ struct StatsView: View {
                 alignment: .leading,
                 spacing: 24
             ) {
-                metric("Top speed", value: stats.topSpeed.map { RideMetrics.speedInMilesPerHour($0) } ?? "—")
-                metric("Fastest ride average", value: stats.fastestRide.map { RideMetrics.speedInMilesPerHour($0) } ?? "—")
-                metric("Longest distance", value: stats.longestRide.map { RideMetrics.distance($0) } ?? "—")
-                metric("Longest riding time", value: stats.longestDuration.map { RideMetrics.duration($0) } ?? "—")
+                record("Top speed", value: stats.topSpeed.map { RideMetrics.speedInMilesPerHour($0) } ?? "—", ride: stats.topSpeedRide, id: "statsTopSpeed")
+                record("Fastest ride average", value: stats.fastestRide.map { RideMetrics.speedInMilesPerHour($0) } ?? "—", ride: stats.fastestAverageRide, id: "statsFastestAverage")
+                record("Longest distance", value: stats.longestRide.map { RideMetrics.distance($0) } ?? "—", ride: stats.longestDistanceRide, id: "statsLongestDistance")
+                record("Longest riding time", value: stats.longestDuration.map { RideMetrics.duration($0) } ?? "—", ride: stats.longestTimeRide, id: "statsLongestTime")
             }
+        }
+    }
+
+    @ViewBuilder private func record(_ title: String, value: String, ride: TrackedRide?, id: String) -> some View {
+        if let ride {
+            NavigationLink {
+                RideHistoryDetailView(ride: ride)
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    metric(title, value: value)
+                    HStack {
+                        Text(ride.startedAt.formatted(.dateTime.month(.abbreviated).day().year()))
+                            .font(.caption)
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(SpokeStyle.secondaryText)
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(.rect)
+                .accessibilityElement(children: .combine)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Open ride details")
+            .accessibilityIdentifier(id)
+        } else {
+            metric(title, value: value)
         }
     }
 
