@@ -79,10 +79,10 @@ private struct RideActivityStats: View {
             metric("Time") {
                 RideActivityTimer(state: state)
             }
-            metric("Distance · mi") {
+            metric("Distance (mi)") {
                 Text(state.distanceInMiles, format: .number.precision(.fractionLength(1)))
             }
-            metric("Speed · mph") {
+            metric("Speed (mph)") {
                 if let speed = state.speedInMilesPerHour, !isStale || state.isPaused {
                     Text(speed, format: .number)
                 } else {
@@ -100,7 +100,7 @@ private struct RideActivityStats: View {
                 .font(.caption2)
                 .foregroundStyle(RideActivityStyle.secondaryText)
             value()
-                .font(.system(.title3, design: .rounded, weight: .semibold))
+                .font(.system(.title3, design: .default, weight: .bold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
@@ -150,7 +150,7 @@ private struct RideActivityPauseButton: View {
             .padding(.horizontal, 16)
             .frame(minHeight: 44)
             .foregroundStyle(.black)
-            .background(RideActivityStyle.primaryAction, in: .rect(cornerRadius: 4))
+            .background(RideActivityStyle.primaryAction, in: .rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(context.state.isPaused ? "Resume ride" : "Pause ride")

@@ -17,12 +17,13 @@ struct SettingsView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Settings")
-                    .font(.title.bold())
+                    .font(SpokeStyle.pageTitle)
+                    .tracking(-0.8)
                     .foregroundStyle(SpokeStyle.text)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("settingsTitle")
                     .padding(.horizontal, SpokeStyle.pageInset)
-                    .padding(.top, 20)
+                    .padding(.top, 16)
                     .padding(.bottom, 12)
 
                 Group {
@@ -47,97 +48,110 @@ private struct SettingsForm: View {
     @State private var inputFrames: [SettingsField: CGRect] = [:]
 
     var body: some View {
-        Form {
-            Section("Name") {
-                HStack(spacing: 8) {
-                    TextField("", text: $settings.name)
-                        .focused($focusedField, equals: .name)
-                        .textContentType(.givenName)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                        .submitLabel(.done)
-                        .onSubmit {
-                            focusedField = nil
-                        }
-                        .accessibilityLabel("Name")
-
-                    if focusedField == .name && !settings.name.isEmpty {
-                        Button {
-                            settings.name = ""
-                            focusedField = .name
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(SpokeStyle.secondaryText)
-                                .frame(minWidth: 44, minHeight: 44)
-                                .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Clear name")
-                    }
-                }
-                .inputFramePreference(for: .name)
-            }
-            .listRowBackground(SpokeStyle.surface)
-
-            Section("On the bike") {
-                Toggle("Keep screen on during rides", isOn: $settings.keepScreenOn)
-                Toggle("Sound effects", isOn: $settings.soundEffectsEnabled)
-            }
-            .listRowBackground(SpokeStyle.surface)
-
-            Section {
-                Toggle("Enable Developer Mode", isOn: $settings.developerModeEnabled)
-            } header: {
-                Text("Developer")
-            } footer: {
-                if settings.developerModeEnabled {
-                    Text("Speed is simulated. Hold the speedometer to increase it; release to slow down.")
-                        .foregroundStyle(SpokeStyle.secondaryText)
-                }
-            }
-            .listRowBackground(SpokeStyle.surface)
-
-            Section {
-                if spotifyAuthentication.sessionID != nil {
-                    Label("Connected to Spotify", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(SpokeStyle.text)
-
-                    Button("Disconnect Spotify", role: .destructive) {
-                        Task { await spotifyAuthentication.signOut() }
-                    }
-                    .buttonStyle(SpokeSecondaryButtonStyle())
-                } else {
-                    Button {
-                        focusedField = nil
-                        Task { await spotifyAuthentication.signIn() }
-                    } label: {
-                        HStack(spacing: 10) {
-                            if spotifyAuthentication.isConnecting {
-                                ProgressView()
-                                    .tint(SpokeStyle.onPrimaryAction)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Name")
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    HStack(spacing: 8) {
+                        TextField("", text: $settings.name)
+                            .focused($focusedField, equals: .name)
+                            .textContentType(.givenName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
                             }
-                            Text(spotifyAuthentication.isConnecting ? "Signing in…" : "Sign in with Spotify")
+                            .accessibilityLabel("Name")
+
+                        if focusedField == .name && !settings.name.isEmpty {
+                            Button {
+                                settings.name = ""
+                                focusedField = .name
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(SpokeStyle.secondaryText)
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(.rect)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Clear name")
                         }
                     }
-                    .buttonStyle(SpokePrimaryButtonStyle())
-                    .disabled(spotifyAuthentication.isConnecting)
-                    .accessibilityIdentifier("spotifySignIn")
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 56)
+                    .background(SpokeStyle.surface)
+                    .inputFramePreference(for: .name)
                 }
-            } header: {
-                Text("Spotify")
-            } footer: {
-                Text(spotifyAuthentication.errorMessage ?? "See what’s playing and save your ride’s soundtrack.")
-                    .foregroundStyle(spotifyAuthentication.errorMessage == nil ? SpokeStyle.secondaryText : SpokeStyle.danger)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("On the bike")
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.bottom, 8)
+                    Toggle("Keep screen on during rides", isOn: $settings.keepScreenOn)
+                        .frame(minHeight: 56)
+                    Divider().overlay(SpokeStyle.separator)
+                    Toggle("Sound effects", isOn: $settings.soundEffectsEnabled)
+                        .frame(minHeight: 56)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Developer")
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Toggle("Enable Developer Mode", isOn: $settings.developerModeEnabled)
+                        .frame(minHeight: 56)
+                    if settings.developerModeEnabled {
+                        Text("Speed is simulated. Hold the speedometer to increase it; release to slow down.")
+                            .font(.footnote)
+                            .foregroundStyle(SpokeStyle.secondaryText)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Spotify")
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    if spotifyAuthentication.sessionID != nil {
+                        Label("Connected to Spotify", systemImage: "checkmark")
+                            .foregroundStyle(SpokeStyle.text)
+
+                        Button("Disconnect Spotify", role: .destructive) {
+                            Task { await spotifyAuthentication.signOut() }
+                        }
+                        .buttonStyle(SpokeSecondaryButtonStyle())
+                    } else {
+                        Button {
+                            focusedField = nil
+                            Task { await spotifyAuthentication.signIn() }
+                        } label: {
+                            HStack(spacing: 10) {
+                                if spotifyAuthentication.isConnecting {
+                                    ProgressView()
+                                        .tint(SpokeStyle.onPrimaryAction)
+                                }
+                                Text(spotifyAuthentication.isConnecting ? "Signing in…" : "Sign in with Spotify")
+                            }
+                        }
+                        .buttonStyle(SpokePrimaryButtonStyle())
+                        .disabled(spotifyAuthentication.isConnecting)
+                        .accessibilityIdentifier("spotifySignIn")
+                    }
+                    Text(spotifyAuthentication.errorMessage ?? "See what’s playing and save your ride’s soundtrack.")
+                        .font(.footnote)
+                        .foregroundStyle(spotifyAuthentication.errorMessage == nil ? SpokeStyle.secondaryText : SpokeStyle.danger)
+                }
             }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
         }
-        .textCase(nil)
-        .listSectionSpacing(20)
-        .listRowSeparatorTint(SpokeStyle.separator)
         .foregroundStyle(SpokeStyle.text)
-        .environment(\.defaultMinListRowHeight, 56)
-        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
         .background(SpokeStyle.background)
         .tint(SpokeStyle.primaryAction)

@@ -30,8 +30,12 @@ struct HomeView: View {
 
                 GeometryReader { geometry in
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 28) {
+                        VStack(alignment: .leading, spacing: 24) {
                             HomeGreeting(timeOfDay: timeOfDay, name: displayName)
+
+                            HomeRideActivity(rides: completedRides, date: currentDate) {
+                                selectedRide = $0
+                            }
 
                             HomeWeatherView(
                                 date: currentDate,
@@ -43,14 +47,10 @@ struct HomeView: View {
                                     Task { await weatherModel.refresh() }
                                 }
                             )
-
-                            HomeRideActivity(rides: completedRides, date: currentDate) {
-                                selectedRide = $0
-                            }
                         }
                         .padding(.horizontal, SpokeStyle.pageInset)
-                        .padding(.top, 20)
-                        .padding(.bottom, 24)
+                        .padding(.top, 16)
+                        .padding(.bottom, 12)
                         .frame(minHeight: geometry.size.height)
                     }
                     .scrollIndicators(.hidden)
@@ -292,8 +292,8 @@ private struct HomeWeatherView: View {
     let onExpireAndReload: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 64
-    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 96
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .largeTitle) private var weatherIconSize: CGFloat = 64
 
     @ViewBuilder
     var body: some View {
@@ -484,7 +484,8 @@ private struct HomeGreeting: View {
 
     var body: some View {
         Text(timeOfDay.salutation + (name.isEmpty ? "" : ", \(name)"))
-            .font(.title.bold())
+            .font(SpokeStyle.pageTitle)
+            .tracking(-0.8)
             .foregroundStyle(SpokeStyle.text)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)

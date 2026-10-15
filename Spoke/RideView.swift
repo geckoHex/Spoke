@@ -239,7 +239,7 @@ private struct RideDashboardView: View {
     private var rideStatus: some View {
         HStack(spacing: 12) {
             if rideSession.activeRide?.isPaused == true {
-                Label("Paused", systemImage: "pause.circle.fill")
+                Label("Paused", systemImage: "pause.fill")
             } else {
                 Label(rideSession.locationStatus.title, systemImage: rideSession.locationStatus.symbol)
                 if rideSession.locationStatus == .denied {
@@ -253,7 +253,7 @@ private struct RideDashboardView: View {
         }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(SpokeStyle.text)
-        .frame(minHeight: 24)
+        .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rideRecordingStatus")
     }
@@ -348,45 +348,33 @@ private struct RideDashboardView: View {
 
     private var speedometer: some View {
         GeometryReader { proxy in
-            let arcWidth = min(max(proxy.size.width - 24, 0), proxy.size.height * 2)
-            let arcHeight = arcWidth / 2
             let speed = displayedSpeedInMilesPerHour
 
-            ZStack(alignment: .bottom) {
-                SpeedometerArc()
-                    .stroke(
-                        SpokeStyle.elevatedSurface,
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                    )
-                    .frame(width: arcWidth, height: arcHeight)
-
-                SpeedometerArc()
-                    .trim(from: 0, to: min(CGFloat(speed) / 30, 1))
-                    .stroke(
-                        arcColor(for: speed),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                    )
-                    .frame(width: arcWidth, height: arcHeight)
-
-                VStack(spacing: 2) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.locationStatus != .recording ? "—" : String(speed))
-                        .font(
-                            .system(
-                                size: min(112, arcWidth * 0.34),
-                                weight: .bold
-                            )
-                        )
+                        .font(.system(size: min(104, proxy.size.height * 0.65), weight: .bold))
+                        .tracking(-3)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
 
-                    Text(isDeveloperModeEnabled ? "mph · simulated" : "mph")
+                    Text(isDeveloperModeEnabled ? "mph (simulated)" : "mph")
                         .font(.headline)
                         .foregroundStyle(SpokeStyle.secondaryText)
                 }
-                .padding(.bottom, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Rectangle()
+                    .fill(SpokeStyle.elevatedSurface)
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(speedColor(for: speed))
+                            .frame(width: proxy.size.width * min(CGFloat(speed) / 30, 1))
+                    }
+                    .frame(height: 4)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         }
         .foregroundStyle(SpokeStyle.text)
         .contentShape(Rectangle())
@@ -441,7 +429,7 @@ private struct RideDashboardView: View {
         }
     }
 
-    private func arcColor(for speed: Int) -> Color {
+    private func speedColor(for speed: Int) -> Color {
         switch speed {
         case ..<20:
             SpokeStyle.text
@@ -520,31 +508,15 @@ private struct RideSkeletonView: View {
     }
 
     private var speedometerSkeleton: some View {
-        GeometryReader { proxy in
-            let arcWidth = min(max(proxy.size.width - 24, 0), proxy.size.height * 2)
-            let arcHeight = arcWidth / 2
-
-            ZStack(alignment: .bottom) {
-                SpeedometerArc()
-                    .stroke(
-                        .white.opacity(0.18),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                    )
-                    .frame(width: arcWidth, height: arcHeight)
-
-                VStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: SpokeStyle.controlRadius, style: .continuous)
-                        .fill(.white.opacity(0.18))
-                        .frame(width: min(116, arcWidth * 0.36), height: 54)
-
-                    RoundedRectangle(cornerRadius: SpokeStyle.controlRadius)
-                        .fill(SpokeStyle.elevatedSurface)
-                        .frame(width: 36, height: 10)
-                }
-                .padding(.bottom, 5)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        VStack(alignment: .leading, spacing: 12) {
+            Rectangle()
+                .fill(.white.opacity(0.18))
+                .frame(width: 116, height: 76)
+            Rectangle()
+                .fill(SpokeStyle.elevatedSurface)
+                .frame(height: 4)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
     }
 
     private var spotifySkeleton: some View {
@@ -588,7 +560,7 @@ private struct RideLayoutMetrics {
                 - spotifyHeight,
             0
         )
-        speedometerHeight = min(180, max(126, availableFeatureHeight * 0.5))
+        speedometerHeight = min(148, max(112, availableFeatureHeight * 0.45))
     }
 }
 
@@ -604,29 +576,6 @@ private struct RideSessionResources: Sendable {
             )
         )
         overspeedAlertController = RideOverspeedAlertController(player: alertPlayer)
-    }
-}
-
-private struct SpeedometerArc: Shape {
-    func path(in rect: CGRect) -> Path {
-        let radius = min(rect.width / 2, rect.height)
-        let center = CGPoint(x: rect.midX, y: rect.maxY)
-        let curveOffset = radius * 0.552_284_749_8
-        var path = Path()
-
-        path.move(to: CGPoint(x: center.x - radius, y: center.y))
-        path.addCurve(
-            to: CGPoint(x: center.x, y: center.y - radius),
-            control1: CGPoint(x: center.x - radius, y: center.y - curveOffset),
-            control2: CGPoint(x: center.x - curveOffset, y: center.y - radius)
-        )
-        path.addCurve(
-            to: CGPoint(x: center.x + radius, y: center.y),
-            control1: CGPoint(x: center.x + curveOffset, y: center.y - radius),
-            control2: CGPoint(x: center.x + radius, y: center.y - curveOffset)
-        )
-
-        return path
     }
 }
 

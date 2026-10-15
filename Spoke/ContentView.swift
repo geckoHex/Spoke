@@ -26,43 +26,52 @@ struct ContentView: View {
     let rideSession: RideSessionController
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab(AppTab.home.title, systemImage: AppTab.home.symbol, value: .home) {
-                HomeView(
-                    settings: settings,
-                    rideSession: rideSession,
-                    onStartRide: { startRide(from: .home) },
-                    onShowRide: {
-                        selectedTab = .ride
-                    },
-                    onEndRide: endRide
-                )
+        VStack(spacing: 0) {
+            TabView(selection: $selectedTab) {
+                Tab(AppTab.home.title, systemImage: AppTab.home.symbol, value: .home) {
+                    HomeView(
+                        settings: settings,
+                        rideSession: rideSession,
+                        onStartRide: { startRide(from: .home) },
+                        onShowRide: {
+                            selectedTab = .ride
+                        },
+                        onEndRide: endRide
+                    )
+                    .toolbar(.hidden, for: .tabBar)
+                }
+
+                Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
+                    RideView(
+                        settings: settings,
+                        rideSession: rideSession,
+                        onStartRide: { startRide(from: .ride) },
+                        onEndRide: endRide
+                    )
+                    .toolbar(.hidden, for: .tabBar)
+                }
+
+                Tab(
+                    AppTab.history.title,
+                    systemImage: AppTab.history.symbol,
+                    value: .history
+                ) {
+                    HistoryView(highlightedRideID: $highlightedRideID)
+                        .toolbar(.hidden, for: .tabBar)
+                }
+
+                Tab(AppTab.stats.title, systemImage: AppTab.stats.symbol, value: .stats) {
+                    StatsView()
+                        .toolbar(.hidden, for: .tabBar)
+                }
+
+                Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
+                    SettingsView(settings: settings)
+                        .toolbar(.hidden, for: .tabBar)
+                }
             }
 
-            Tab(AppTab.ride.title, systemImage: AppTab.ride.symbol, value: .ride) {
-                RideView(
-                    settings: settings,
-                    rideSession: rideSession,
-                    onStartRide: { startRide(from: .ride) },
-                    onEndRide: endRide
-                )
-            }
-
-            Tab(
-                AppTab.history.title,
-                systemImage: AppTab.history.symbol,
-                value: .history
-            ) {
-                HistoryView(highlightedRideID: $highlightedRideID)
-            }
-
-            Tab(AppTab.stats.title, systemImage: AppTab.stats.symbol, value: .stats) {
-                StatsView()
-            }
-
-            Tab(AppTab.settings.title, systemImage: AppTab.settings.symbol, value: .settings) {
-                SettingsView(settings: settings)
-            }
+            SpokeTabBar(selection: $selectedTab)
         }
         .foregroundStyle(SpokeStyle.text)
         .background(SpokeStyle.background)
@@ -189,34 +198,6 @@ struct ContentView: View {
     private func updateIdleTimer() {
         UIApplication.shared.isIdleTimerDisabled =
             scenePhase == .active && shouldKeepScreenOn
-    }
-}
-
-private enum AppTab: Hashable {
-    case home
-    case ride
-    case history
-    case stats
-    case settings
-
-    var title: String {
-        switch self {
-        case .home: "Home"
-        case .ride: "Ride"
-        case .history: "History"
-        case .stats: "Stats"
-        case .settings: "Settings"
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .home: "house"
-        case .ride: "bicycle"
-        case .history: "clock"
-        case .stats: "chart.bar.xaxis"
-        case .settings: "gearshape"
-        }
     }
 }
 

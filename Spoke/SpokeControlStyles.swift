@@ -12,9 +12,10 @@ enum SpokeStyle {
     static let caution = Color(red: 255 / 255, green: 200 / 255, blue: 87 / 255)
     static let danger = Color(red: 1, green: 85 / 255, blue: 74 / 255)
     static let separator = Color(white: 56 / 255)
-    static let cardRadius: CGFloat = 4
-    static let controlRadius: CGFloat = 4
+    static let cardRadius: CGFloat = 0
+    static let controlRadius: CGFloat = 0
     static let pageInset: CGFloat = 20
+    static let pageTitle = Font.system(.largeTitle, design: .default, weight: .bold)
 }
 
 struct SpokePrimaryButtonStyle: ButtonStyle {

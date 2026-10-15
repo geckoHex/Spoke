@@ -249,19 +249,21 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
-    func testNativeTabNavigationAndControls() throws {
+    func testTabNavigationAndControls() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ride-fixture", "--weather-fixture"]
         app.launch()
         defer { app.terminate() }
 
-        let tabBar = app.tabBars.firstMatch
+        let tabBar = app.otherElements["spokeTabBar"]
         XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
-        XCTAssertEqual(tabBar.buttons.count, 4)
+        XCTAssertEqual(tabBar.buttons.count, 5)
 
-        for title in ["Home", "Ride", "History", "Settings"] {
+        for title in ["Home", "Ride", "History", "Stats", "Settings"] {
             let tab = tabBar.buttons[title]
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
+            XCTAssertGreaterThanOrEqual(tab.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(tab.frame.height, 44)
             tab.tap()
             XCTAssertTrue(tab.isSelected)
         }
@@ -300,6 +302,10 @@ final class SpokeUITests: XCTestCase {
         add(homeScreenshot)
 
         app.buttons["History"].tap()
+        let historyScreenshot = XCTAttachment(screenshot: app.screenshot())
+        historyScreenshot.name = "Ride history rows"
+        historyScreenshot.lifetime = .keepAlways
+        add(historyScreenshot)
         let ride = app.scrollViews.buttons.firstMatch
         guard ride.waitForExistence(timeout: 3) else { return }
         ride.tap()
@@ -454,7 +460,7 @@ final class SpokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ride-fixture", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
-        for title in ["Home", "Ride", "History", "Settings"] {
+        for title in ["Home", "Ride", "History", "Stats", "Settings"] {
             XCTAssertLessThanOrEqual(app.buttons[title].frame.height, 80, "Navigation must leave room for content")
         }
         app.buttons["History"].tap()
@@ -510,6 +516,7 @@ final class SpokeUITests: XCTestCase {
         let pause = app.buttons["Pause Ride"]
         XCTAssertTrue(pause.waitForExistence(timeout: 10))
         XCTAssertGreaterThanOrEqual(pause.frame.height, 60)
+        XCTAssertLessThanOrEqual(pause.frame.maxY, app.otherElements["spokeTabBar"].frame.minY)
         XCTAssertTrue(app.otherElements["rideRecordingStatus"].waitForExistence(timeout: 10))
         capture("Refined Ride")
         pause.tap()

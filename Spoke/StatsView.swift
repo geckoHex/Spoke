@@ -13,10 +13,11 @@ struct StatsView: View {
                 let stats = RideStatistics(rides: rides, now: context.date)
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Stats")
-                                .font(.title.bold())
+                                .font(SpokeStyle.pageTitle)
+                                .tracking(-0.8)
                                 .accessibilityAddTraits(.isHeader)
                                 .accessibilityIdentifier("statsTitle")
                             Text("Last 30 days")
@@ -34,13 +35,16 @@ struct StatsView: View {
                             )
                         } else {
                             speedChart(stats)
+                            Divider().overlay(SpokeStyle.separator)
                             distanceChart(stats)
+                            Divider().overlay(SpokeStyle.separator)
                             rideSummary(stats)
+                            Divider().overlay(SpokeStyle.separator)
                             peakPerformance(stats)
                         }
                     }
                     .padding(.horizontal, SpokeStyle.pageInset)
-                    .padding(.top, 20)
+                    .padding(.top, 16)
                     .padding(.bottom, 24)
                 }
                 .scrollIndicators(.hidden)
@@ -64,7 +68,7 @@ struct StatsView: View {
                         )
                         .lineStyle(StrokeStyle(lineWidth: 2.5))
                         .foregroundStyle(SpokeStyle.primaryAction)
-                        .symbol(.circle)
+                        .symbol(.square)
                         .symbolSize(28)
                         .accessibilityLabel(day.date.formatted(.dateTime.month().day()))
                         .accessibilityValue(RideMetrics.speedInMilesPerHour(speed))
@@ -86,8 +90,6 @@ struct StatsView: View {
                     .foregroundStyle(SpokeStyle.secondaryText)
             }
         }
-        .padding(20)
-        .background(SpokeStyle.surface, in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius))
     }
 
     private func distanceChart(_ stats: RideStatistics) -> some View {
@@ -100,7 +102,7 @@ struct StatsView: View {
                     y: .value("Distance (mi)", day.distanceInMeters / 1_609.344)
                 )
                 .foregroundStyle(SpokeStyle.primaryAction)
-                .cornerRadius(2)
+                .cornerRadius(0)
                 .accessibilityLabel(day.date.formatted(.dateTime.month().day()))
                 .accessibilityValue(RideMetrics.distance(day.distanceInMeters))
             }
@@ -115,8 +117,6 @@ struct StatsView: View {
                 .font(.caption)
                 .foregroundStyle(SpokeStyle.secondaryText)
         }
-        .padding(20)
-        .background(SpokeStyle.surface, in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius))
     }
 
     private func rideSummary(_ stats: RideStatistics) -> some View {

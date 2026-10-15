@@ -28,12 +28,13 @@ struct HistoryView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Your rides")
-                    .font(.title.bold())
+                    .font(SpokeStyle.pageTitle)
+                    .tracking(-0.8)
                     .foregroundStyle(SpokeStyle.text)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("historyTitle")
                     .padding(.horizontal, SpokeStyle.pageInset)
-                    .padding(.top, 20)
+                    .padding(.top, 16)
                     .padding(.bottom, 12)
 
                 Group {
@@ -46,7 +47,7 @@ struct HistoryView: View {
                         .background(SpokeStyle.background)
                     } else {
                         ScrollView {
-                            LazyVStack(spacing: 12) {
+                            LazyVStack(spacing: 0) {
                                 ForEach(completedRides) { ride in
                                     NavigationLink {
                                         RideHistoryDetailView(ride: ride)
@@ -59,6 +60,8 @@ struct HistoryView: View {
                                         )
                                     }
                                     .buttonStyle(.plain)
+
+                                    Divider().overlay(SpokeStyle.separator)
                                 }
                             }
                             .padding(.horizontal, SpokeStyle.pageInset)
@@ -102,7 +105,7 @@ private struct RideHistoryRow: View {
         HStack(alignment: .center, spacing: 12) {
             if !dynamicTypeSize.isAccessibilitySize {
                 RideRouteThumbnail(points: ride.routePoints)
-                    .frame(width: 56, height: 64)
+                    .frame(width: 64, height: 64)
                     .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 8) {
@@ -145,13 +148,10 @@ private struct RideHistoryRow: View {
                 .foregroundStyle(SpokeStyle.secondaryText)
                 .accessibilityHidden(true)
         }
-        .padding(16)
+        .padding(.vertical, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            isHighlighted ? SpokeStyle.elevatedSurface : SpokeStyle.surface,
-            in: RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: SpokeStyle.cardRadius, style: .continuous))
+        .background(isHighlighted ? SpokeStyle.elevatedSurface : .clear)
+        .contentShape(.rect)
         .accessibilityElement(children: .combine)
     }
 
@@ -179,7 +179,7 @@ private struct RideRouteThumbnail: View {
         }
 
         ZStack {
-            SpokeStyle.background
+            SpokeStyle.surface
             if coordinates.count > 1 {
                 Canvas { context, size in
                     let minX = coordinates.map(\.x).min() ?? 0
