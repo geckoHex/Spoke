@@ -6,11 +6,12 @@ struct StatsView: View {
     @Query(filter: #Predicate<TrackedRide> { $0.endedAt != nil })
     private var rides: [TrackedRide]
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var period: RideStatisticsPeriod = .thisMonth
 
     var body: some View {
         NavigationStack {
             TimelineView(.periodic(from: .now, by: 60)) { context in
-                let stats = RideStatistics(rides: rides, now: context.date)
+                let stats = RideStatistics(rides: rides, period: period, now: context.date)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
@@ -20,16 +21,17 @@ struct StatsView: View {
                                 .tracking(-0.8)
                                 .accessibilityAddTraits(.isHeader)
                                 .accessibilityIdentifier("statsTitle")
-                            Text("Last 30 days")
-                                .font(.headline)
-                            Text("\(stats.startDate.formatted(.dateTime.month(.abbreviated).day())) – \(context.date.formatted(.dateTime.month(.abbreviated).day()))")
+                            periodPicker
+                                .padding(.vertical, 8)
+                            Text("\(stats.startDate.formatted(.dateTime.month(.abbreviated).day().year())) – \(context.date.formatted(.dateTime.month(.abbreviated).day().year()))")
                                 .font(.subheadline)
                                 .foregroundStyle(SpokeStyle.secondaryText)
+                                .accessibilityIdentifier("statsDateRange")
                         }
 
                         if stats.rideCount == 0 {
                             ContentUnavailableView(
-                                "No rides in the last 30 days",
+                                "No rides in this period",
                                 systemImage: "chart.bar.xaxis",
                                 description: Text("Finish a ride to see your speed, distance, and riding trends here.")
                             )
@@ -62,6 +64,16 @@ struct StatsView: View {
         }
     }
 
+    private var periodPicker: some View {
+        Picker("Time period", selection: $period) {
+            ForEach(RideStatisticsPeriod.allCases) { period in
+                Text(period.rawValue).tag(period)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("statsPeriodPicker")
+    }
+
     private func speedChart(_ stats: RideStatistics) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             chartHeading("Average ride speed", value: stats.averageSpeed.map { RideMetrics.speedInMilesPerHour($0) } ?? "—")
@@ -77,13 +89,13 @@ struct StatsView: View {
                         .foregroundStyle(SpokeStyle.primaryAction)
                         .symbol(.square)
                         .symbolSize(28)
-                        .accessibilityLabel(day.date.formatted(.dateTime.month().day()))
+                        .accessibilityLabel(day.date.formatted(.dateTime.month().day().year()))
                         .accessibilityValue(RideMetrics.speedInMilesPerHour(speed))
                     }
                 }
                 .chartXScale(domain: stats.startDate...stats.endDate)
                 .chartYScale(domain: 0...max(1, (stats.days.compactMap(\.averageSpeed).max() ?? 0) * 1.15))
-                .modifier(StatsChartAxes())
+                .modifier(StatsChartAxes(dayCount: stats.days.count))
                 .frame(height: 170)
                 .accessibilityLabel("Daily average ride speed")
                 .accessibilityIdentifier("statsSpeedChart")
@@ -110,12 +122,12 @@ struct StatsView: View {
                 )
                 .foregroundStyle(SpokeStyle.primaryAction)
                 .cornerRadius(0)
-                .accessibilityLabel(day.date.formatted(.dateTime.month().day()))
+                .accessibilityLabel(day.date.formatted(.dateTime.month().day().year()))
                 .accessibilityValue(RideMetrics.distance(day.distanceInMeters))
             }
             .chartXScale(domain: stats.startDate...stats.endDate)
             .chartYScale(domain: 0...max(1, (stats.days.map(\.distanceInMeters).max() ?? 0) / 1_609.344 * 1.15))
-            .modifier(StatsChartAxes())
+            .modifier(StatsChartAxes(dayCount: stats.days.count))
             .frame(height: 150)
             .accessibilityLabel("Daily distance ridden")
             .accessibilityIdentifier("statsDistanceChart")
@@ -222,11 +234,15 @@ struct StatsView: View {
 }
 
 private struct StatsChartAxes: ViewModifier {
+    let dayCount: Int
+
     func body(content: Content) -> some View {
         content
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: 7)) {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                AxisMarks(values: .automatic(desiredCount: 4)) {
+                    AxisValueLabel(format: dayCount > 366
+                                   ? .dateTime.month(.abbreviated).year()
+                                   : .dateTime.month(.abbreviated).day())
                         .foregroundStyle(SpokeStyle.secondaryText)
                 }
             }

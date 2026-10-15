@@ -22,7 +22,7 @@ final class SpokeUITests: XCTestCase {
         XCTAssertLessThan(stats.frame.midX, app.buttons["Settings"].frame.midX)
         stats.tap()
         XCTAssertTrue(app.staticTexts["statsTitle"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Last 30 days"].exists)
+        XCTAssertTrue(app.segmentedControls["statsPeriodPicker"].buttons["This Month"].isSelected)
         XCTAssertTrue(app.descendants(matching: .any)["statsSpeedChart"].exists)
         let charts = XCTAttachment(screenshot: app.screenshot())
         charts.name = "Stats monthly charts"
@@ -67,15 +67,60 @@ final class SpokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testStatsPeriodFilters() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture", "--stats-fixture"]
+        app.launch()
+        defer { app.terminate() }
+        app.buttons["Stats"].tap()
+        let picker = app.segmentedControls["statsPeriodPicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        let calendar = Calendar.current
+        let now = Date.now
+        let starts: [(String, Date)] = [
+            ("All Time", calendar.startOfDay(for: calendar.date(byAdding: .day, value: -40, to: now)!)),
+            ("This Year", calendar.dateInterval(of: .year, for: now)!.start),
+            ("This Month", calendar.dateInterval(of: .month, for: now)!.start),
+            ("This Week", calendar.dateInterval(of: .weekOfYear, for: now)!.start),
+        ]
+        for (title, start) in starts {
+            picker.buttons[title].tap()
+            XCTAssertTrue(picker.buttons[title].isSelected)
+            XCTAssertTrue(app.staticTexts["statsDateRange"].label.hasPrefix(start.formatted(.dateTime.month(.abbreviated).day().year())))
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "Stats \(title) filter"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+        picker.buttons["This Year"].tap()
+        let heading = app.staticTexts["Weekly activity"]
+        for _ in 0..<6 {
+            if heading.isHittable { break }
+            app.swipeUp()
+        }
+        let calendarScreenshot = XCTAttachment(screenshot: app.screenshot())
+        calendarScreenshot.name = "Stats yearly activity calendar"
+        calendarScreenshot.lifetime = .keepAlways
+        add(calendarScreenshot)
+        XCTAssertTrue(heading.isHittable)
+    }
+
+    @MainActor
     func testStatsEmptyState() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--weather-fixture"]
         app.launch()
         defer { app.terminate() }
         app.buttons["Stats"].tap()
-        XCTAssertTrue(app.staticTexts["No rides in the last 30 days"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["No rides in this period"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.descendants(matching: .any)["statsSpeedChart"].exists)
         XCTAssertFalse(app.staticTexts["Peak performance"].exists)
+        let picker = app.segmentedControls["statsPeriodPicker"]
+        for title in ["All Time", "This Year", "This Week"] {
+            picker.buttons[title].tap()
+            XCTAssertTrue(picker.buttons[title].isSelected)
+            XCTAssertTrue(app.staticTexts["No rides in this period"].exists)
+        }
         app.buttons["History"].tap()
         XCTAssertTrue(app.staticTexts["No Rides Yet"].waitForExistence(timeout: 5))
     }

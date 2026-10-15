@@ -85,27 +85,25 @@ struct StatsActivityCalendar: View {
     let stats: RideStatistics
 
     var body: some View {
+        let maximum = stats.days.map(\.distanceInMeters).max() ?? 0
         VStack(alignment: .leading, spacing: 16) {
             Text("Weekly activity")
                 .font(.title3.bold())
                 .accessibilityAddTraits(.isHeader)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 7), spacing: 8) {
-                ForEach(0..<7) { index in
-                    Text(stats.weekdaySymbols[index])
-                        .font(.caption)
-                        .foregroundStyle(SpokeStyle.secondaryText)
-                        .accessibilityHidden(true)
+            if stats.days.count > 42 {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(spacing: 8) { weekdays }
+                    ScrollView(.horizontal) {
+                        LazyHGrid(rows: Array(repeating: GridItem(.fixed(24), spacing: 8), count: 7), spacing: 8) {
+                            squares(maximum: maximum)
+                        }
+                    }
+                    .defaultScrollAnchor(.trailing)
                 }
-                ForEach(0..<stats.calendarLeadingDays, id: \.self) { _ in
-                    Color.clear.frame(height: 24).accessibilityHidden(true)
-                }
-                ForEach(stats.days) { day in
-                    Rectangle()
-                        .fill(color(for: day))
-                        .frame(width: 24, height: 24)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(day.date.formatted(.dateTime.weekday(.wide).month().day()))
-                        .accessibilityValue(day.rideCount == 0 ? "No rides" : "\(day.rideCount) rides, \(RideMetrics.distance(day.distanceInMeters))")
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 7), spacing: 8) {
+                    weekdays
+                    squares(maximum: maximum)
                 }
             }
             HStack(spacing: 6) {
@@ -123,10 +121,28 @@ struct StatsActivityCalendar: View {
         .accessibilityIdentifier("statsActivityCalendar")
     }
 
-    private func color(for day: RideStatistics.Day) -> Color {
-        guard day.rideCount > 0 else { return SpokeStyle.elevatedSurface }
-        let maximum = stats.days.map(\.distanceInMeters).max() ?? 0
-        let intensity = maximum > 0 ? day.distanceInMeters / maximum : 0
-        return SpokeStyle.danger.opacity(0.65 + 0.35 * intensity)
+    private var weekdays: some View {
+        ForEach(0..<7) { index in
+            Text(stats.weekdaySymbols[index])
+                .font(.caption)
+                .foregroundStyle(SpokeStyle.secondaryText)
+                .frame(height: 24)
+                .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder private func squares(maximum: Double) -> some View {
+        ForEach(0..<stats.calendarLeadingDays, id: \.self) { _ in
+            Color.clear.frame(width: 24, height: 24).accessibilityHidden(true)
+        }
+        ForEach(stats.days) { day in
+            let intensity = maximum > 0 ? day.distanceInMeters / maximum : 0
+            Rectangle()
+                .fill(day.rideCount > 0 ? SpokeStyle.danger.opacity(0.65 + 0.35 * intensity) : SpokeStyle.elevatedSurface)
+                .frame(width: 24, height: 24)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(day.date.formatted(.dateTime.weekday(.wide).month().day().year()))
+                .accessibilityValue(day.rideCount == 0 ? "No rides" : "\(day.rideCount) rides, \(RideMetrics.distance(day.distanceInMeters))")
+        }
     }
 }

@@ -44,9 +44,9 @@ struct RideStatisticsTests {
         #expect(abs(stats.days.reduce(0) { $0 + $1.distanceInMeters } - stats.distanceInMeters) < 0.001)
     }
 
-    @Test func includesThirtyCalendarDaysAndRejectsActiveAndFutureRides() {
+    @Test func includesCurrentMonthAndRejectsActiveAndFutureRides() {
         let now = date(14)
-        let boundary = date(15, month: 9, hour: 0)
+        let boundary = date(1, hour: 0)
         let active = TrackedRide(startedAt: date(13))
         let unfinishedInThisSnapshot = ride(at: now.addingTimeInterval(-100), duration: 200)
         let stats = RideStatistics(rides: [
@@ -57,7 +57,7 @@ struct RideStatisticsTests {
 
         #expect(stats.startDate == boundary)
         #expect(stats.endDate == date(15, hour: 0))
-        #expect(stats.days.count == 30)
+        #expect(stats.days.count == 14)
         #expect(stats.rideCount == 2)
         #expect(stats.activeDays == 2)
         #expect(stats.days.first?.date == boundary)
@@ -130,7 +130,7 @@ struct RideStatisticsTests {
             #expect(stats.fastestRide == nil)
             #expect(stats.topSpeed == nil)
             #expect(stats.longestDuration == (rides.isEmpty ? nil : 600))
-            #expect(stats.days.count == 30)
+            #expect(stats.days.count == 14)
             #expect(stats.days.allSatisfy { $0.averageSpeed == nil && $0.distanceInMeters == 0 })
         }
     }
@@ -138,10 +138,11 @@ struct RideStatisticsTests {
     @Test func calendarDaysRemainCorrectAcrossDaylightSavingAndYearBoundaries() {
         for now in [date(15, month: 3), date(10, month: 11), date(10, month: 1, year: 2027)] {
             let stats = RideStatistics(rides: [], now: now, calendar: calendar)
-            #expect(stats.days.count == 30)
-            #expect(Set(stats.days.map(\.date)).count == 30)
+            let count = calendar.component(.day, from: now)
+            #expect(stats.days.count == count)
+            #expect(Set(stats.days.map(\.date)).count == count)
             #expect(stats.days.allSatisfy { calendar.component(.hour, from: $0.date) == 0 })
-            #expect(calendar.dateComponents([.day], from: stats.startDate, to: stats.endDate).day == 30)
+            #expect(calendar.dateComponents([.day], from: stats.startDate, to: stats.endDate).day == count)
         }
     }
 
@@ -163,10 +164,73 @@ struct RideStatisticsTests {
         var mondayFirst = calendar
         mondayFirst.firstWeekday = 2
         let stats = RideStatistics(rides: [ride(at: date(13), withRoute: false)], now: date(14), calendar: mondayFirst)
-        #expect(stats.calendarLeadingDays == 1)
+        #expect(stats.calendarLeadingDays == 3)
         #expect(stats.weekdaySymbols.first == mondayFirst.veryShortStandaloneWeekdaySymbols[1])
         #expect(stats.days.first { $0.date == date(13, hour: 0) }?.rideCount == 1)
         #expect(stats.days.filter { $0.rideCount > 0 }.count == stats.activeDays)
         #expect(stats.days.reduce(0) { $0 + $1.rideCount } == stats.rideCount)
+    }
+
+    @Test func periodsFilterTotalsRecordsAndActivityTogether() {
+        var mondayFirst = calendar
+        mondayFirst.firstWeekday = 2
+        let lastYear = ride(at: date(20, month: 12, year: 2025), duration: 120)
+        let lastMonth = ride(at: date(20, month: 9), duration: 240)
+        let lastWeek = ride(at: date(1), duration: 360)
+        let thisWeek = ride(at: date(13), duration: 480)
+        let rides = [lastYear, lastMonth, lastWeek, thisWeek]
+        let expectations: [(RideStatisticsPeriod, Int, Date, TrackedRide, TimeInterval)] = [
+            (.allTime, 4, date(20, month: 12, year: 2025, hour: 0), lastYear, 1_200),
+            (.thisYear, 3, date(1, month: 1, hour: 0), lastMonth, 1_080),
+            (.thisMonth, 2, date(1, hour: 0), lastWeek, 840),
+            (.thisWeek, 1, date(12, hour: 0), thisWeek, 480),
+        ]
+        for (period, count, start, fastest, duration) in expectations {
+            let stats = RideStatistics(rides: rides, period: period, now: date(14), calendar: mondayFirst)
+            #expect(stats.startDate == start)
+            #expect(stats.rideCount == count)
+            #expect(stats.activeDays == count)
+            #expect(stats.days.reduce(0) { $0 + $1.rideCount } == count)
+            #expect(stats.duration == duration)
+            #expect(stats.fastestAverageRide === fastest)
+            #expect(abs(stats.distanceInMeters - Double(count) * RideMetrics.distanceInMeters(for: thisWeek)) < 0.001)
+        }
+    }
+
+    @Test func allTimeStartsAtEarliestValidCompletedRideAndHandlesEmptyHistory() {
+        let active = TrackedRide(startedAt: date(1, year: 2000))
+        let invalid = ride(at: date(1, year: 2001), duration: -60)
+        let earliest = ride(at: date(29, month: 2, year: 2024))
+        let future = ride(at: date(15))
+        let stats = RideStatistics(rides: [active, invalid, future, earliest], period: .allTime, now: date(14), calendar: calendar)
+        #expect(stats.startDate == date(29, month: 2, year: 2024, hour: 0))
+        #expect(stats.rideCount == 1)
+        let empty = RideStatistics(rides: [active, invalid, future], period: .allTime, now: date(14), calendar: calendar)
+        #expect(empty.days.count == 1)
+        #expect(empty.startDate == date(14, hour: 0))
+        #expect(empty.rideCount == 0)
+    }
+
+    @Test func speedDistributionAndMotionUseTheSelectedPeriod() {
+        let rides = [ride(at: date(30, month: 9), duration: 20), ride(at: date(13), duration: 20)]
+        let month = RideStatistics(rides: rides, period: .thisMonth, now: date(14), calendar: calendar)
+        let year = RideStatistics(rides: rides, period: .thisYear, now: date(14), calendar: calendar)
+        #expect(month.timeBreakdown.recorded == 20)
+        #expect(year.timeBreakdown.recorded == 40)
+        #expect(month.timeBreakdown.moving == 20)
+        #expect(year.timeBreakdown.secondsByBand.reduce(0, +) == 40)
+    }
+
+    @Test func weekUsesLocalFirstWeekdayAcrossYearAndDaylightSavingBoundaries() {
+        var mondayFirst = calendar
+        mondayFirst.firstWeekday = 2
+        let newYear = RideStatistics(rides: [], period: .thisWeek, now: date(1, month: 1, year: 2027), calendar: mondayFirst)
+        #expect(newYear.startDate == date(28, month: 12, hour: 0))
+        #expect(newYear.days.count == 5)
+        let daylightSaving = RideStatistics(rides: [], period: .thisWeek, now: date(8, month: 3), calendar: mondayFirst)
+        #expect(daylightSaving.days.count == 7)
+        #expect(daylightSaving.endDate.timeIntervalSince(daylightSaving.startDate) == 7 * 86_400 - 3_600)
+        let leapMonth = RideStatistics(rides: [], period: .thisMonth, now: date(29, month: 2, year: 2024), calendar: calendar)
+        #expect(leapMonth.days.count == 29)
     }
 }

@@ -41,19 +41,20 @@ struct RideStatistics {
     var averageDistance: Double { rideCount > 0 ? distanceInMeters / Double(rideCount) : 0 }
     var averageDuration: TimeInterval { rideCount > 0 ? duration / Double(rideCount) : 0 }
 
-    init(rides: [TrackedRide], now: Date = .now, calendar: Calendar = .current) {
+    init(rides: [TrackedRide], period: RideStatisticsPeriod = .thisMonth, now: Date = .now, calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -29, to: today)!
+        let finished = rides.filter { ride in
+            guard let endedAt = ride.endedAt else { return false }
+            return ride.startedAt <= now && endedAt >= ride.startedAt && endedAt <= now
+        }
+        let start = period.startDate(now: now, earliestRide: finished.map(\.startedAt).min(), calendar: calendar)
         startDate = start
         endDate = calendar.date(byAdding: .day, value: 1, to: today)!
         calendarLeadingDays = (calendar.component(.weekday, from: start) - calendar.firstWeekday + 7) % 7
         weekdaySymbols = (0..<7).map { calendar.veryShortStandaloneWeekdaySymbols[($0 + calendar.firstWeekday - 1) % 7] }
 
-        let completed = rides.compactMap { ride -> Ride? in
-            guard let endedAt = ride.endedAt,
-                  ride.startedAt >= start, ride.startedAt <= now,
-                  endedAt >= ride.startedAt, endedAt <= now
-            else { return nil }
+        let completed = finished.compactMap { ride -> Ride? in
+            guard ride.startedAt >= start else { return nil }
 
             return Ride(
                 model: ride,
@@ -64,7 +65,8 @@ struct RideStatistics {
             )
         }
         let byDay = Dictionary(grouping: completed, by: \.date)
-        days = (0..<30).map { offset in
+        let dayCount = calendar.dateComponents([.day], from: start, to: endDate).day!
+        days = (0..<dayCount).map { offset in
             let date = calendar.date(byAdding: .day, value: offset, to: start)!
             let rides = byDay[date] ?? []
             return Day(

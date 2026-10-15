@@ -33,7 +33,7 @@ struct StatsExplorationMap: View {
                     .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
                     .frame(height: 240)
                     .accessibilityLabel("Exploration map")
-                    .accessibilityValue("Solid red streets were first ridden in the last 30 days. Dashed gray streets were ridden before.")
+                    .accessibilityValue("Solid red streets were first ridden in the selected period. Dashed gray streets were ridden before.")
                     .accessibilityIdentifier("statsExplorationMap")
 
                     ViewThatFits(in: .horizontal) {
