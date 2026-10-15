@@ -3,56 +3,70 @@ import SwiftData
 import SwiftUI
 
 struct StatsView: View {
-    @Query(filter: #Predicate<TrackedRide> { $0.endedAt != nil })
-    private var rides: [TrackedRide]
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
     var body: some View {
         NavigationStack {
             TimelineView(.periodic(from: .now, by: 60)) { context in
-                let stats = RideStatistics(rides: rides, now: context.date)
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Stats")
-                                .font(SpokeStyle.pageTitle)
-                                .tracking(-0.8)
-                                .accessibilityAddTraits(.isHeader)
-                                .accessibilityIdentifier("statsTitle")
-                            Text("Last 30 days")
-                                .font(.headline)
-                            Text("\(stats.startDate.formatted(.dateTime.month(.abbreviated).day())) – \(context.date.formatted(.dateTime.month(.abbreviated).day()))")
-                                .font(.subheadline)
-                                .foregroundStyle(SpokeStyle.secondaryText)
-                        }
-
-                        if stats.rideCount == 0 {
-                            ContentUnavailableView(
-                                "No rides in the last 30 days",
-                                systemImage: "chart.bar.xaxis",
-                                description: Text("Finish a ride to see your speed, distance, and riding trends here.")
-                            )
-                        } else {
-                            speedChart(stats)
-                            Divider().overlay(SpokeStyle.separator)
-                            distanceChart(stats)
-                            Divider().overlay(SpokeStyle.separator)
-                            rideSummary(stats)
-                            Divider().overlay(SpokeStyle.separator)
-                            peakPerformance(stats)
-                        }
-                    }
-                    .padding(.horizontal, SpokeStyle.pageInset)
-                    .padding(.top, 16)
-                    .padding(.bottom, 24)
-                }
-                .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
-                .background(SpokeStyle.background)
+                StatsContent(date: context.date)
             }
             .toolbar(.hidden, for: .navigationBar)
         }
+    }
+}
+
+private struct StatsContent: View {
+    let date: Date
+    @Query private var rides: [TrackedRide]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    init(date: Date) {
+        self.date = date
+        let start = RideStatistics.startDate(relativeTo: date)
+        _rides = Query(filter: #Predicate<TrackedRide> {
+            $0.endedAt != nil && $0.startedAt >= start
+        })
+    }
+
+    var body: some View {
+        let stats = RideStatistics(rides: rides, now: date)
+
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Stats")
+                        .font(SpokeStyle.pageTitle)
+                        .tracking(-0.8)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("statsTitle")
+                    Text("Last 30 days")
+                        .font(.headline)
+                    Text("\(stats.startDate.formatted(.dateTime.month(.abbreviated).day())) – \(date.formatted(.dateTime.month(.abbreviated).day()))")
+                        .font(.subheadline)
+                        .foregroundStyle(SpokeStyle.secondaryText)
+                }
+
+                if stats.rideCount == 0 {
+                    ContentUnavailableView(
+                        "No rides in the last 30 days",
+                        systemImage: "chart.bar.xaxis",
+                        description: Text("Finish a ride to see your speed, distance, and riding trends here.")
+                    )
+                } else {
+                    speedChart(stats)
+                    Divider().overlay(SpokeStyle.separator)
+                    distanceChart(stats)
+                    Divider().overlay(SpokeStyle.separator)
+                    rideSummary(stats)
+                    Divider().overlay(SpokeStyle.separator)
+                    peakPerformance(stats)
+                }
+            }
+            .padding(.horizontal, SpokeStyle.pageInset)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+        .background(SpokeStyle.background)
     }
 
     private func speedChart(_ stats: RideStatistics) -> some View {

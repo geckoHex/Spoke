@@ -119,8 +119,8 @@ private struct RideDashboardView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
 
-    @EnvironmentObject private var spotifyAuthentication: SpotifyAuthenticationStore
-    @StateObject private var spotifyStore = SpotifyNowPlayingStore()
+    @Environment(SpotifyAuthenticationStore.self) private var spotifyAuthentication
+    @State private var spotifyStore = SpotifyNowPlayingStore()
     private let overspeedAlertController: RideOverspeedAlertController
     @State private var developerSpeedInMilesPerHour = 0
     @State private var isDeveloperSpeedometerPressed = false
@@ -586,6 +586,6 @@ private struct RideSessionResources: Sendable {
         onStartRide: {},
         onEndRide: {}
     )
-        .environmentObject(SpotifyAuthenticationStore())
+        .environment(SpotifyAuthenticationStore())
         .preferredColorScheme(.dark)
 }

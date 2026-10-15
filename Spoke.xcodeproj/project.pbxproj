@@ -59,13 +59,6 @@
 		51AB0001304149440042A92D /* Exceptions for "Spoke" folder in "Spoke" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				images/afternoon.png,
-				images/evening.png,
-				images/midnight.png,
-				images/morning.png,
-				images/night.png,
-				images/sunrise.png,
-				images/sunset.png,
 				Info.plist,
 			);
 			target = 31A5EF56304149440042A92D /* Spoke */;

@@ -115,22 +115,12 @@ enum RideRouteSpeed {
     }
 
     static func movingMetrics(for points: [RideRoutePoint]) -> RideMovingMetrics {
-        measuredSegments(for: points)
-            .filter { $0.speedInMilesPerHour > littleMotionThreshold }
-            .reduce(
-                into: RideMovingMetrics(duration: 0, distanceInMeters: 0)
-            ) { metrics, segment in
-                metrics = RideMovingMetrics(
-                    duration: metrics.duration + segment.duration,
-                    distanceInMeters:
-                        metrics.distanceInMeters + segment.distanceInMeters
-                )
-            }
+        RideRouteSummary(points: points).movingMetrics
     }
 
     static func topSpeed(for points: [RideRoutePoint]) -> Double? {
         // shortcut: Route segments estimate speed; persist live samples if peaks must match the speedometer.
-        measuredSegments(for: points).map(\.speedInMilesPerHour).max()
+        RideRouteSummary(points: points).topSpeedInMilesPerHour
     }
 
     static func typicalMovingSpeed(_ speeds: [Double]) -> Double? {

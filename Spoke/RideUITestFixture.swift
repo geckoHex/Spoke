@@ -17,6 +17,7 @@ enum RideUITestFixture {
                 context.insert(point)
                 ride.routePoints.append(point)
             }
+            ride.routeSummary = RideRouteSummary(points: ride.routePoints)
         }
         try context.save()
     }
@@ -53,6 +54,7 @@ enum RideUITestFixture {
             context.insert(point)
             ride.routePoints.append(point)
         }
+        ride.routeSummary = RideRouteSummary(points: ride.routePoints)
         try context.save()
     }
 }

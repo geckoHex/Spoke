@@ -4,8 +4,8 @@ Spoke is a premium cycling app. It should feel Apple-designed: polished, minimal
 
 ## Design Instructions
 
-Preserve the clean DoorDash-inspired dark theme: charcoal backgrounds, white text and icons, bold system headings, and restrained red accents.
-Use neutral raised surfaces for sheets and fields, red pill-shaped primary buttons with white content, and readable lighter red for destructive labels. Use the primary red for navigation icons, map routes, markers, and progress. Distinguish route speeds with red, white, and gray plus solid, dashed, and dotted lines. Reserve amber for the speed warning.
+Preserve the current monochrome dark theme defined in `Spoke/SpokeControlStyles.swift`: black backgrounds, neutral raised surfaces, white text and icons, bold system headings, and square cards and controls.
+Use white primary buttons with black content, white navigation icons, map routes, markers, and progress. Distinguish route speeds with white and gray plus solid, dashed, and dotted lines. Use the existing red for destructive controls and amber for the speed warning. Historical concepts in `Design/` are references, not instructions to restyle the app.
 Keep the landscape image confined to the Home weather card. Keep sheets consistent and uncluttered.
 Always design in dark mode.
 Keep contrast in mind, adjusting colors when needed.

@@ -9,8 +9,8 @@ import SwiftUI
 import UIKit
 
 struct HistoryView: View {
-    @Query(sort: \TrackedRide.startedAt, order: .reverse)
-    private var rides: [TrackedRide]
+    @Query(filter: #Predicate<TrackedRide> { $0.endedAt != nil }, sort: \TrackedRide.startedAt, order: .reverse)
+    private var completedRides: [TrackedRide]
     @Binding private var highlightedRideID: PersistentIdentifier?
     @State private var relativeTimeSnapshot = Date.now
 
@@ -18,10 +18,6 @@ struct HistoryView: View {
         highlightedRideID: Binding<PersistentIdentifier?> = .constant(nil)
     ) {
         _highlightedRideID = highlightedRideID
-    }
-
-    private var completedRides: [TrackedRide] {
-        rides.filter { $0.endedAt != nil }
     }
 
     var body: some View {
@@ -243,7 +239,7 @@ struct RideHistoryDetailView: View {
     }
 
     private var movingMetrics: RideMovingMetrics {
-        RideRouteSpeed.movingMetrics(for: ride.routePoints)
+        ride.routeSummary.movingMetrics
     }
 
     private var rideDateAndTime: String {

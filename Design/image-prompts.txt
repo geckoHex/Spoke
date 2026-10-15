@@ -1,4 +1,7 @@
-Generated using the built-in image_gen tool.
+Historical concept and artwork prompts, generated using the built-in image_gen tool.
+The app's current design is defined by Spoke/SpokeControlStyles.swift and AGENTS.md.
+These prompts document asset provenance; they are not current UI specifications.
+weather-midnight-unused.png preserves an unused source illustration; bundled weather images live in Spoke/Assets.xcassets.
 
 CONCEPT
 Create a polished, credible iOS app UI design concept sheet for Spoke, a premium cycling app, showing three flat front-facing iPhone screens side by side: Home, active Ride HUD, and History. Not a website. Screens should occupy almost all of the wide image; no perspective, props, scenery outside phones, or explanatory callouts. This is a design reference for a real SwiftUI implementation.

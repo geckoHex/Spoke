@@ -29,7 +29,8 @@ final class RideSessionController {
     @ObservationIgnored private var modelContext: ModelContext?
     @ObservationIgnored private var locationTask: Task<Void, Never>?
     @ObservationIgnored private var locationSessionGeneration = 0
-    @ObservationIgnored private var lastRecordedPositionAt: Date?
+    @ObservationIgnored private var lastRecordedPoint: RideRoutePoint?
+    @ObservationIgnored private var firstRecordedLocation: RideLocationSample?
     @ObservationIgnored private var lastSpotifyTrackIdentity: String?
     @ObservationIgnored private var startAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
@@ -64,7 +65,7 @@ final class RideSessionController {
 
         activeRide = ride
         let latestPoint = ride.routePoints.max { $0.recordedAt < $1.recordedAt }
-        lastRecordedPositionAt = latestPoint?.recordedAt
+        lastRecordedPoint = latestPoint
         lastSpotifyTrackIdentity = ride.soundtrackEntries
             .max { $0.startedAt < $1.startedAt }?
             .trackIdentity
@@ -72,8 +73,11 @@ final class RideSessionController {
             RideMapState(location: RideLocationSample(point: $0), heading: nil)
         }
 
-        if let firstPoint = ride.routePoints.min(by: { $0.recordedAt < $1.recordedAt }) {
-            resolveStartAddressIfNeeded(RideLocationSample(point: firstPoint), for: ride)
+        firstRecordedLocation = ride.routePoints
+            .min(by: { $0.recordedAt < $1.recordedAt })
+            .map(RideLocationSample.init)
+        if let firstRecordedLocation {
+            resolveStartAddressIfNeeded(firstRecordedLocation, for: ride)
         }
 
         if !ride.isPaused {
@@ -87,6 +91,7 @@ final class RideSessionController {
         errorMessage = nil
 
         let ride = TrackedRide(startedAt: date)
+        ride.routeSummary = RideRouteSummary()
         modelContext.insert(ride)
 
         do {
@@ -100,7 +105,8 @@ final class RideSessionController {
         activeRide = ride
         currentMapState = nil
         speedInMilesPerHour = 0
-        lastRecordedPositionAt = nil
+        lastRecordedPoint = nil
+        firstRecordedLocation = nil
         lastSpotifyTrackIdentity = nil
         beginLocationUpdates()
         synchronizeLiveActivity(at: date, requestIfNeeded: true)
@@ -191,7 +197,8 @@ final class RideSessionController {
 
         activeRide = nil
         currentMapState = nil
-        lastRecordedPositionAt = nil
+        lastRecordedPoint = nil
+        firstRecordedLocation = nil
         lastSpotifyTrackIdentity = nil
         synchronizeLiveActivity(at: date)
 
@@ -441,8 +448,8 @@ final class RideSessionController {
               ))
         else { return }
 
-        if let lastRecordedPositionAt,
-           location.timestamp.timeIntervalSince(lastRecordedPositionAt)
+        if let lastRecordedPoint,
+           location.timestamp.timeIntervalSince(lastRecordedPoint.recordedAt)
             < positionRecordingInterval
         {
             return
@@ -456,18 +463,21 @@ final class RideSessionController {
             horizontalAccuracy: location.horizontalAccuracy,
             recordedAt: location.timestamp
         )
+        let previousSummary = ride.routeSummary
+        var summary = previousSummary
+        summary.append(point, after: lastRecordedPoint)
         modelContext.insert(point)
         ride.routePoints.append(point)
+        ride.routeSummary = summary
 
         do {
-            try modelContext.save()
-            lastRecordedPositionAt = location.timestamp
-            let startingLocation = ride.routePoints
-                .min(by: { $0.recordedAt < $1.recordedAt })
-                .map(RideLocationSample.init) ?? location
-            resolveStartAddressIfNeeded(startingLocation, for: ride)
+            try saveChanges(modelContext)
+            lastRecordedPoint = point
+            if firstRecordedLocation == nil { firstRecordedLocation = location }
+            resolveStartAddressIfNeeded(firstRecordedLocation ?? location, for: ride)
         } catch {
             ride.routePoints.removeAll { $0 === point }
+            ride.routeSummary = previousSummary
             modelContext.delete(point)
         }
     }

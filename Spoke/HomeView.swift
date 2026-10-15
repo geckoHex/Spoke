@@ -13,8 +13,8 @@ struct HomeView: View {
     let onShowRide: () -> Void
     let onEndRide: () -> Void
 
-    @Query(sort: \TrackedRide.startedAt, order: .reverse)
-    private var rides: [TrackedRide]
+    @Query(filter: #Predicate<TrackedRide> { $0.endedAt != nil }, sort: \TrackedRide.startedAt, order: .reverse)
+    private var completedRides: [TrackedRide]
     @State private var selectedRide: TrackedRide?
 
     @State private var weatherModel =
@@ -24,21 +24,23 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let currentDate = max(context.date, Date.now)
-                let timeOfDay = TimeOfDay(date: currentDate)
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            HomeGreeting(
+                                timeOfDay: TimeOfDay(date: max(context.date, Date.now)),
+                                name: displayName
+                            )
+                        }
 
-                GeometryReader { geometry in
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 24) {
-                            HomeGreeting(timeOfDay: timeOfDay, name: displayName)
+                        HomeRideActivity(rides: completedRides) {
+                            selectedRide = $0
+                        }
 
-                            HomeRideActivity(rides: completedRides, date: currentDate) {
-                                selectedRide = $0
-                            }
-
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
                             HomeWeatherView(
-                                date: currentDate,
+                                date: max(context.date, Date.now),
                                 snapshot: weatherModel.snapshot,
                                 isLoading: weatherModel.isLoading,
                                 isUnavailable: weatherModel.isUnavailable,
@@ -48,21 +50,21 @@ struct HomeView: View {
                                 }
                             )
                         }
-                        .padding(.horizontal, SpokeStyle.pageInset)
-                        .padding(.top, 16)
-                        .padding(.bottom, 12)
-                        .frame(minHeight: geometry.size.height)
                     }
-                    .scrollIndicators(.hidden)
-                    .scrollBounceBehavior(.basedOnSize)
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
+                    .frame(minHeight: geometry.size.height)
                 }
-                .background(SpokeStyle.background)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    rideAction(date: currentDate)
-                        .padding(.horizontal, SpokeStyle.pageInset)
-                        .padding(.vertical, 12)
-                        .background(SpokeStyle.background)
-                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+            }
+            .background(SpokeStyle.background)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                rideAction
+                    .padding(.horizontal, SpokeStyle.pageInset)
+                    .padding(.vertical, 12)
+                    .background(SpokeStyle.background)
             }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $selectedRide) { ride in
@@ -75,15 +77,17 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private func rideAction(date: Date) -> some View {
+    private var rideAction: some View {
         if let ride = rideSession.activeRide {
             VStack(spacing: 12) {
                 Button(action: onShowRide) {
                     HStack {
                         Label(ride.isPaused ? "Ride paused" : rideSession.locationStatus.title, systemImage: "bicycle")
                         Spacer()
-                        Text(RideMetrics.duration(ride.elapsedDuration(at: date)))
-                            .monospacedDigit()
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            Text(RideMetrics.duration(ride.elapsedDuration(at: max(context.date, Date.now))))
+                                .monospacedDigit()
+                        }
                         Image(systemName: "chevron.right")
                     }
                     .font(.subheadline.weight(.semibold))
@@ -112,10 +116,6 @@ struct HomeView: View {
         }
     }
 
-    private var completedRides: [TrackedRide] {
-        rides.filter { $0.endedAt != nil }
-    }
-
     private var displayName: String {
         let trimmedName = settings?.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmedName ?? ""
@@ -124,35 +124,13 @@ struct HomeView: View {
 
 private struct HomeRideActivity: View {
     let rides: [TrackedRide]
-    let date: Date
     let onOpenRide: (TrackedRide) -> Void
-
-    private var recentRides: [TrackedRide] {
-        rides.filter {
-            RideMetrics.startedInLastSevenDays($0, relativeTo: date)
-        }
-    }
-
-    private var totalDistance: Double {
-        recentRides.reduce(0) { result, ride in
-            result + RideMetrics.distanceInMeters(for: ride)
-        }
-    }
-
-    private var totalDuration: TimeInterval {
-        recentRides.reduce(0) { result, ride in
-            result + ride.elapsedDuration()
-        }
-    }
-
-    private var rideCountDescription: String {
-        let count = recentRides.count
-        return "\(count) \(count == 1 ? "ride" : "rides")"
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            weeklySummary
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                weeklySummary(at: max(context.date, Date.now))
+            }
 
             Divider().overlay(SpokeStyle.separator)
 
@@ -174,8 +152,16 @@ private struct HomeRideActivity: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var weeklySummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func weeklySummary(at date: Date) -> some View {
+        let recentRides = rides.filter {
+            RideMetrics.startedInLastSevenDays($0, relativeTo: date)
+        }
+        let totalDistance = recentRides.reduce(0) { $0 + RideMetrics.distanceInMeters(for: $1) }
+        let totalDuration = recentRides.reduce(0) { $0 + $1.elapsedDuration() }
+        let count = recentRides.count
+        let rideCountDescription = "\(count) \(count == 1 ? "ride" : "rides")"
+
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Last 7 Days")
                     .font(.headline)

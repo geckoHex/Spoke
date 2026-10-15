@@ -7,7 +7,6 @@ import SwiftData
 enum RideSessionStore {
     static let modelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
             AppSettings.self,
             TrackedRide.self,
             RideRoutePoint.self,
@@ -28,11 +27,33 @@ enum RideSessionStore {
                ProcessInfo.processInfo.arguments.contains("--stats-fixture") {
                 try RideUITestFixture.insertStats(into: container.mainContext)
             }
+            // A failed cache backfill must not prevent opening existing rides.
+            // Reads can derive missing summaries from the unchanged route points.
+            try? backfillRouteSummaries(in: container)
             return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+
+    static func backfillRouteSummaries(in container: ModelContainer) throws {
+        var descriptor = FetchDescriptor<TrackedRide>(
+            predicate: #Predicate { $0.routeSummaryPointCount == nil }
+        )
+        descriptor.fetchLimit = 100
+
+        while true {
+            // Release each batch's route objects before fetching the next one.
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
+            let rides = try context.fetch(descriptor)
+            guard !rides.isEmpty else { return }
+            for ride in rides {
+                ride.routeSummary = RideRouteSummary(points: ride.routePoints)
+            }
+            try context.save()
+        }
+    }
 
     static let controller: RideSessionController = {
         let controller = RideSessionController(liveActivity: RideLiveActivityController())

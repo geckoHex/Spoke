@@ -27,4 +27,15 @@ final class AppSettings {
         self.keepScreenOn = keepScreenOn
         self.developerModeEnabled = developerModeEnabled
     }
+
+    func clearLegacySpotifyCredentials() -> Bool {
+        guard !spotifyClientID.isEmpty || !spotifyClientSecret.isEmpty
+                || !spotifyRefreshToken.isEmpty
+        else { return false }
+
+        spotifyClientID = ""
+        spotifyClientSecret = ""
+        spotifyRefreshToken = ""
+        return true
+    }
 }

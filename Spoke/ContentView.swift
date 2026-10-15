@@ -175,11 +175,7 @@ struct ContentView: View {
 
     private func createSettingsIfNeeded() {
         if let settings {
-            if !settings.spotifyClientID.isEmpty || !settings.spotifyClientSecret.isEmpty
-                || !settings.spotifyRefreshToken.isEmpty {
-                settings.spotifyClientID = ""
-                settings.spotifyClientSecret = ""
-                settings.spotifyRefreshToken = ""
+            if settings.clearLegacySpotifyCredentials() {
                 try? modelContext.save()
             }
             return
@@ -203,10 +199,9 @@ struct ContentView: View {
 
 #Preview {
     ContentView(rideSession: RideSessionController())
-        .environmentObject(SpotifyAuthenticationStore())
+        .environment(SpotifyAuthenticationStore())
         .modelContainer(
             for: [
-                Item.self,
                 AppSettings.self,
                 TrackedRide.self,
                 RideRoutePoint.self,

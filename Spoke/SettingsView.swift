@@ -43,7 +43,7 @@ struct SettingsView: View {
 
 private struct SettingsForm: View {
     @Bindable var settings: AppSettings
-    @EnvironmentObject private var spotifyAuthentication: SpotifyAuthenticationStore
+    @Environment(SpotifyAuthenticationStore.self) private var spotifyAuthentication
     @FocusState private var focusedField: SettingsField?
     @State private var inputFrames: [SettingsField: CGRect] = [:]
 
@@ -197,6 +197,6 @@ private extension View {
 
 #Preview {
     SettingsView(settings: AppSettings())
-        .environmentObject(SpotifyAuthenticationStore())
+        .environment(SpotifyAuthenticationStore())
         .preferredColorScheme(.dark)
 }

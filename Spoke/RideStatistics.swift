@@ -32,9 +32,13 @@ struct RideStatistics {
     var averageDistance: Double { rideCount > 0 ? distanceInMeters / Double(rideCount) : 0 }
     var averageDuration: TimeInterval { rideCount > 0 ? duration / Double(rideCount) : 0 }
 
+    static func startDate(relativeTo date: Date, calendar: Calendar = .current) -> Date {
+        calendar.date(byAdding: .day, value: -29, to: calendar.startOfDay(for: date))!
+    }
+
     init(rides: [TrackedRide], now: Date = .now, calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -29, to: today)!
+        let start = Self.startDate(relativeTo: now, calendar: calendar)
         startDate = start
         endDate = calendar.date(byAdding: .day, value: 1, to: today)!
 
@@ -44,11 +48,12 @@ struct RideStatistics {
                   endedAt >= ride.startedAt, endedAt <= now
             else { return nil }
 
+            let summary = ride.routeSummary
             return Ride(
                 date: calendar.startOfDay(for: ride.startedAt),
-                distance: ride.routePoints.count > 1 ? RideMetrics.distanceInMeters(for: ride) : nil,
+                distance: summary.pointCount > 1 ? summary.distanceInMeters : nil,
                 duration: ride.elapsedDuration(),
-                topSpeed: RideRouteSpeed.topSpeed(for: ride.routePoints)
+                topSpeed: summary.topSpeedInMilesPerHour
             )
         }
         let byDay = Dictionary(grouping: completed, by: \.date)

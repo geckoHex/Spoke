@@ -46,14 +46,7 @@ enum RideMetrics {
     }
 
     static func distanceInMeters(for ride: TrackedRide) -> CLLocationDistance {
-        let points = ride.routePoints.sorted { $0.recordedAt < $1.recordedAt }
-        guard points.count > 1 else { return 0 }
-
-        return zip(points, points.dropFirst()).reduce(0) { distance, pair in
-            let start = CLLocation(latitude: pair.0.latitude, longitude: pair.0.longitude)
-            let end = CLLocation(latitude: pair.1.latitude, longitude: pair.1.longitude)
-            return distance + end.distance(from: start)
-        }
+        ride.routeSummary.distanceInMeters
     }
 
     static func distance(_ meters: CLLocationDistance) -> String {

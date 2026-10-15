@@ -19,6 +19,13 @@ final class TrackedRide {
     var lastResumedAt: Date?
     var accumulatedPausedDuration: TimeInterval
 
+    // Optional for existing stores. Raw points remain the source for maps and replay.
+    var totalDistanceInMeters: Double?
+    var movingDuration: TimeInterval?
+    var movingDistanceInMeters: Double?
+    var topSpeedInMilesPerHour: Double?
+    var routeSummaryPointCount: Int?
+
     @Relationship(deleteRule: .cascade, inverse: \RideRoutePoint.ride)
     var routePoints: [RideRoutePoint]
 
@@ -41,6 +48,31 @@ final class TrackedRide {
 
     var isPaused: Bool {
         pausedAt != nil && endedAt == nil
+    }
+
+    /// Recording updates this alongside routePoints in the same save. Route imports
+    /// or edits must rebuild it with RideRouteSummary(points:) before saving.
+    var routeSummary: RideRouteSummary {
+        get {
+            guard let totalDistanceInMeters, let movingDuration,
+                  let movingDistanceInMeters, let routeSummaryPointCount
+            else { return RideRouteSummary(points: routePoints) }
+
+            var summary = RideRouteSummary()
+            summary.pointCount = routeSummaryPointCount
+            summary.distanceInMeters = totalDistanceInMeters
+            summary.movingDuration = movingDuration
+            summary.movingDistanceInMeters = movingDistanceInMeters
+            summary.topSpeedInMilesPerHour = topSpeedInMilesPerHour
+            return summary
+        }
+        set {
+            totalDistanceInMeters = newValue.distanceInMeters
+            movingDuration = newValue.movingDuration
+            movingDistanceInMeters = newValue.movingDistanceInMeters
+            topSpeedInMilesPerHour = newValue.topSpeedInMilesPerHour
+            routeSummaryPointCount = newValue.pointCount
+        }
     }
 
     var automaticName: String? {
