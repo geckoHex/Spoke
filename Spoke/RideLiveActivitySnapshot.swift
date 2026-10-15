@@ -6,6 +6,7 @@ struct RideLiveActivitySnapshot: Equatable {
 
     init(
         ride: TrackedRide,
+        distanceInMeters: Double,
         speedInMilesPerHour: Int,
         locationStatus: RideLocationStatus,
         at date: Date
@@ -14,7 +15,7 @@ struct RideLiveActivitySnapshot: Equatable {
         state = RideActivityAttributes.ContentState(
             timerStartDate: ride.startedAt.addingTimeInterval(ride.accumulatedPausedDuration),
             elapsedDuration: ride.elapsedDuration(at: date),
-            distanceInMiles: RideMetrics.distanceInMeters(for: ride) / 1_609.344,
+            distanceInMiles: distanceInMeters / 1_609.344,
             speedInMilesPerHour: ride.isPaused ? 0
                 : (locationStatus == .recording ? max(speedInMilesPerHour, 0) : nil),
             isPaused: ride.isPaused

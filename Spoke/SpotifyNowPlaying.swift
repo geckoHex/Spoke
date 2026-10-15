@@ -3,8 +3,8 @@
 //  Spoke
 //
 
-import Combine
 import Foundation
+import Observation
 import SwiftUI
 
 nonisolated struct SpotifyTrack: Equatable, Sendable {
@@ -36,7 +36,8 @@ nonisolated struct SpotifyTrack: Equatable, Sendable {
 }
 
 @MainActor
-final class SpotifyNowPlayingStore: ObservableObject {
+@Observable
+final class SpotifyNowPlayingStore {
     enum State: Equatable {
         case idle
         case loading
@@ -45,7 +46,7 @@ final class SpotifyNowPlayingStore: ObservableObject {
         case failed(String)
     }
 
-    @Published private(set) var state: State = .idle
+    private(set) var state: State = .idle
 
     private let refreshInterval = Duration.seconds(10)
 

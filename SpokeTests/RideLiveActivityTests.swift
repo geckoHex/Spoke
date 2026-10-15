@@ -34,7 +34,7 @@ struct RideLiveActivityTests {
     @Test func unavailableLocationDoesNotAdvertiseAnOldSpeed() {
         let ride = TrackedRide()
         let snapshot = RideLiveActivitySnapshot(
-            ride: ride, speedInMilesPerHour: 16, locationStatus: .unavailable, at: .now
+            ride: ride, distanceInMeters: 0, speedInMilesPerHour: 16, locationStatus: .unavailable, at: .now
         )
         #expect(snapshot.state.speedInMilesPerHour == nil)
     }
@@ -166,7 +166,8 @@ struct RideLiveActivityTests {
     }
 
     private func snapshot(_ ride: TrackedRide, at date: Date) -> RideLiveActivitySnapshot {
-        RideLiveActivitySnapshot(ride: ride, speedInMilesPerHour: 16, locationStatus: .recording, at: date)
+        RideLiveActivitySnapshot(ride: ride, distanceInMeters: RideMetrics.distanceInMeters(for: ride),
+                                 speedInMilesPerHour: 16, locationStatus: .recording, at: date)
     }
 
     private func makeContainer() throws -> ModelContainer {

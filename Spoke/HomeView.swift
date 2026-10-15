@@ -13,7 +13,8 @@ struct HomeView: View {
     let onShowRide: () -> Void
     let onEndRide: () -> Void
 
-    @Query(sort: \TrackedRide.startedAt, order: .reverse)
+    @Query(filter: #Predicate<TrackedRide> { $0.endedAt != nil },
+           sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
     @State private var selectedRide: TrackedRide?
 
@@ -33,7 +34,7 @@ struct HomeView: View {
                         VStack(alignment: .leading, spacing: 24) {
                             HomeGreeting(timeOfDay: timeOfDay, name: displayName)
 
-                            HomeRideActivity(rides: completedRides, date: currentDate) {
+                            HomeRideActivity(rides: rides, date: currentDate) {
                                 selectedRide = $0
                             }
 
@@ -110,10 +111,6 @@ struct HomeView: View {
                 [.home: $0]
             }
         }
-    }
-
-    private var completedRides: [TrackedRide] {
-        rides.filter { $0.endedAt != nil }
     }
 
     private var displayName: String {

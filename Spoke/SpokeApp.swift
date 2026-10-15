@@ -10,7 +10,7 @@ import SwiftData
 
 @main
 struct SpokeApp: App {
-    @StateObject private var spotifyAuthentication = SpotifyAuthenticationStore()
+    @State private var spotifyAuthentication = SpotifyAuthenticationStore()
     @State private var rideSession: RideSessionController
 
     init() {
@@ -21,7 +21,7 @@ struct SpokeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(rideSession: rideSession)
-                .environmentObject(spotifyAuthentication)
+                .environment(spotifyAuthentication)
                 .disablesKeyboardSafeArea()
 
         }

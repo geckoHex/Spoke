@@ -7,7 +7,6 @@ import SwiftData
 enum RideSessionStore {
     static let modelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
             AppSettings.self,
             TrackedRide.self,
             RideRoutePoint.self,

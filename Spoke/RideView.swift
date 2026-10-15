@@ -119,8 +119,8 @@ private struct RideDashboardView: View {
     let settings: AppSettings?
     let rideSession: RideSessionController
 
-    @EnvironmentObject private var spotifyAuthentication: SpotifyAuthenticationStore
-    @StateObject private var spotifyStore = SpotifyNowPlayingStore()
+    @Environment(SpotifyAuthenticationStore.self) private var spotifyAuthentication
+    @State private var spotifyStore = SpotifyNowPlayingStore()
     private let overspeedAlertController: RideOverspeedAlertController
     @State private var developerSpeedInMilesPerHour = 0
     @State private var isDeveloperSpeedometerPressed = false
@@ -308,7 +308,7 @@ private struct RideDashboardView: View {
             HStack(spacing: 16) {
                 progressMetric(
                     "Distance",
-                    value: RideMetrics.distance(activeRideDistanceInMeters)
+                    value: RideMetrics.distance(rideSession.distanceInMeters)
                 )
                 Rectangle()
                     .fill(SpokeStyle.separator)
@@ -335,11 +335,6 @@ private struct RideDashboardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-    }
-
-    private var activeRideDistanceInMeters: CLLocationDistance {
-        guard let activeRide = rideSession.activeRide else { return 0 }
-        return RideMetrics.distanceInMeters(for: activeRide)
     }
 
     private func activeRideElapsedDuration(at date: Date) -> TimeInterval {
@@ -586,6 +581,6 @@ private struct RideSessionResources: Sendable {
         onStartRide: {},
         onEndRide: {}
     )
-        .environmentObject(SpotifyAuthenticationStore())
+        .environment(SpotifyAuthenticationStore())
         .preferredColorScheme(.dark)
 }

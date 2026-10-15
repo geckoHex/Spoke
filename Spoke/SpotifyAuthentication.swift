@@ -1,7 +1,7 @@
 import AuthenticationServices
-import Combine
 import CryptoKit
 import Foundation
+import Observation
 import Security
 import UIKit
 
@@ -144,13 +144,14 @@ nonisolated enum SpotifyKeychain {
 }
 
 @MainActor
-final class SpotifyAuthenticationStore: ObservableObject {
-    @Published private(set) var sessionID: UUID?
-    @Published private(set) var isConnecting = false
-    @Published private(set) var errorMessage: String?
+@Observable
+final class SpotifyAuthenticationStore {
+    private(set) var sessionID: UUID?
+    private(set) var isConnecting = false
+    private(set) var errorMessage: String?
     let client: SpotifyAPIClient
-    private var webSession: ASWebAuthenticationSession?
-    private var presentationContext: SpotifyPresentationContext?
+    @ObservationIgnored private var webSession: ASWebAuthenticationSession?
+    @ObservationIgnored private var presentationContext: SpotifyPresentationContext?
 
     init() {
         let isTesting = ProcessInfo.processInfo.arguments.contains("--ui-testing")

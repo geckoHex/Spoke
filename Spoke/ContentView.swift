@@ -203,10 +203,9 @@ struct ContentView: View {
 
 #Preview {
     ContentView(rideSession: RideSessionController())
-        .environmentObject(SpotifyAuthenticationStore())
+        .environment(SpotifyAuthenticationStore())
         .modelContainer(
             for: [
-                Item.self,
                 AppSettings.self,
                 TrackedRide.self,
                 RideRoutePoint.self,

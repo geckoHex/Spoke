@@ -9,7 +9,8 @@ import SwiftUI
 import UIKit
 
 struct HistoryView: View {
-    @Query(sort: \TrackedRide.startedAt, order: .reverse)
+    @Query(filter: #Predicate<TrackedRide> { $0.endedAt != nil },
+           sort: \TrackedRide.startedAt, order: .reverse)
     private var rides: [TrackedRide]
     @Binding private var highlightedRideID: PersistentIdentifier?
     @State private var relativeTimeSnapshot = Date.now
@@ -18,10 +19,6 @@ struct HistoryView: View {
         highlightedRideID: Binding<PersistentIdentifier?> = .constant(nil)
     ) {
         _highlightedRideID = highlightedRideID
-    }
-
-    private var completedRides: [TrackedRide] {
-        rides.filter { $0.endedAt != nil }
     }
 
     var body: some View {
@@ -38,7 +35,7 @@ struct HistoryView: View {
                     .padding(.bottom, 12)
 
                 Group {
-                    if completedRides.isEmpty {
+                    if rides.isEmpty {
                         ContentUnavailableView(
                             "No Rides Yet",
                             systemImage: "figure.outdoor.cycle",
@@ -48,7 +45,7 @@ struct HistoryView: View {
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 0) {
-                                ForEach(completedRides) { ride in
+                                ForEach(rides) { ride in
                                     NavigationLink {
                                         RideHistoryDetailView(ride: ride)
                                     } label: {

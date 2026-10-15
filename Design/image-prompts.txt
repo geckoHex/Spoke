@@ -1,3 +1,5 @@
+Historical artwork prompts, retained as asset provenance. The UI concept below is not the current app design or implementation guidance.
+
 Generated using the built-in image_gen tool.
 
 CONCEPT

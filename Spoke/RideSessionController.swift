@@ -15,6 +15,7 @@ final class RideSessionController {
     var errorMessage: String?
     private(set) var activeRide: TrackedRide?
     private(set) var speedInMilesPerHour = 0
+    private(set) var distanceInMeters: CLLocationDistance = 0
     private(set) var currentMapState: RideMapState?
     private(set) var locationStatus: RideLocationStatus = .acquiring
 
@@ -29,7 +30,7 @@ final class RideSessionController {
     @ObservationIgnored private var modelContext: ModelContext?
     @ObservationIgnored private var locationTask: Task<Void, Never>?
     @ObservationIgnored private var locationSessionGeneration = 0
-    @ObservationIgnored private var lastRecordedPositionAt: Date?
+    @ObservationIgnored private var lastRecordedLocation: RideLocationSample?
     @ObservationIgnored private var lastSpotifyTrackIdentity: String?
     @ObservationIgnored private var startAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
@@ -63,8 +64,9 @@ final class RideSessionController {
         guard let ride = try? modelContext.fetch(descriptor).first else { return }
 
         activeRide = ride
+        distanceInMeters = RideMetrics.distanceInMeters(for: ride)
         let latestPoint = ride.routePoints.max { $0.recordedAt < $1.recordedAt }
-        lastRecordedPositionAt = latestPoint?.recordedAt
+        lastRecordedLocation = latestPoint.map(RideLocationSample.init)
         lastSpotifyTrackIdentity = ride.soundtrackEntries
             .max { $0.startedAt < $1.startedAt }?
             .trackIdentity
@@ -100,7 +102,8 @@ final class RideSessionController {
         activeRide = ride
         currentMapState = nil
         speedInMilesPerHour = 0
-        lastRecordedPositionAt = nil
+        distanceInMeters = 0
+        lastRecordedLocation = nil
         lastSpotifyTrackIdentity = nil
         beginLocationUpdates()
         synchronizeLiveActivity(at: date, requestIfNeeded: true)
@@ -190,8 +193,9 @@ final class RideSessionController {
         }
 
         activeRide = nil
+        distanceInMeters = 0
         currentMapState = nil
-        lastRecordedPositionAt = nil
+        lastRecordedLocation = nil
         lastSpotifyTrackIdentity = nil
         synchronizeLiveActivity(at: date)
 
@@ -393,6 +397,7 @@ final class RideSessionController {
         let snapshot = activeRide.map {
             RideLiveActivitySnapshot(
                 ride: $0,
+                distanceInMeters: distanceInMeters,
                 speedInMilesPerHour: speedInMilesPerHour,
                 locationStatus: locationStatus,
                 at: date
@@ -441,8 +446,8 @@ final class RideSessionController {
               ))
         else { return }
 
-        if let lastRecordedPositionAt,
-           location.timestamp.timeIntervalSince(lastRecordedPositionAt)
+        if let lastRecordedLocation,
+           location.timestamp.timeIntervalSince(lastRecordedLocation.timestamp)
             < positionRecordingInterval
         {
             return
@@ -450,6 +455,10 @@ final class RideSessionController {
 
         guard let modelContext else { return }
 
+        let addedDistance = lastRecordedLocation.map { previous in
+            CLLocation(latitude: location.latitude, longitude: location.longitude)
+                .distance(from: CLLocation(latitude: previous.latitude, longitude: previous.longitude))
+        } ?? 0
         let point = RideRoutePoint(
             latitude: location.latitude,
             longitude: location.longitude,
@@ -461,8 +470,9 @@ final class RideSessionController {
         ride.routePoints.append(point)
 
         do {
-            try modelContext.save()
-            lastRecordedPositionAt = location.timestamp
+            try saveChanges(modelContext)
+            lastRecordedLocation = location
+            distanceInMeters += addedDistance
             let startingLocation = ride.routePoints
                 .min(by: { $0.recordedAt < $1.recordedAt })
                 .map(RideLocationSample.init) ?? location
