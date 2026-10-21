@@ -54,6 +54,7 @@ struct RideRecordedSegment {
             let duration = last.recordedAt.timeIntervalSince(first.recordedAt)
             // shortcut: Infer motion from fixes at most 30 seconds apart; use saved speed samples if finer precision is needed.
             guard duration > 0, duration <= 30,
+                  first.formsCyclingSegment(with: last),
                   first.recordedAt >= ride.startedAt, last.recordedAt <= endedAt,
                   first.recordingStartedAt == last.recordingStartedAt,
                   (0...50).contains(first.horizontalAccuracy),

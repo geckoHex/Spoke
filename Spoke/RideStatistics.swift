@@ -15,6 +15,7 @@ struct RideStatistics {
         let date: Date
         let distance: Double?
         let duration: TimeInterval
+        let cyclingDuration: TimeInterval
         let topSpeed: Double?
     }
 
@@ -61,6 +62,7 @@ struct RideStatistics {
                 date: calendar.startOfDay(for: ride.startedAt),
                 distance: ride.routePoints.count > 1 ? RideMetrics.distanceInMeters(for: ride) : nil,
                 duration: ride.elapsedDuration(),
+                cyclingDuration: ride.cyclingDuration(),
                 topSpeed: RideRouteSpeed.topSpeed(for: ride.routePoints)
             )
         }
@@ -105,8 +107,8 @@ struct RideStatistics {
 
     private static func averageSpeed(for rides: [Ride]) -> Double? {
         // A ride without a timed route cannot contribute a measured speed.
-        let timedRoutes = rides.filter { $0.distance != nil && $0.duration > 0 }
-        let duration = timedRoutes.reduce(0) { $0 + $1.duration }
+        let timedRoutes = rides.filter { $0.distance != nil && $0.cyclingDuration > 0 }
+        let duration = timedRoutes.reduce(0) { $0 + $1.cyclingDuration }
         guard duration > 0 else { return nil }
         let distance = timedRoutes.reduce(0) { $0 + ($1.distance ?? 0) }
         return distance / 1_609.344 / (duration / 3_600)

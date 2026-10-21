@@ -50,10 +50,14 @@ enum RideMetrics {
         guard points.count > 1 else { return 0 }
 
         return zip(points, points.dropFirst()).reduce(0) { distance, pair in
-            let start = CLLocation(latitude: pair.0.latitude, longitude: pair.0.longitude)
-            let end = CLLocation(latitude: pair.1.latitude, longitude: pair.1.longitude)
-            return distance + end.distance(from: start)
+            distance + cyclingDistance(from: pair.0, to: pair.1)
         }
+    }
+
+    static func cyclingDistance(from start: RideRoutePoint, to end: RideRoutePoint) -> CLLocationDistance {
+        guard start.formsCyclingSegment(with: end) else { return 0 }
+        return CLLocation(latitude: end.latitude, longitude: end.longitude)
+            .distance(from: CLLocation(latitude: start.latitude, longitude: start.longitude))
     }
 
     static func distance(_ meters: CLLocationDistance) -> String {

@@ -67,7 +67,8 @@ struct RideView: View {
                         ride: ride,
                         onPauseToggle: { rideSession.togglePause() },
                         onEnd: onEndRide,
-                        isRideStartDestination: true
+                        isRideStartDestination: true,
+                        onWalkingToggle: { rideSession.toggleWalking() }
                     )
                     .padding(.horizontal, SpokeStyle.pageInset)
                     .padding(.vertical, 12)
@@ -241,7 +242,12 @@ private struct RideDashboardView: View {
             if rideSession.activeRide?.isPaused == true {
                 Label("Paused", systemImage: "pause.fill")
             } else {
-                Label(rideSession.locationStatus.title, systemImage: rideSession.locationStatus.symbol)
+                if rideSession.activeRide?.isWalking == true {
+                    Label("Walking", systemImage: "figure.walk")
+                }
+                if rideSession.activeRide?.isWalking != true || rideSession.locationStatus != .recording {
+                    Label(rideSession.locationStatus.title, systemImage: rideSession.locationStatus.symbol)
+                }
                 if rideSession.locationStatus == .denied {
                     Link("Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
                         .frame(minHeight: 44)
@@ -260,7 +266,8 @@ private struct RideDashboardView: View {
 
     private var overspeedAlertSpeed: Int? {
         guard settings?.soundEffectsEnabled != false else { return nil }
-        return rideSession.activeRide?.isPaused == true ? nil : displayedSpeedInMilesPerHour
+        return rideSession.activeRide?.isPaused == true || rideSession.activeRide?.isWalking == true
+            ? nil : displayedSpeedInMilesPerHour
     }
 
     private var isDeveloperModeEnabled: Bool {
@@ -268,7 +275,8 @@ private struct RideDashboardView: View {
     }
 
     private var displayedSpeedInMilesPerHour: Int {
-        isDeveloperModeEnabled
+        guard rideSession.activeRide?.isWalking != true else { return 0 }
+        return isDeveloperModeEnabled
             ? developerSpeedInMilesPerHour
             : rideSession.speedInMilesPerHour
     }
@@ -347,7 +355,7 @@ private struct RideDashboardView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.locationStatus != .recording ? "—" : String(speed))
+                    Text(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.activeRide?.isWalking != true && rideSession.locationStatus != .recording ? "—" : String(speed))
                         .font(.system(size: min(104, proxy.size.height * 0.65), weight: .bold))
                         .tracking(-3)
                         .monospacedDigit()
@@ -394,7 +402,7 @@ private struct RideDashboardView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(isDeveloperModeEnabled ? "Simulated speed" : "Speed")
-        .accessibilityValue(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.locationStatus != .recording ? "Unavailable" : "\(displayedSpeedInMilesPerHour) miles per hour")
+        .accessibilityValue(!isDeveloperModeEnabled && rideSession.activeRide?.isPaused == false && rideSession.activeRide?.isWalking != true && rideSession.locationStatus != .recording ? "Unavailable" : "\(displayedSpeedInMilesPerHour) miles per hour")
     }
 
     private func runDeveloperSpeedControl() async {

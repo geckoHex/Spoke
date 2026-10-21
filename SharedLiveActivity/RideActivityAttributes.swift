@@ -8,6 +8,10 @@ nonisolated struct RideActivityAttributes: ActivityAttributes, Sendable {
         var distanceInMiles: Double
         var speedInMilesPerHour: Int?
         var isPaused: Bool
+        var isWalking: Bool? = nil
+
+        var statusTitle: String { isPaused ? "Paused" : (isWalking == true ? "Walking" : "Riding") }
+        var statusSymbol: String { isPaused ? "pause.fill" : (isWalking == true ? "figure.walk" : "bicycle") }
     }
 
     let rideID: String

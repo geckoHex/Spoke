@@ -17,7 +17,7 @@ struct RideLiveActivity: Widget {
                         .foregroundStyle(RideActivityStyle.accent)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.isPaused ? "Paused" : "Riding")
+                    Text(context.state.statusTitle)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(RideActivityStyle.secondaryText)
                 }
@@ -29,17 +29,17 @@ struct RideLiveActivity: Widget {
                     .padding(.top, 4)
                 }
             } compactLeading: {
-                Image(systemName: context.state.isPaused ? "pause.fill" : "bicycle")
+                Image(systemName: context.state.statusSymbol)
                     .foregroundStyle(RideActivityStyle.accent)
-                    .accessibilityLabel(context.state.isPaused ? "Ride paused" : "Ride in progress")
+                    .accessibilityLabel(context.state.statusTitle)
             } compactTrailing: {
                 RideActivityTimer(state: context.state)
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: 64)
             } minimal: {
-                Image(systemName: context.state.isPaused ? "pause.fill" : "bicycle")
+                Image(systemName: context.state.statusSymbol)
                     .foregroundStyle(RideActivityStyle.accent)
-                    .accessibilityLabel(context.state.isPaused ? "Ride paused" : "Ride in progress")
+                    .accessibilityLabel(context.state.statusTitle)
             }
             .keylineTint(RideActivityStyle.accent)
         }
@@ -55,7 +55,7 @@ private struct RideActivityLockScreenView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("Spoke", systemImage: "bicycle")
                         .font(.headline)
-                    Text(context.state.isPaused ? "Ride paused" : "Ride in progress")
+                    Text(context.state.statusTitle)
                         .font(.caption)
                         .foregroundStyle(RideActivityStyle.secondaryText)
                 }
@@ -83,7 +83,7 @@ private struct RideActivityStats: View {
                 Text(state.distanceInMiles, format: .number.precision(.fractionLength(1)))
             }
             metric("Speed (mph)") {
-                if let speed = state.speedInMilesPerHour, !isStale || state.isPaused {
+                if let speed = state.speedInMilesPerHour, !isStale || state.isPaused || state.isWalking == true {
                     Text(speed, format: .number)
                 } else {
                     Text("—")

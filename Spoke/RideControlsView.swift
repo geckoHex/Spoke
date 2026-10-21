@@ -5,6 +5,7 @@ struct RideControlsView: View {
     let onPauseToggle: () -> Void
     let onEnd: () -> Void
     var isRideStartDestination = false
+    var onWalkingToggle: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -16,49 +17,62 @@ struct RideControlsView: View {
             ? AnyLayout(VStackLayout(spacing: 12))
             : AnyLayout(HStackLayout(spacing: 12))
 
-        layout {
-            Button(action: onPauseToggle) {
-                Label(ride.isPaused ? "Resume" : "Pause", systemImage: ride.isPaused ? "play.fill" : "pause.fill")
+        VStack(spacing: 8) {
+            layout {
+                Button(action: onPauseToggle) {
+                    Label(ride.isPaused ? "Resume" : "Pause", systemImage: ride.isPaused ? "play.fill" : "pause.fill")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
+                .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
+                .anchorPreference(key: RideStartButtonPreference.self, value: .bounds) {
+                    isRideStartDestination ? [.pause: $0] : [:]
+                }
+
+                Label(isHolding ? "Keep holding" : "Hold to end", systemImage: "stop.fill")
+                    .font(.headline.weight(.bold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .buttonStyle(SpokePrimaryButtonStyle(minHeight: 64))
-            .accessibilityLabel(ride.isPaused ? "Resume Ride" : "Pause Ride")
-            .anchorPreference(key: RideStartButtonPreference.self, value: .bounds) {
-                isRideStartDestination ? [.pause: $0] : [:]
+                    .minimumScaleFactor(0.75)
+                    .foregroundStyle(SpokeStyle.danger)
+                    .frame(maxWidth: .infinity, minHeight: 64)
+                    .padding(.horizontal, 12)
+                    .background {
+                        GeometryReader { proxy in
+                            SpokeStyle.danger.opacity(0.2)
+                                .frame(width: proxy.size.width * holdProgress)
+                        }
+                    }
+                    .background(SpokeStyle.surface)
+                    .clipShape(.rect(cornerRadius: SpokeStyle.controlRadius))
+                    .contentShape(.rect)
+                    .onLongPressGesture(minimumDuration: 1, maximumDistance: 32) {
+                        isHolding = false
+                        holdProgress = 0
+                        onEnd()
+                    } onPressingChanged: { pressing in
+                        isHolding = pressing
+                        withAnimation(reduceMotion ? nil : .linear(duration: pressing ? 1 : 0.15)) {
+                            holdProgress = pressing ? 1 : 0
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel("End Ride")
+                    .accessibilityHint("Hold for one second to finish. With VoiceOver, double-tap to finish.")
+                    .accessibilityAction { onEnd() }
             }
 
-            Label(isHolding ? "Keep holding" : "Hold to end", systemImage: "stop.fill")
-                .font(.headline.weight(.bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .foregroundStyle(SpokeStyle.danger)
-                .frame(maxWidth: .infinity, minHeight: 64)
-                .padding(.horizontal, 12)
-                .background {
-                    GeometryReader { proxy in
-                        SpokeStyle.danger.opacity(0.2)
-                            .frame(width: proxy.size.width * holdProgress)
-                    }
+            if let onWalkingToggle {
+                Button(action: onWalkingToggle) {
+                    Label(ride.isWalking ? "Resume Riding" : "Walk Your Bike",
+                          systemImage: ride.isWalking ? "figure.outdoor.cycle" : "figure.walk")
                 }
-                .background(SpokeStyle.surface)
-                .clipShape(.rect(cornerRadius: SpokeStyle.controlRadius))
-                .contentShape(.rect)
-                .onLongPressGesture(minimumDuration: 1, maximumDistance: 32) {
-                    isHolding = false
-                    holdProgress = 0
-                    onEnd()
-                } onPressingChanged: { pressing in
-                    isHolding = pressing
-                    withAnimation(reduceMotion ? nil : .linear(duration: pressing ? 1 : 0.15)) {
-                        holdProgress = pressing ? 1 : 0
-                    }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityAddTraits(.isButton)
-                .accessibilityLabel("End Ride")
-                .accessibilityHint("Hold for one second to finish. With VoiceOver, double-tap to finish.")
-                .accessibilityAction { onEnd() }
+                .buttonStyle(SpokeSecondaryButtonStyle())
+                .disabled(ride.isPaused)
+                .opacity(ride.isPaused ? 0.5 : 1)
+                .accessibilityHint(ride.isWalking ? "Returns to cycling." : "Pauses cycling distance while time and GPS continue.")
+            }
         }
         .onDisappear {
             isHolding = false

@@ -11,6 +11,41 @@ import XCTest
 final class SpokeUITests: XCTestCase {
 
     @MainActor
+    func testWalkYourBikeKeepsTimerRunningAndResumesCycling() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--weather-fixture"]
+        app.launch()
+        defer { app.terminate() }
+        app.buttons["Start Ride"].tap()
+        let walk = app.buttons["Walk Your Bike"]
+        XCTAssertTrue(walk.waitForExistence(timeout: 10))
+        XCTAssertTrue(walk.wait(for: \.isHittable, toEqual: true, timeout: 5))
+        walk.tap()
+        XCTAssertTrue(app.staticTexts["Walking"].waitForExistence(timeout: 5))
+        let resume = app.buttons["Resume Riding"]
+        XCTAssertTrue(resume.isHittable)
+        let time = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Time, ")).firstMatch
+        XCTAssertTrue(time.waitForExistence(timeout: 5))
+        let initialTime = time.label
+        expectation(for: NSPredicate(format: "label != %@", initialTime), evaluatedWith: time)
+        waitForExpectations(timeout: 5)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Walking ride"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.buttons["Pause Ride"].tap()
+        XCTAssertTrue(app.buttons["Resume Ride"].waitForExistence(timeout: 5))
+        XCTAssertFalse(resume.isEnabled)
+        app.buttons["Resume Ride"].tap()
+        XCTAssertTrue(resume.wait(for: \.isEnabled, toEqual: true, timeout: 5))
+        resume.tap()
+        XCTAssertTrue(walk.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Walking"].exists)
+        app.buttons["End Ride"].press(forDuration: 1.2)
+        XCTAssertTrue(app.staticTexts["Ride Complete"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testStatsTabShowsMonthlyChartsAndMetrics() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--weather-fixture", "--stats-fixture"]

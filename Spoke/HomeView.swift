@@ -81,7 +81,8 @@ struct HomeView: View {
             VStack(spacing: 12) {
                 Button(action: onShowRide) {
                     HStack {
-                        Label(ride.isPaused ? "Ride paused" : rideSession.locationStatus.title, systemImage: "bicycle")
+                        Label(ride.isPaused ? "Ride paused" : (ride.isWalking ? "Walking" : rideSession.locationStatus.title),
+                              systemImage: ride.isWalking ? "figure.walk" : "bicycle")
                         Spacer()
                         Text(RideMetrics.duration(ride.elapsedDuration(at: date)))
                             .monospacedDigit()
@@ -94,7 +95,7 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("View current ride")
-                .accessibilityValue(ride.isPaused ? "Paused" : rideSession.locationStatus.title)
+                .accessibilityValue(ride.isPaused ? "Paused" : (ride.isWalking ? "Walking" : rideSession.locationStatus.title))
 
                 RideControlsView(
                     ride: ride,

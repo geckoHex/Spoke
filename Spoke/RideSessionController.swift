@@ -30,7 +30,7 @@ final class RideSessionController {
     @ObservationIgnored private var modelContext: ModelContext?
     @ObservationIgnored private var locationTask: Task<Void, Never>?
     @ObservationIgnored private var locationSessionGeneration = 0
-    @ObservationIgnored private var lastRecordedLocation: RideLocationSample?
+    @ObservationIgnored private var lastRecordedPoint: RideRoutePoint?
     @ObservationIgnored private var lastSpotifyTrackIdentity: String?
     @ObservationIgnored private var startAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     @ObservationIgnored private var endAddressTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
@@ -66,7 +66,7 @@ final class RideSessionController {
         activeRide = ride
         distanceInMeters = RideMetrics.distanceInMeters(for: ride)
         let latestPoint = ride.routePoints.max { $0.recordedAt < $1.recordedAt }
-        lastRecordedLocation = latestPoint.map(RideLocationSample.init)
+        lastRecordedPoint = latestPoint
         lastSpotifyTrackIdentity = ride.soundtrackEntries
             .max { $0.startedAt < $1.startedAt }?
             .trackIdentity
@@ -103,7 +103,7 @@ final class RideSessionController {
         currentMapState = nil
         speedInMilesPerHour = 0
         distanceInMeters = 0
-        lastRecordedLocation = nil
+        lastRecordedPoint = nil
         lastSpotifyTrackIdentity = nil
         beginLocationUpdates()
         synchronizeLiveActivity(at: date, requestIfNeeded: true)
@@ -117,6 +117,7 @@ final class RideSessionController {
         let previousPausedAt = ride.pausedAt
         let previousPausedDuration = ride.accumulatedPausedDuration
         let previousResumedAt = ride.lastResumedAt
+        let previousWalkingDuration = ride.accumulatedWalkingDuration
 
         if ride.isPaused {
             ride.resume(at: date)
@@ -131,6 +132,7 @@ final class RideSessionController {
             ride.pausedAt = previousPausedAt
             ride.accumulatedPausedDuration = previousPausedDuration
             ride.lastResumedAt = previousResumedAt
+            ride.accumulatedWalkingDuration = previousWalkingDuration
             return
         }
 
@@ -139,6 +141,29 @@ final class RideSessionController {
         } else {
             beginLocationUpdates()
         }
+        synchronizeLiveActivity(at: date)
+    }
+
+    func toggleWalking(at date: Date = .now) {
+        guard let ride = activeRide, !ride.isPaused, ride.endedAt == nil else { return }
+
+        errorMessage = nil
+        let wasWalking = ride.isWalking
+        let previousChangedAt = ride.walkingChangedAt
+        let previousWalkingDuration = ride.accumulatedWalkingDuration
+        ride.toggleWalking(at: date)
+
+        do {
+            if let modelContext { try saveChanges(modelContext) }
+        } catch {
+            ride.isWalking = wasWalking
+            ride.walkingChangedAt = previousChangedAt
+            ride.accumulatedWalkingDuration = previousWalkingDuration
+            errorMessage = "Your ride couldn’t \(wasWalking ? "resume riding" : "switch to walking"). Please try again."
+            return
+        }
+
+        speedInMilesPerHour = 0
         synchronizeLiveActivity(at: date)
     }
 
@@ -175,6 +200,7 @@ final class RideSessionController {
         let wasPaused = ride.isPaused
         let previousPausedAt = ride.pausedAt
         let previousPausedDuration = ride.accumulatedPausedDuration
+        let previousWalkingDuration = ride.accumulatedWalkingDuration
         endLocationUpdates()
         ride.end(at: date)
 
@@ -185,6 +211,7 @@ final class RideSessionController {
             ride.endedAt = nil
             ride.pausedAt = previousPausedAt
             ride.accumulatedPausedDuration = previousPausedDuration
+            ride.accumulatedWalkingDuration = previousWalkingDuration
 
             if !wasPaused {
                 beginLocationUpdates()
@@ -195,7 +222,7 @@ final class RideSessionController {
         activeRide = nil
         distanceInMeters = 0
         currentMapState = nil
-        lastRecordedLocation = nil
+        lastRecordedPoint = nil
         lastSpotifyTrackIdentity = nil
         synchronizeLiveActivity(at: date)
 
@@ -428,7 +455,7 @@ final class RideSessionController {
         }
 
         if let speedInMilesPerHour = update.speedInMilesPerHour {
-            self.speedInMilesPerHour = speedInMilesPerHour
+            self.speedInMilesPerHour = ride.isWalking ? 0 : speedInMilesPerHour
         }
     }
 
@@ -439,6 +466,7 @@ final class RideSessionController {
         // Background delivery can be delayed; only live speed needs a fresh fix.
         guard let ride = activeRide, !ride.isPaused, ride.endedAt == nil,
               location.timestamp >= max(ride.startedAt, ride.lastResumedAt ?? ride.startedAt),
+              location.timestamp >= (ride.walkingChangedAt ?? ride.startedAt),
               location.timestamp <= now.addingTimeInterval(1),
               (0...100).contains(location.horizontalAccuracy),
               CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(
@@ -446,8 +474,8 @@ final class RideSessionController {
               ))
         else { return }
 
-        if let lastRecordedLocation,
-           location.timestamp.timeIntervalSince(lastRecordedLocation.timestamp)
+        if let lastRecordedPoint,
+           location.timestamp.timeIntervalSince(lastRecordedPoint.recordedAt)
             < positionRecordingInterval
         {
             return
@@ -455,10 +483,6 @@ final class RideSessionController {
 
         guard let modelContext else { return }
 
-        let addedDistance = lastRecordedLocation.map { previous in
-            CLLocation(latitude: location.latitude, longitude: location.longitude)
-                .distance(from: CLLocation(latitude: previous.latitude, longitude: previous.longitude))
-        } ?? 0
         let point = RideRoutePoint(
             latitude: location.latitude,
             longitude: location.longitude,
@@ -466,12 +490,15 @@ final class RideSessionController {
             recordedAt: location.timestamp
         )
         point.recordingStartedAt = ride.lastResumedAt ?? ride.startedAt
+        point.isWalking = ride.isWalking
+        point.walkingChangedAt = ride.walkingChangedAt
+        let addedDistance = lastRecordedPoint.map { RideMetrics.cyclingDistance(from: $0, to: point) } ?? 0
         modelContext.insert(point)
         ride.routePoints.append(point)
 
         do {
             try saveChanges(modelContext)
-            lastRecordedLocation = location
+            lastRecordedPoint = point
             distanceInMeters += addedDistance
             let startingLocation = ride.routePoints
                 .min(by: { $0.recordedAt < $1.recordedAt })

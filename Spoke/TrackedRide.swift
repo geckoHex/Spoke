@@ -18,6 +18,9 @@ final class TrackedRide {
     var pausedAt: Date?
     var lastResumedAt: Date?
     var accumulatedPausedDuration: TimeInterval
+    var isWalking: Bool = false
+    var walkingChangedAt: Date? = nil
+    var accumulatedWalkingDuration: TimeInterval = 0
 
     @Relationship(deleteRule: .cascade, inverse: \RideRoutePoint.ride)
     var routePoints: [RideRoutePoint]
@@ -72,7 +75,24 @@ final class TrackedRide {
 
     func pause(at date: Date = .now) {
         guard endedAt == nil, pausedAt == nil else { return }
+        accumulatedWalkingDuration += currentWalkingDuration(at: date)
         pausedAt = date
+    }
+
+    func toggleWalking(at date: Date = .now) {
+        guard endedAt == nil, !isPaused else { return }
+        accumulatedWalkingDuration += currentWalkingDuration(at: date)
+        isWalking.toggle()
+        walkingChangedAt = date
+    }
+
+    func cyclingDuration(at date: Date = .now) -> TimeInterval {
+        max(elapsedDuration(at: date) - accumulatedWalkingDuration - currentWalkingDuration(at: date), 0)
+    }
+
+    private func currentWalkingDuration(at date: Date) -> TimeInterval {
+        guard isWalking, !isPaused, endedAt == nil, let walkingChangedAt else { return 0 }
+        return max(date.timeIntervalSince(max(walkingChangedAt, lastResumedAt ?? startedAt)), 0)
     }
 
     func resume(at date: Date = .now) {
@@ -84,6 +104,7 @@ final class TrackedRide {
 
     func end(at date: Date = .now) {
         guard endedAt == nil else { return }
+        accumulatedWalkingDuration += currentWalkingDuration(at: date)
 
         if let pausedAt {
             accumulatedPausedDuration += max(date.timeIntervalSince(pausedAt), 0)
@@ -101,7 +122,14 @@ final class RideRoutePoint {
     var horizontalAccuracy: Double
     var recordedAt: Date
     var recordingStartedAt: Date? = nil
+    var isWalking: Bool = false
+    var walkingChangedAt: Date? = nil
     var ride: TrackedRide?
+
+    func formsCyclingSegment(with next: RideRoutePoint) -> Bool {
+        // A walk can fall between two fixes without producing a walking point.
+        !isWalking && !next.isWalking && walkingChangedAt == next.walkingChangedAt
+    }
 
     init(
         latitude: Double,

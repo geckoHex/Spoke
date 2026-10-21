@@ -16,9 +16,10 @@ struct RideLiveActivitySnapshot: Equatable {
             timerStartDate: ride.startedAt.addingTimeInterval(ride.accumulatedPausedDuration),
             elapsedDuration: ride.elapsedDuration(at: date),
             distanceInMiles: distanceInMeters / 1_609.344,
-            speedInMilesPerHour: ride.isPaused ? 0
+            speedInMilesPerHour: ride.isPaused || ride.isWalking ? 0
                 : (locationStatus == .recording ? max(speedInMilesPerHour, 0) : nil),
-            isPaused: ride.isPaused
+            isPaused: ride.isPaused,
+            isWalking: ride.isWalking
         )
     }
 }

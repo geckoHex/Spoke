@@ -59,14 +59,14 @@ enum RideRouteSpeed {
         let measuredSegments = measuredSegments(for: points)
 
         let normalSpeed = typicalMovingSpeed(
-            measuredSegments.map(\.speedInMilesPerHour)
+            measuredSegments.filter(\.isCycling).map(\.speedInMilesPerHour)
         )
 
         return measuredSegments.reduce(into: []) { segments, measuredSegment in
-            let motion = motion(
+            let motion: RideRouteMotion = measuredSegment.isCycling ? motion(
                 for: measuredSegment.speedInMilesPerHour,
                 normalSpeed: normalSpeed
-            )
+            ) : .slower
 
             if segments.last?.motion == motion {
                 segments[segments.count - 1].coordinates.append(measuredSegment.end)
@@ -87,7 +87,7 @@ enum RideRouteSpeed {
         var candidate: StopCandidate?
 
         for measuredSegment in measuredSegments {
-            let isStopped = measuredSegment.speedInMilesPerHour
+            let isStopped = measuredSegment.isCycling && measuredSegment.speedInMilesPerHour
                 <= littleMotionThreshold
 
             if isStopped {
@@ -116,7 +116,7 @@ enum RideRouteSpeed {
 
     static func movingMetrics(for points: [RideRoutePoint]) -> RideMovingMetrics {
         measuredSegments(for: points)
-            .filter { $0.speedInMilesPerHour > littleMotionThreshold }
+            .filter { $0.isCycling && $0.speedInMilesPerHour > littleMotionThreshold }
             .reduce(
                 into: RideMovingMetrics(duration: 0, distanceInMeters: 0)
             ) { metrics, segment in
@@ -130,7 +130,7 @@ enum RideRouteSpeed {
 
     static func topSpeed(for points: [RideRoutePoint]) -> Double? {
         // shortcut: Route segments estimate speed; persist live samples if peaks must match the speedometer.
-        measuredSegments(for: points).map(\.speedInMilesPerHour).max()
+        measuredSegments(for: points).filter(\.isCycling).map(\.speedInMilesPerHour).max()
     }
 
     static func typicalMovingSpeed(_ speeds: [Double]) -> Double? {
@@ -190,6 +190,7 @@ enum RideRouteSpeed {
                 endedAt: endPoint.recordedAt,
                 distanceInMeters: distanceInMeters,
                 duration: duration,
+                isCycling: startPoint.formsCyclingSegment(with: endPoint),
                 speedInMilesPerHour: speedInMilesPerHour
             )
         }
@@ -203,6 +204,7 @@ private struct MeasuredSegment {
     let endedAt: Date
     let distanceInMeters: CLLocationDistance
     let duration: TimeInterval
+    let isCycling: Bool
     let speedInMilesPerHour: Double
 }
 
